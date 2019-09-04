@@ -10,7 +10,7 @@ import SettingSDK from '../sdks/SettingSDK';
 import FileSDK from '../sdks/FileSDK';
 import NetworkSDK from '../sdks/NetworkSDK';
 import DownloadManager from '../managers/DownloadManager/DownloadManager';
-
+import SystemSDK from '../sdks/SystemSDK';
 @Singleton
 class ContainerAPI {
 
@@ -47,6 +47,9 @@ class ContainerAPI {
 
     public getDownloadManagerInstance(pluginId: string): DownloadManager {
         return new DownloadManager(pluginId);
+    }
+    public getSystemSDKInstance(pluginId: string): SystemSDK {
+        return new SystemSDK(pluginId)
     }
 
 
