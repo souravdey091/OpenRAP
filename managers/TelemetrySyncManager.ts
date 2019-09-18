@@ -65,9 +65,7 @@ export class TelemetrySyncManager {
         .find(dbFilters)
         .catch(error => logger.error("fetching telemetryEvents failed", error));
       logger.info(
-        `telemetry events length, ${
-          telemetryEvents.docs.length
-        } for plugin: ${pluginId}`
+        `telemetry events length, ${telemetryEvents.docs.length} for plugin: ${pluginId}`
       );
     } else {
       telemetryEvents = await this.databaseSdk
@@ -138,7 +136,7 @@ export class TelemetrySyncManager {
         logger.warn("sync job failed: network not available");
         return;
       }
-      let apiKey = "";
+      let apiKey;
 
       try {
         let { api_key } = await this.databaseSdk.getDoc(
@@ -177,9 +175,7 @@ export class TelemetrySyncManager {
           .then(data => {
             // sync each packet to the plugins  api base url
             logger.info(
-              `${data} telemetry synced for  packet ${
-                telemetryPacket._id
-              } of events ${telemetryPacket.events.length}`
+              `${data} telemetry synced for  packet ${telemetryPacket._id} of events ${telemetryPacket.events.length}`
             ); // on successful sync update the batch sync status to true
             return this.databaseSdk.updateDoc(
               "telemetry_packets",
@@ -189,9 +185,7 @@ export class TelemetrySyncManager {
           })
           .catch(err => {
             logger.error(
-              `error while syncing packets to telemetry service for  packet ${
-                telemetryPacket._id
-              } of events ${telemetryPacket.events.length}`
+              `error while syncing packets to telemetry service for  packet ${telemetryPacket._id} of events ${telemetryPacket.events.length}`
             );
           });
       }
@@ -291,45 +285,45 @@ export class TelemetrySyncManager {
   async getAPIToken(deviceId = this.systemSDK.getDeviceId()) {
     //const apiKey =;
     //let token = Buffer.from(apiKey, 'base64').toString('ascii');
-    if (process.env.APP_BASE_URL_TOKEN && deviceId) {
-      let headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`
-      };
-      let body = {
-        id: "api.device.register",
-        ver: "1.0",
-        ts: Date.now(),
-        request: {
-          key: deviceId
-        }
-      };
-      let response = await axios
-        .post(
-          process.env.APP_BASE_URL +
-            "/api/api-manager/v1/consumer/mobile_device/credential/register",
-          body,
-          { headers: headers }
-        )
-        .catch(err => {
-          logger.error(
-            `Error while registering the device status ${
-              err.response.status
-            } data ${err.response.data}`
-          );
-          throw Error(err);
-        });
-      let key = _.get(response, "data.result.key");
-      let secret = _.get(response, "data.result.secret");
-      let apiKey = jwt.sign({ iss: key }, secret, { algorithm: "HS256" });
-      await this.databaseSdk
-        .upsertDoc("settings", "device_token", { api_key: apiKey })
-        .catch(err => {
-          logger.error("while inserting the api key to the  database", err);
-        });
-      return apiKey;
-    } else {
-      throw Error(`token or deviceID missing to register device ${deviceId}`);
-    }
+    // if (process.env.APP_BASE_URL_TOKEN && deviceId) {
+    //   let headers = {
+    //     "Content-Type": "application/json",
+    //     Authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`
+    //   };
+    //   let body = {
+    //     id: "api.device.register",
+    //     ver: "1.0",
+    //     ts: Date.now(),
+    //     request: {
+    //       key: deviceId
+    //     }
+    //   };
+    //   let response = await axios
+    //     .post(
+    //       process.env.APP_BASE_URL +
+    //         "/api/api-manager/v1/consumer/mobile_device/credential/register",
+    //       body,
+    //       { headers: headers }
+    //     )
+    //     .catch(err => {
+    //       logger.error(
+    //         `Error while registering the device status ${
+    //           err.response.status
+    //         } data ${err.response.data}`
+    //       );
+    //       throw Error(err);
+    //     });
+    //   let key = _.get(response, "data.result.key");
+    //   let secret = _.get(response, "data.result.secret");
+    //   let apiKey = jwt.sign({ iss: key }, secret, { algorithm: "HS256" });
+    //   await this.databaseSdk
+    //     .upsertDoc("settings", "device_token", { api_key: apiKey })
+    //     .catch(err => {
+    //       logger.error("while inserting the api key to the  database", err);
+    //     });
+    return Promise.resolve(process.env.APP_BASE_URL_TOKEN);
+    // } else {
+    //   throw Error(`token or deviceID missing to register device ${deviceId}`);
+    // }
   }
 }

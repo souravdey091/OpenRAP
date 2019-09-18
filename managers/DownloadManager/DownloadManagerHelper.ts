@@ -8,7 +8,6 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { STATUS, STATUS_MESSAGE } from "./DownloadManager";
 import { DataBaseSDK } from "../../sdks/DataBaseSDK";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
-import { telemetryInstance } from "../..";
 
 @Singleton
 export class DownloadManagerHelper {
@@ -20,16 +19,14 @@ export class DownloadManagerHelper {
   private suDScheduler;
   constructor() {
     // initialize the su downloader3 schedular
-    let options = {
-      threads: 1, // TODO: if threads are morethan one the unzip is failing due to partial combined
-      throttleRate: 5000,
-      timeout: 60000
-    };
-
-    let schedulerOptions = {
+    const schedulerOptions = {
       autoStart: true,
       maxConcurrentDownloads: 1, //  don't change this which will give db duplicate update errors on progress
-      downloadOptions: options
+      downloadOptions: {
+        threads: 1, // TODO: if threads are more than one the unzip is failing due to partials combined
+        throttleRate: 2000,
+        timeout: 60000
+      }
     };
     this.suDScheduler = new SuDScheduler(schedulerOptions);
   }
@@ -75,110 +72,59 @@ export class DownloadManagerHelper {
   downloadObserver = (downloadId: string, docId: string) => {
     return {
       next: progressInfo => {
-        //update the status to In Progress in DB with stats
-        this.dbSDK
-          .getDoc(this.dataBaseName, docId)
-          .then(doc => {
+        (async () => {
+          try {
+            const doc = await this.dbSDK.getDoc(this.dataBaseName, docId);
             // for initial call we will get the filesize
-            if (_.get(progressInfo, "filesize")) {
-              let telemetryLog = {
-                context: {
-                  env: "downloadManager"
-                },
-                object: {
-                  id: downloadId,
-                  type: "content"
-                },
-                edata: {
-                  level: "INFO",
-                  type: "system",
-                  message: "content download moved to inProgress state",
-                  params: [
-                    {
-                      id: docId
-                    },
-                    {
-                      contentIds: downloadId
-                    },
-                    {
-                      totalSize: _.get(progressInfo, "filesize")
-                    },
-                    {
-                      status: STATUS.InProgress
-                    }
-                  ]
-                }
-              };
-              telemetryInstance.log(telemetryLog);
-              doc.files = _.map(doc.files, file => {
+            if (progressInfo.filesize) {
+              const files = _.map(doc.files, file => {
                 if (file.id === downloadId) {
-                  file.size = _.get(progressInfo, "filesize");
+                  file.size = progressInfo.filesize;
                 }
                 return file;
               });
+              doc.files = files;
+              doc.status = STATUS.InProgress;
+              doc.statusMsg = STATUS_MESSAGE.InProgress;
             }
+
             //sub-sequent calls we will get downloaded count
             if (_.get(progressInfo, "total.downloaded")) {
               let downloaded = progressInfo.total.downloaded;
-              doc.files = _.map(doc.files, file => {
+              const files = _.map(doc.files, file => {
                 if (file.id === downloadId) {
                   file.downloaded = downloaded;
-                  file.size = progressInfo.total.filesize;
                 }
                 return file;
               });
+              doc.files = files;
+              doc.stats.downloadedSize = _.sumBy(
+                doc.files,
+                file => file["downloaded"]
+              );
             }
-
-            doc.status = STATUS.InProgress;
-            doc.statusMsg = STATUS_MESSAGE.InProgress;
             doc.updatedOn = Date.now();
             delete doc["_rev"];
-            return this.dbSDK.updateDoc(this.dataBaseName, docId, doc);
-          })
-          .catch(err => {
-            logger.error("While updating progress in database", err);
-          });
-      },
-      error: e => {
-        // generate the telemetry
-
-        let telemetryLog = {
-          context: {
-            env: "downloadManager"
-          },
-          object: {
-            id: downloadId,
-            type: "content"
-          },
-          edata: {
-            level: "INFO",
-            type: "system",
-            message: "content download failed",
-            params: [
-              {
-                id: docId
-              },
-              {
-                contentIds: downloadId
-              },
-              {
-                status: STATUS.Failed
-              }
-            ]
+            await this.dbSDK.updateDoc(this.dataBaseName, docId, doc);
+          } catch (error) {
+            logger.error("While updating progress in database", error);
           }
-        };
-        telemetryInstance.log(telemetryLog);
-        // update the status to failed
-        this.dbSDK
-          .updateDoc(this.dataBaseName, docId, {
-            status: STATUS.Failed,
-            statusMsg: STATUS_MESSAGE.Failed,
-            updatedOn: Date.now()
-          })
-          .then(() => {
-            return this.dbSDK.getDoc(this.dataBaseName, docId);
-          })
-          .then(doc => {
+        })();
+      },
+      error: error => {
+        // generate the telemetry
+        (async () => {
+          try {
+            // update the status to failed and remove other un processed files from queue
+            await this.dbSDK.updateDoc(this.dataBaseName, docId, {
+              status: STATUS.Failed,
+              statusMsg: STATUS_MESSAGE.Failed,
+              updatedOn: Date.now()
+            });
+
+            //remove pending items from downloadQueue
+
+            const doc = await this.dbSDK.getDoc(this.dataBaseName, docId);
             let pluginId = doc.pluginId;
             delete doc.pluginId;
             delete doc.statusMsg;
@@ -186,70 +132,35 @@ export class DownloadManagerHelper {
             doc.id = doc._id;
             delete doc._id;
             EventManager.emit(`${pluginId}:download:failed`, doc);
-            logger.error("Error", e, "context:", JSON.stringify(doc));
-          })
-          .catch(e => {
+          } catch (error) {
             logger.error(
-              "Error",
-              e,
-              "context-error:",
-              e,
-              "docId",
-              docId,
-              "fileId",
-              downloadId
+              `DownloadManager: Error while downloading the data, ${error}`
             );
-          });
+          }
+        })();
 
         // Emit the event on error
       },
       complete: () => {
-        // log the info
-        // generate the telemetry
-        let telemetryLog = {
-          context: {
-            env: "downloadManager"
-          },
-          object: {
-            id: downloadId,
-            type: "content"
-          },
-          edata: {
-            level: "INFO",
-            type: "system",
-            message: "content download failed",
-            params: [
-              {
-                id: docId
-              },
-              {
-                contentIds: downloadId
-              },
-              {
-                status: STATUS.Completed
-              }
-            ]
-          }
-        };
-        telemetryInstance.log(telemetryLog);
-        // update the status to completed
+        (async () => {
+          try {
+            // log the info
+            // generate the telemetry
+            // update the status to completed
 
-        this.dbSDK
-          .getDoc(this.dataBaseName, docId)
-          .then(async doc => {
-            doc.stats.downloadedFiles = doc.stats.downloadedFiles + 1;
-            if (_.find(doc.files, { id: downloadId })["size"]) {
-              doc.stats.downloadedSize += _.find(doc.files, {
-                id: downloadId
-              })["size"];
-            }
+            const doc = await this.dbSDK.getDoc(this.dataBaseName, docId);
+            let files = _.map(doc.files, file => {
+              if (file.id === downloadId) {
+                file.downloaded = file.size;
+              }
+              return file;
+            });
+            let stats = doc.stats;
+            stats.downloadedFiles = doc.stats.downloadedFiles + 1;
+            stats.downloadedSize = _.sumBy(files, file => file["downloaded"]);
+            doc.files = files;
+            doc.stats = stats;
             if (doc.stats.downloadedFiles === doc.files.length) {
-              doc.files = _.map(doc.files, file => {
-                if (file.id === downloadId) {
-                  file.downloaded = file.size;
-                }
-                return file;
-              });
               let pluginId = doc.pluginId;
               delete doc.pluginId;
               delete doc.statusMsg;
@@ -259,33 +170,24 @@ export class DownloadManagerHelper {
               doc.status = STATUS.Completed;
               EventManager.emit(`${pluginId}:download:complete`, doc);
               return this.dbSDK.updateDoc(this.dataBaseName, docId, {
+                files: files,
+                stats: stats,
                 status: STATUS.EventEmitted,
                 updatedOn: Date.now()
               });
             } else {
-              doc.files = _.map(doc.files, file => {
-                if (file.id === downloadId) {
-                  file.downloaded = file.size;
-                }
-                return file;
-              });
               return this.dbSDK.updateDoc(this.dataBaseName, docId, {
-                files: doc.files,
-                stats: doc.stats,
+                files: files,
+                stats: stats,
                 updatedOn: Date.now()
               });
             }
-          })
-          .catch(e => {
+          } catch (error) {
             logger.error(
-              "while download complete processing",
-              e,
-              "docId",
-              docId,
-              "fileId",
-              downloadId
+              `while processing download complete method ", ${error}, docId: ${docId}, fileId: ${downloadId}`
             );
-          });
+          }
+        })();
       }
     };
   };

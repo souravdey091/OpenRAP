@@ -4,18 +4,15 @@
 
 import { DownloadObject, DownloadFile } from "../../interfaces";
 import { Inject } from "typescript-ioc";
-
 import * as _ from "lodash";
 import uuid4 from "uuid/v4";
 import * as path from "path";
 import { DataBaseSDK } from "../../sdks/DataBaseSDK";
 import FileSDK from "../../sdks/FileSDK";
-
 import { DownloadManagerHelper } from "./DownloadManagerHelper";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
-import { telemetryInstance } from "../..";
-import { type } from "os";
+import * as Url from "url";
 
 /*
  * Below are the status for the download manager with different status
@@ -83,11 +80,10 @@ export default class DownloadManager {
     let docId = uuid4();
     // insert the download request with data to database
     if (_.isArray(files)) {
-      let fileSizes = _.map(files, file => file.size);
       let totalSize = _.reduce(
-        fileSizes,
-        (sum, n) => {
-          return sum + n;
+        files,
+        (sum, file) => {
+          return sum + file.size;
         },
         0
       );
@@ -108,7 +104,9 @@ export default class DownloadManager {
       for (const file of files as DownloadFile[]) {
         let fileId = (file as DownloadFile).id;
         let downloadUrl = (file as DownloadFile).url;
-        let fileName = downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1);
+        let fileName = `${fileId}${path.extname(
+          Url.parse(downloadUrl).pathname
+        )}`;
         let downloadObj = {
           id: fileId,
           file: fileName,
@@ -132,45 +130,19 @@ export default class DownloadManager {
           locations,
           this.downloadManagerHelper.downloadObserver(fileId, docId)
         );
-
-        let telemetryLog = {
-          context: {
-            env: "downloadManager"
-          },
-          object: {
-            id: file.id,
-            type: "content"
-          },
-          edata: {
-            level: "INFO",
-            type: "system",
-            message: "request to download content is submitted",
-            params: [
-              {
-                id: docId
-              },
-              {
-                contentIds: fileId
-              },
-              {
-                totalSize: file.size
-              },
-              {
-                status: STATUS.Submitted
-              }
-            ]
-          }
-        };
-        telemetryInstance.log(telemetryLog);
       }
       await this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
 
       return Promise.resolve(docId);
     } else {
-      let fileId = (files as DownloadFile).id;
-      let downloadUrl = (files as DownloadFile).url;
-      let totalSize = files.size;
-      let fileName = downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1);
+      let {
+        id: fileId,
+        url: downloadUrl,
+        size: totalSize
+      } = files as DownloadFile;
+      let fileName = `${fileId}${path.extname(
+        Url.parse(downloadUrl).pathname
+      )}`;
       let doc = {
         pluginId: this.pluginId,
         status: STATUS.Submitted,
@@ -202,36 +174,6 @@ export default class DownloadManager {
         url: downloadUrl,
         savePath: this.fileSDK.getAbsPath(path.join(location, fileName))
       };
-
-      let telemetryLog = {
-        context: {
-          env: "downloadManager"
-        },
-        object: {
-          id: fileId,
-          type: "content"
-        },
-        edata: {
-          level: "INFO",
-          type: "system",
-          message: "request to download content is submitted",
-          params: [
-            {
-              id: docId
-            },
-            {
-              contentIds: fileId
-            },
-            {
-              totalSize: totalSize
-            },
-            {
-              status: STATUS.Submitted
-            }
-          ]
-        }
-      };
-      telemetryInstance.log(telemetryLog);
       // while adding to queue we will prefix with docId if same content is requested again we will download it again
       this.downloadManagerHelper.queueDownload(
         `${docId}_${fileId}`,
