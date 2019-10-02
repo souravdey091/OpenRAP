@@ -65,7 +65,7 @@ export class TelemetrySyncManager {
         .find(dbFilters)
         .catch(error => logger.error("fetching telemetryEvents failed", error));
       logger.info(
-        `telemetry events length, ${telemetryEvents.docs.length} for plugin: ${pluginId}`
+        `telemetry events: , ${telemetryEvents.docs.length} for plugin: ${pluginId}`
       );
     } else {
       telemetryEvents = await this.databaseSdk
@@ -175,7 +175,9 @@ export class TelemetrySyncManager {
           .then(data => {
             // sync each packet to the plugins  api base url
             logger.info(
-              `${data} telemetry synced for  packet ${telemetryPacket._id} of events ${telemetryPacket.events.length}`
+              `${JSON.stringify(data)} telemetry synced for  packet ${
+                telemetryPacket._id
+              } of events ${telemetryPacket.events.length}`
             ); // on successful sync update the batch sync status to true
             return this.databaseSdk.updateDoc(
               "telemetry_packets",

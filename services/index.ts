@@ -1,1 +1,2 @@
-export * from './telemetry/telemetryService';
+export * from "./telemetry/telemetryInstance";
+export * from "./telemetry/telemetryService";

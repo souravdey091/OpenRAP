@@ -1,7 +1,7 @@
 import { DataBaseSDK } from "./DataBaseSDK";
 import { hash } from "../utils";
 import { Inject } from "typescript-ioc";
-import { telemetryInstance } from "..";
+import { telemetryInstance } from "../services";
 
 /**
  * @author Harish Kumar Gangula <harishg@ilimi.in>

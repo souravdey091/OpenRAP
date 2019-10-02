@@ -11,7 +11,8 @@ import {
   IEndEventInput,
   ILogEventInput,
   ITelemetryContext,
-  IFeedBackEventInput
+  IFeedBackEventInput,
+  IAuditEventInput
 } from "./ITelemetry";
 import * as telemetrySDK from "@project-sunbird/telemetry-sdk";
 import SystemSDK from "../../sdks/SystemSDK";
@@ -182,6 +183,19 @@ export class TelemetryHelper {
     if (this.isInitialized) {
       const eventData: ITelemetryEvent = this.getEventData(feedbackEventInput);
       this.telemetryProvider.feedback(eventData.edata, eventData.options);
+    }
+  }
+
+  /**
+   * Audit 'audit' telemetry event
+   *
+   * @param {IAuditEventInput} IFeedBackEventInput
+   * @memberof TelemetryService
+   */
+  public audit(auditEventInput: IAuditEventInput) {
+    if (this.isInitialized) {
+      const eventData: ITelemetryEvent = this.getEventData(auditEventInput);
+      this.telemetryProvider.audit(eventData.edata, eventData.options);
     }
   }
 

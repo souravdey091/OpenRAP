@@ -40,7 +40,6 @@ export class TelemetryService extends TelemetryHelper {
   }
   dispatcher(data) {
     this.telemetryBatch.push(data);
-    logger.error("dispatcher called", this.telemetryBatch.length);
     if (this.telemetryBatch.length >= this.telemetryConfig.batchSize) {
       this.telemetryConfig.dispatcher(
         this.telemetryBatch.splice(0, this.telemetryBatch.length)

@@ -8,7 +8,7 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { STATUS, STATUS_MESSAGE } from "./DownloadManager";
 import { DataBaseSDK } from "../../sdks/DataBaseSDK";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
-
+import { telemetryInstance } from "../../services";
 @Singleton
 export class DownloadManagerHelper {
   @Inject
@@ -86,6 +86,27 @@ export class DownloadManagerHelper {
               doc.files = files;
               doc.status = STATUS.InProgress;
               doc.statusMsg = STATUS_MESSAGE.InProgress;
+
+              let duration = (Date.now() - parseInt(doc.updatedOn)) / 1000;
+              let telemetryEvent = {
+                context: {
+                  env: "downloadManager",
+                  cdata: [
+                    {
+                      id: downloadId,
+                      type: "content"
+                    }
+                  ]
+                },
+                edata: {
+                  type: "OTHER",
+                  state: STATUS.InProgress,
+                  prevstate: STATUS.Submitted,
+                  props: ["stats.downloadedSize", "status", "updatedOn"],
+                  duration: duration
+                }
+              };
+              telemetryInstance.audit(telemetryEvent);
             }
 
             //sub-sequent calls we will get downloaded count
@@ -132,6 +153,21 @@ export class DownloadManagerHelper {
             doc.id = doc._id;
             delete doc._id;
             EventManager.emit(`${pluginId}:download:failed`, doc);
+            const telemetryError = {
+              context: {
+                env: "downloadManager"
+              },
+              object: {
+                id: downloadId,
+                type: "content"
+              },
+              edata: {
+                err: "SERVER_ERROR",
+                errtype: "system",
+                stacktrace: _.toString(error)
+              }
+            };
+            telemetryInstance.error(telemetryError);
           } catch (error) {
             logger.error(
               `DownloadManager: Error while downloading the data, ${error}`
@@ -146,15 +182,38 @@ export class DownloadManagerHelper {
           try {
             // log the info
             // generate the telemetry
+
             // update the status to completed
 
             const doc = await this.dbSDK.getDoc(this.dataBaseName, docId);
+
+            let duration = (Date.now() - parseInt(doc.updatedOn)) / 1000;
+            let telemetryEvent = {
+              context: {
+                env: "downloadManager",
+                cdata: [
+                  {
+                    id: downloadId,
+                    type: "content"
+                  }
+                ]
+              },
+              edata: {
+                type: "OTHER",
+                state: STATUS.Completed,
+                prevstate: STATUS.InProgress,
+                props: ["stats.downloadedSize", "status", "updatedOn"],
+                duration: duration
+              }
+            };
+            telemetryInstance.audit(telemetryEvent);
             let files = _.map(doc.files, file => {
               if (file.id === downloadId) {
                 file.downloaded = file.size;
               }
               return file;
             });
+
             let stats = doc.stats;
             stats.downloadedFiles = doc.stats.downloadedFiles + 1;
             stats.downloadedSize = _.sumBy(files, file => file["downloaded"]);

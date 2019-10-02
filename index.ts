@@ -2,20 +2,14 @@ import { DataBaseSDK } from "./sdks/DataBaseSDK";
 import * as fs from "fs";
 import * as path from "path";
 import * as _ from "lodash";
-import { reconciliation } from "./managers/DownloadManager/DownloadManager";
+import { reconciliation as DownloadManagerReconciliation } from "./managers/DownloadManager/DownloadManager";
 import NetworkSDK from "./sdks/NetworkSDK";
 import { TelemetrySyncManager } from "./managers/TelemetrySyncManager";
-import { TelemetryInstance } from "./services/telemetry/telemetryInstance";
-import uuid = require("uuid");
-import { TelemetryService } from "./services";
 
-let sessionId = null;
-let telemetryInstance: TelemetryService;
 // Initialize container
 const bootstrap = async () => {
-  sessionId = uuid.v4();
   // initialize the telemetry instance, to get it in other modules
-  telemetryInstance = new TelemetryInstance().get();
+
   // create databases for the container
   let dataBase = new DataBaseSDK();
   let schema = JSON.parse(
@@ -35,7 +29,7 @@ const bootstrap = async () => {
       }
     }
   }
-  await reconciliation();
+  await DownloadManagerReconciliation();
   const telemetrySyncManager = new TelemetrySyncManager();
   let interval =
     parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
@@ -46,4 +40,4 @@ const bootstrap = async () => {
   new NetworkSDK();
 };
 
-export { bootstrap, sessionId, telemetryInstance };
+export { bootstrap };
