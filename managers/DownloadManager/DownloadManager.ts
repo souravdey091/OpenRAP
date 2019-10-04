@@ -2,18 +2,18 @@
  * @author Harish Kumar Gangula <harishg@ilimi.in>
  */
 
-import { DownloadObject, DownloadFile } from "../../interfaces";
+import { DownloadObject, DownloadFile } from "./../../interfaces";
 import { Inject } from "typescript-ioc";
 import * as _ from "lodash";
 import uuid4 from "uuid/v4";
 import * as path from "path";
-import { DataBaseSDK } from "../../sdks/DataBaseSDK";
-import FileSDK from "../../sdks/FileSDK";
+import { DataBaseSDK } from "./../../sdks/DataBaseSDK";
+import FileSDK from "./../../sdks/FileSDK";
 import { DownloadManagerHelper } from "./DownloadManagerHelper";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import * as Url from "url";
-import { telemetryInstance } from "../../services";
+import { TelemetryInstance } from "./../../services/telemetry/telemetryInstance";
 
 /*
  * Below are the status for the download manager with different status
@@ -37,6 +37,9 @@ export enum STATUS_MESSAGE {
 export default class DownloadManager {
   @Inject
   private downloadManagerHelper: DownloadManagerHelper;
+
+  @Inject
+  private telemetryInstance: TelemetryInstance;
 
   pluginId: string;
 
@@ -161,7 +164,7 @@ export default class DownloadManager {
             ]
           }
         };
-        telemetryInstance.log(telemetryLog);
+        this.telemetryInstance.log(telemetryLog);
       }
 
       await this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
@@ -237,7 +240,7 @@ export default class DownloadManager {
           ]
         }
       };
-      telemetryInstance.log(telemetryLog);
+      this.telemetryInstance.log(telemetryLog);
       // while adding to queue we will prefix with docId if same content is requested again we will download it again
       this.downloadManagerHelper.queueDownload(
         `${docId}_${fileId}`,

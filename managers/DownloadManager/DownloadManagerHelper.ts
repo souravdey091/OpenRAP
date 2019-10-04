@@ -6,13 +6,16 @@ import { Singleton, Inject } from "typescript-ioc";
 import * as _ from "lodash";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { STATUS, STATUS_MESSAGE } from "./DownloadManager";
-import { DataBaseSDK } from "../../sdks/DataBaseSDK";
+import { DataBaseSDK } from "./../../sdks/DataBaseSDK";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
-import { telemetryInstance } from "../../services";
+import { TelemetryInstance } from "./../../services/telemetry/telemetryInstance";
 @Singleton
 export class DownloadManagerHelper {
   @Inject
   private dbSDK: DataBaseSDK;
+
+  @Inject
+  private telemetryInstance: TelemetryInstance;
 
   private dataBaseName = "download_queue";
 
@@ -106,7 +109,7 @@ export class DownloadManagerHelper {
                   duration: duration
                 }
               };
-              telemetryInstance.audit(telemetryEvent);
+              this.telemetryInstance.audit(telemetryEvent);
             }
 
             //sub-sequent calls we will get downloaded count
@@ -167,7 +170,7 @@ export class DownloadManagerHelper {
                 stacktrace: _.toString(error)
               }
             };
-            telemetryInstance.error(telemetryError);
+            this.telemetryInstance.error(telemetryError);
           } catch (error) {
             logger.error(
               `DownloadManager: Error while downloading the data, ${error}`
@@ -206,7 +209,7 @@ export class DownloadManagerHelper {
                 duration: duration
               }
             };
-            telemetryInstance.audit(telemetryEvent);
+            this.telemetryInstance.audit(telemetryEvent);
             let files = _.map(doc.files, file => {
               if (file.id === downloadId) {
                 file.downloaded = file.size;
