@@ -1,18 +1,17 @@
 import { Singleton, Inject } from "typescript-ioc";
 import { TelemetryService } from "./telemetryService";
-import { TelemetryConfig } from "../../interfaces/telemetryConfig";
-import { DataBaseSDK } from "../../sdks/DataBaseSDK";
+import { TelemetryConfig } from "./../../interfaces/telemetryConfig";
+import { DataBaseSDK } from "./../../sdks/DataBaseSDK";
 import * as _ from "lodash";
 import uuid = require("uuid");
 
 @Singleton
-export class TelemetryInstance {
-  private instance: TelemetryService;
-
+export class TelemetryInstance extends TelemetryService {
   @Inject
   private databaseSdk: DataBaseSDK;
   sessionId: string;
   constructor() {
+    super();
     this.sessionId = uuid.v4();
     let telemetryValidation =
       _.toLower(process.env.TELEMETRY_VALIDATION) === "true" ? true : false;
@@ -31,14 +30,9 @@ export class TelemetryInstance {
       runningEnv: "server",
       dispatcher: this.dispatcher.bind(this)
     };
-    this.instance = new TelemetryService(config);
-  }
-  get() {
-    return this.instance;
+    this.init(config);
   }
   dispatcher(events): void {
     return this.databaseSdk.bulkDocs("telemetry", events);
   }
 }
-
-export const telemetryInstance = new TelemetryInstance().get();

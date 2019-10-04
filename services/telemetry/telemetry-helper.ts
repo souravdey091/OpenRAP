@@ -15,7 +15,7 @@ import {
   IAuditEventInput
 } from "./ITelemetry";
 import * as telemetrySDK from "@project-sunbird/telemetry-sdk";
-import SystemSDK from "../../sdks/SystemSDK";
+import SystemSDK from "./../../sdks/SystemSDK";
 
 export class TelemetryHelper {
   /**

@@ -1,13 +1,13 @@
 import * as _ from "lodash";
 import { TelemetryHelper } from "./telemetry-helper";
-import { TelemetryConfig } from "../../interfaces/telemetryConfig";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
 
 export class TelemetryService extends TelemetryHelper {
   telemetryBatch = [];
   telemetryConfig: any = {};
-  constructor(config: TelemetryConfig) {
+  constructor() {
     super();
+  }
+  init(config) {
     // const orgDetails = await this.databaseSdk.getDoc(
     //   "organization",
     //   process.env.CHANNEL
@@ -36,7 +36,7 @@ export class TelemetryService extends TelemetryHelper {
         }
       }
     };
-    this.init(telemetryLibConfig);
+    super.init(telemetryLibConfig);
   }
   dispatcher(data) {
     this.telemetryBatch.push(data);

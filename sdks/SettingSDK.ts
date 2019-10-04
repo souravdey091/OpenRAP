@@ -1,7 +1,7 @@
 import { DataBaseSDK } from "./DataBaseSDK";
-import { hash } from "../utils";
+import { hash } from "./../utils";
 import { Inject } from "typescript-ioc";
-import { telemetryInstance } from "../services";
+import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
 
 /**
  * @author Harish Kumar Gangula <harishg@ilimi.in>
@@ -12,6 +12,10 @@ let dbName = "settings";
 export default class SettingSDK {
   @Inject
   private dbSDK: DataBaseSDK;
+
+  @Inject
+  private telemetryInstance: TelemetryInstance;
+
   constructor(public pluginId?: string) {}
   /*
    * Method to put the setting
@@ -19,7 +23,7 @@ export default class SettingSDK {
    * @param value Object - The value of the setting
    */
   put = async (key: string, value: object): Promise<boolean> => {
-    telemetryInstance.log({
+    this.telemetryInstance.log({
       context: {
         env: "settings"
       },

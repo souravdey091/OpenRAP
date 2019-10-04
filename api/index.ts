@@ -4,14 +4,14 @@
 
 import { Singleton, Inject } from "typescript-ioc";
 import { bootstrap } from "./../index";
-import { PluginConfig } from "../interfaces";
-import { register } from "../sdks/GlobalSDK";
-import SettingSDK from "../sdks/SettingSDK";
-import FileSDK from "../sdks/FileSDK";
-import NetworkSDK from "../sdks/NetworkSDK";
-import DownloadManager from "../managers/DownloadManager/DownloadManager";
-import SystemSDK from "../sdks/SystemSDK";
-import TelemetrySDK from "../sdks/TelemetrySDK";
+import { PluginConfig } from "./../interfaces";
+import { register } from "./../sdks/GlobalSDK";
+import SettingSDK from "./../sdks/SettingSDK";
+import FileSDK from "./../sdks/FileSDK";
+import NetworkSDK from "./../sdks/NetworkSDK";
+import DownloadManager from "./../managers/DownloadManager/DownloadManager";
+import SystemSDK from "./../sdks/SystemSDK";
+import TelemetrySDK from "./../sdks/TelemetrySDK";
 @Singleton
 class ContainerAPI {
   @Inject

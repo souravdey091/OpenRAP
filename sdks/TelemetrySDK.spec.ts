@@ -1,11 +1,13 @@
 import { expect } from "chai";
 import TelemetrySDK from "./TelemetrySDK";
 import * as _ from "lodash";
-import { telemetryInstance } from "../services";
+import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
+
+let telemetryInstance: TelemetryInstance = new TelemetryInstance();
 
 let telemetrySDK = new TelemetrySDK();
 
-describe("TelemetrySDK", () => {
+describe.only("TelemetrySDK", () => {
   it("should get the telemetryInstance", () => {
     expect(telemetrySDK.getInstance()).to.eq(telemetryInstance);
   });

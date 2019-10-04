@@ -1,11 +1,15 @@
-import { telemetryInstance } from "./../services";
+import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
+import { Inject } from "typescript-ioc";
 
 export default class TelemetrySDK {
+  @Inject
+  private telemetryInstance: TelemetryInstance;
+
   getInstance() {
-    return telemetryInstance;
+    return this.telemetryInstance;
   }
 
   send(events: any[]) {
-    telemetryInstance.dispatcher(events);
+    return this.telemetryInstance.dispatcher(events);
   }
 }

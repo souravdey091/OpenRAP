@@ -2,20 +2,19 @@
  * @author Harish Kumar Gangula <harishg@ilimi.in>
  */
 
-import { DataBaseSDK } from "../sdks/DataBaseSDK";
+import { DataBaseSDK } from "./../sdks/DataBaseSDK";
 import { Inject, Singleton } from "typescript-ioc";
 import * as _ from "lodash";
 import axios from "axios";
 import SystemSDK from "./../sdks/SystemSDK";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { FrameworkAPI } from "@project-sunbird/ext-framework-server/api";
-import * as jwt from "jsonwebtoken";
-import { list } from "../sdks/GlobalSDK";
-import NetworkSDK from "../sdks/NetworkSDK";
+import { list } from "./../sdks/GlobalSDK";
+import NetworkSDK from "./../sdks/NetworkSDK";
 import * as zlib from "zlib";
 import * as path from "path";
 import * as fs from "fs";
-import FileSDK from "../sdks/FileSDK";
+import FileSDK from "./../sdks/FileSDK";
 import uuid = require("uuid");
 
 @Singleton
