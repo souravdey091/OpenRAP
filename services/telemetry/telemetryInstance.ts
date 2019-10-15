@@ -32,7 +32,7 @@ export class TelemetryInstance extends TelemetryService {
     };
     this.init(config);
   }
-  send(events) {
+  send(events): Promise<any> {
     return this.databaseSdk.bulkDocs("telemetry", events);
   }
 }

@@ -9,7 +9,7 @@ export default class TelemetrySDK {
     return this.telemetryInstance;
   }
 
-  send(events: any[]) {
+  send(events: any[]): Promise<any> {
     return this.telemetryInstance.send(events);
   }
 }
