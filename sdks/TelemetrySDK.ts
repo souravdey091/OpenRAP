@@ -10,6 +10,6 @@ export default class TelemetrySDK {
   }
 
   send(events: any[]) {
-    return this.telemetryInstance.dispatcher(events);
+    return this.telemetryInstance.send(events);
   }
 }

@@ -28,11 +28,11 @@ export class TelemetryInstance extends TelemetryService {
       batchSize: 10,
       enableValidation: telemetryValidation,
       runningEnv: "server",
-      dispatcher: this.dispatcher.bind(this)
+      dispatcher: this.send.bind(this)
     };
     this.init(config);
   }
-  dispatcher(events): void {
+  send(events): void {
     return this.databaseSdk.bulkDocs("telemetry", events);
   }
 }

@@ -14,8 +14,6 @@ import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 @Singleton
 class ContainerAPI {
-  @Inject
-  telemetrySDK: TelemetrySDK;
   public async bootstrap() {
     await bootstrap();
   }
@@ -54,7 +52,7 @@ class ContainerAPI {
   }
 
   public getTelemetrySDKInstance() {
-    return this.telemetrySDK;
+    return new TelemetrySDK();
   }
 }
 
