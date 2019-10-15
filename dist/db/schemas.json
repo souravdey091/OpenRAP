@@ -1,0 +1,52 @@
+{
+    "databases": [
+        {
+            "name": "plugin_registry"
+        },
+        {
+            "name": "settings"
+        },
+        {
+            "name": "telemetry_packets",
+            "indexes": [
+                {
+                    "index": {
+                        "fields": [
+                            "pluginId",
+                            "status",
+                            "updatedOn"
+                        ]
+                    },
+                    "name": "filterIndex"
+                }
+            ]
+        },
+        {
+            "name": "download_queue",
+            "indexes": [
+                {
+                    "index": {
+                        "fields": [
+                            "pluginId",
+                            "status",
+                            "updatedOn"
+                        ]
+                    },
+                    "name": "filterIndex"
+                }
+            ]
+        },
+        {
+            "name": "telemetry",
+            "indexes": [
+                {
+                    "index": {
+                        "fields": [
+                            "syncStatus"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}
