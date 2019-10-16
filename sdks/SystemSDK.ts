@@ -1,6 +1,6 @@
 import { Singleton } from "typescript-ioc";
 const GetMac = require("getmac");
-import { hash } from "./../utils";
+const crypto = require("crypto");
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 @Singleton
 export default class SystemSDK {
@@ -12,7 +12,10 @@ export default class SystemSDK {
     return new Promise(resolve => {
       GetMac.getMac((err, macAddress) => {
         logger.error(`Error while getting deviceId ${err}`);
-        this.deviceId = hash(macAddress);
+        this.deviceId = crypto
+          .createHash("md5")
+          .update(macAddress)
+          .digest("hex");
         resolve(this.deviceId);
       });
     });

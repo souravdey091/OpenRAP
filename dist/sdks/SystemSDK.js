@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const typescript_ioc_1 = require("typescript-ioc");
 const GetMac = require("getmac");
-const utils_1 = require("./../utils");
+const crypto = require("crypto");
 const logger_1 = require("@project-sunbird/ext-framework-server/logger");
 let SystemSDK = class SystemSDK {
     constructor(pluginId) { }
@@ -21,7 +21,10 @@ let SystemSDK = class SystemSDK {
         return new Promise(resolve => {
             GetMac.getMac((err, macAddress) => {
                 logger_1.logger.error(`Error while getting deviceId ${err}`);
-                this.deviceId = utils_1.hash(macAddress);
+                this.deviceId = crypto
+                    .createHash("md5")
+                    .update(macAddress)
+                    .digest("hex");
                 resolve(this.deviceId);
             });
         });
