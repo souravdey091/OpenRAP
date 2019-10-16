@@ -16,7 +16,7 @@ class TelemetryService extends telemetry_helper_1.TelemetryHelper {
         this.telemetryConfig = config;
         const telemetryLibConfig = {
             userOrgDetails: {
-                userId: this.getDeviceId(),
+                userId: "anonymous",
                 rootOrgId: config.rootOrgId,
                 organisationIds: [config.hashTagId]
             },

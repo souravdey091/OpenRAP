@@ -9,21 +9,26 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const node_machine_id_1 = require("node-machine-id");
 const typescript_ioc_1 = require("typescript-ioc");
+const GetMac = require("getmac");
+const utils_1 = require("./../utils");
+const logger_1 = require("@project-sunbird/ext-framework-server/logger");
 let SystemSDK = class SystemSDK {
-    constructor(pluginId) {
-        this.deviceId = node_machine_id_1.machineIdSync();
-    }
+    constructor(pluginId) { }
     getDeviceId() {
-        return this.deviceId;
+        if (this.deviceId)
+            return Promise.resolve(this.deviceId);
+        return new Promise(resolve => {
+            GetMac.getMac((err, macAddress) => {
+                logger_1.logger.error(`Error while getting deviceId ${err}`);
+                this.deviceId = utils_1.hash(macAddress);
+                resolve(this.deviceId);
+            });
+        });
     }
     getDiskSpaceInfo() { }
     getMemoryInfo() { }
-    getDeviceInfo() {
-        {
-        }
-    }
+    getDeviceInfo() { }
     getAll() { }
 };
 SystemSDK = __decorate([

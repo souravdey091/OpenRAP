@@ -71,6 +71,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
     }
     createTelemetryPacket(pluginId) {
         return __awaiter(this, void 0, void 0, function* () {
+            let did = yield this.systemSDK.getDeviceId();
             let dbFilters = {
                 selector: {},
                 limit: this.TELEMETRY_PACKET_SIZE * 10
@@ -97,7 +98,6 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                 let omittedDoc = _.omit(doc, ["_id", "_rev"]);
                 //here we consider all the events as anonymous usage and updating the uid and did if
                 if (updateDIDFlag) {
-                    let did = this.systemSDK.getDeviceId();
                     omittedDoc["actor"]["id"] = did;
                     omittedDoc["context"]["did"] = did;
                 }
@@ -151,7 +151,8 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                 }
                 catch (error) {
                     logger_1.logger.warn("device token is not set getting it from api", error);
-                    apiKey = yield this.getAPIToken(this.systemSDK.getDeviceId()).catch(err => logger_1.logger.error(`while getting the token ${err}`));
+                    let did = yield this.systemSDK.getDeviceId();
+                    apiKey = yield this.getAPIToken(did).catch(err => logger_1.logger.error(`while getting the token ${err}`));
                 }
                 if (!apiKey) {
                     logger_1.logger.error("sync job failed: api_key not available");
@@ -189,10 +190,11 @@ let TelemetrySyncManager = class TelemetrySyncManager {
     }
     makeSyncApiCall(packet, apiKey) {
         return __awaiter(this, void 0, void 0, function* () {
+            let did = yield this.systemSDK.getDeviceId();
             let headers = {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${apiKey}`,
-                did: this.systemSDK.getDeviceId(),
+                did: did,
                 msgid: packet["_id"]
             };
             let body = {
@@ -262,7 +264,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
             }
         });
     }
-    getAPIToken(deviceId = this.systemSDK.getDeviceId()) {
+    getAPIToken(deviceId) {
         return __awaiter(this, void 0, void 0, function* () {
             //const apiKey =;
             //let token = Buffer.from(apiKey, 'base64').toString('ascii');

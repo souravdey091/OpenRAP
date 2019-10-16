@@ -1,7 +1,7 @@
 export default class SystemSDK {
     private deviceId;
     constructor(pluginId?: string);
-    getDeviceId(): any;
+    getDeviceId(): Promise<string>;
     getDiskSpaceInfo(): void;
     getMemoryInfo(): void;
     getDeviceInfo(): void;

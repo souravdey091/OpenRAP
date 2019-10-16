@@ -69,12 +69,6 @@ export class TelemetryHelper {
     this.isInitialized = true;
     console.log("Telemetry Service is Initialized!", this.context);
   }
-  getDeviceId(callback?: any) {
-    return (
-      (callback && callback(this.systemSDK.getDeviceId())) ||
-      this.systemSDK.getDeviceId()
-    );
-  }
 
   /**
    *

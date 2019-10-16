@@ -12,5 +12,5 @@ export declare class TelemetrySyncManager {
     syncJob(): Promise<void>;
     makeSyncApiCall(packet: any, apiKey: any): Promise<import("../../../../../../Users/harishkumargangula/Documents/Workspace/OpenRAP/node_modules/axios").AxiosResponse<any>>;
     cleanUpJob(): Promise<void>;
-    getAPIToken(deviceId?: any): Promise<string>;
+    getAPIToken(deviceId: any): Promise<string>;
 }

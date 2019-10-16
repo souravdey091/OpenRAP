@@ -38,7 +38,6 @@ export declare class TelemetryHelper {
      * @memberof TelemetryService
      */
     init(context: ITelemetryContext): void;
-    getDeviceId(callback?: any): any;
     /**
      *
      *

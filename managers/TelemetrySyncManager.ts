@@ -49,6 +49,7 @@ export class TelemetrySyncManager {
     this.createTelemetryPacket(""); // createTelemetryPacket job for OpenRap telemetry events
   }
   async createTelemetryPacket(pluginId: string) {
+    let did = await this.systemSDK.getDeviceId();
     let dbFilters = {
       selector: {},
       limit: this.TELEMETRY_PACKET_SIZE * 10
@@ -81,7 +82,6 @@ export class TelemetrySyncManager {
       let omittedDoc = _.omit(doc, ["_id", "_rev"]);
       //here we consider all the events as anonymous usage and updating the uid and did if
       if (updateDIDFlag) {
-        let did = this.systemSDK.getDeviceId();
         omittedDoc["actor"]["id"] = did;
         omittedDoc["context"]["did"] = did;
       }
@@ -145,8 +145,9 @@ export class TelemetrySyncManager {
         apiKey = api_key;
       } catch (error) {
         logger.warn("device token is not set getting it from api", error);
-        apiKey = await this.getAPIToken(this.systemSDK.getDeviceId()).catch(
-          err => logger.error(`while getting the token ${err}`)
+        let did = await this.systemSDK.getDeviceId();
+        apiKey = await this.getAPIToken(did).catch(err =>
+          logger.error(`while getting the token ${err}`)
         );
       }
 
@@ -195,10 +196,11 @@ export class TelemetrySyncManager {
     }
   }
   async makeSyncApiCall(packet, apiKey) {
+    let did = await this.systemSDK.getDeviceId();
     let headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
-      did: this.systemSDK.getDeviceId(),
+      did: did,
       msgid: packet["_id"]
     };
     let body = {
@@ -283,7 +285,7 @@ export class TelemetrySyncManager {
       logger.error(`while running the telemetry cleanup job ${error}`);
     }
   }
-  async getAPIToken(deviceId = this.systemSDK.getDeviceId()) {
+  async getAPIToken(deviceId) {
     //const apiKey =;
     //let token = Buffer.from(apiKey, 'base64').toString('ascii');
     // if (process.env.APP_BASE_URL_TOKEN && deviceId) {
