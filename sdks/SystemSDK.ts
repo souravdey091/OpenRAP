@@ -11,7 +11,9 @@ export default class SystemSDK {
     if (this.deviceId) return Promise.resolve(this.deviceId);
     return new Promise(resolve => {
       GetMac.getMac((err, macAddress) => {
-        logger.error(`Error while getting deviceId ${err}`);
+        if (err) {
+          logger.error(`Error while getting deviceId ${err}`);
+        }
         this.deviceId = crypto
           .createHash("md5")
           .update(macAddress)

@@ -36,8 +36,6 @@ const _ = __importStar(require("lodash"));
 const axios_1 = __importDefault(require("axios"));
 const SystemSDK_1 = __importDefault(require("./../sdks/SystemSDK"));
 const logger_1 = require("@project-sunbird/ext-framework-server/logger");
-const api_1 = require("@project-sunbird/ext-framework-server/api");
-const GlobalSDK_1 = require("./../sdks/GlobalSDK");
 const NetworkSDK_1 = __importDefault(require("./../sdks/NetworkSDK"));
 const zlib = __importStar(require("zlib"));
 const path = __importStar(require("path"));
@@ -45,103 +43,58 @@ const fs = __importStar(require("fs"));
 const FileSDK_1 = __importDefault(require("./../sdks/FileSDK"));
 let TelemetrySyncManager = class TelemetrySyncManager {
     constructor() {
-        this.TELEMETRY_PACKET_SIZE = process.env.TELEMETRY_PACKET_SIZE
-            ? parseInt(process.env.TELEMETRY_PACKET_SIZE)
-            : 200;
+        this.TELEMETRY_PACKET_SIZE = parseInt(process.env.TELEMETRY_PACKET_SIZE) || 200;
     }
     batchJob() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                let did = yield this.systemSDK.getDeviceId();
+                let dbFilters = {
+                    selector: {},
+                    limit: this.TELEMETRY_PACKET_SIZE * 100
+                };
+                let telemetryEvents = yield this.databaseSdk.find("telemetry", dbFilters);
+                if (telemetryEvents.docs.length === 0)
+                    return;
+                logger_1.logger.info(`Batching telemetry events size ${telemetryEvents.docs.length} of chunk size each ${this.TELEMETRY_PACKET_SIZE}`);
+                let updateDIDFlag = process.env.MODE === "standalone";
+                let formatedEvents = _.map(telemetryEvents.docs, doc => {
+                    let omittedDoc = _.omit(doc, ["_id", "_rev"]);
+                    //here we consider all the events as anonymous usage and updating the uid and did if
+                    if (updateDIDFlag) {
+                        omittedDoc["actor"]["id"] = did;
+                        omittedDoc["context"]["did"] = did;
+                    }
+                    return omittedDoc;
+                });
+                const packets = _.chunk(formatedEvents, this.TELEMETRY_PACKET_SIZE).map(data => ({
+                    syncStatus: false,
+                    createdOn: Date.now(),
+                    updateOn: Date.now(),
+                    events: data
+                }));
+                yield this.databaseSdk.bulkDocs("telemetry_packets", packets);
+                logger_1.logger.info(`Adding ${packets.length} packets to  telemetry_packets DB`);
+                const deleteEvents = _.map(telemetryEvents.docs, data => ({
+                    _id: data._id,
+                    _rev: data._rev,
+                    _deleted: true
+                }));
+                telemetryEvents = yield this.databaseSdk.bulkDocs("telemetry", deleteEvents);
+                logger_1.logger.info(`Deleted telemetry events of size ${deleteEvents.length} from telemetry db`);
             }
             catch (error) {
-                logger_1.logger.error(`while running the telemetry batch job ${error}`);
+                logger_1.logger.error(`error while batching the telemetry events`, error);
             }
-            const pluginDetails = yield GlobalSDK_1.list().catch(() => {
-                // get the plugins from global registry
-                return [];
-            });
-            if (!pluginDetails.length) {
-                return;
-            }
-            _.forEach(pluginDetails, pluginDetail => {
-                this.createTelemetryPacket(pluginDetail.id); // telemetry events by plugin from plugin's  and create the packet
-            });
-            this.createTelemetryPacket(""); // createTelemetryPacket job for OpenRap telemetry events
-        });
-    }
-    createTelemetryPacket(pluginId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let did = yield this.systemSDK.getDeviceId();
-            let dbFilters = {
-                selector: {},
-                limit: this.TELEMETRY_PACKET_SIZE * 10
-            };
-            let telemetryEvents = { docs: [] };
-            if (pluginId) {
-                let pluginDbInstance = this.frameworkAPI.getPouchDBInstance(pluginId, "telemetry");
-                telemetryEvents = yield pluginDbInstance
-                    .find(dbFilters)
-                    .catch(error => logger_1.logger.error("fetching telemetryEvents failed", error));
-                logger_1.logger.info(`telemetry events: , ${telemetryEvents.docs.length} for plugin: ${pluginId}`);
-            }
-            else {
-                telemetryEvents = yield this.databaseSdk
-                    .find("telemetry", dbFilters)
-                    .catch(error => logger_1.logger.error("fetching telemetryEvents failed", error));
-                logger_1.logger.info("telemetry events length", telemetryEvents.docs.length);
-            }
-            if (!telemetryEvents.docs.length) {
-                return;
-            }
-            let updateDIDFlag = process.env.MODE === "standalone";
-            let formatedEvents = _.map(telemetryEvents.docs, doc => {
-                let omittedDoc = _.omit(doc, ["_id", "_rev"]);
-                //here we consider all the events as anonymous usage and updating the uid and did if
-                if (updateDIDFlag) {
-                    omittedDoc["actor"]["id"] = did;
-                    omittedDoc["context"]["did"] = did;
-                }
-                return omittedDoc;
-            });
-            const packets = _.chunk(formatedEvents, this.TELEMETRY_PACKET_SIZE).map(data => ({
-                pluginId: pluginId,
-                syncStatus: false,
-                createdOn: Date.now(),
-                updateOn: Date.now(),
-                events: data
-            }));
-            yield this.databaseSdk
-                .bulkDocs("telemetry_packets", packets) // insert the batch into batch table with plugin-Id and sync status as false
-                .catch(error => logger_1.logger.error("creating packets", error));
-            const deleteEvents = _.map(telemetryEvents.docs, data => ({
-                _id: data._id,
-                _rev: data._rev,
-                _deleted: true
-            }));
-            if (pluginId) {
-                let pluginDbInstance = this.frameworkAPI.getPouchDBInstance(pluginId, "telemetry");
-                yield pluginDbInstance
-                    .bulkDocs(deleteEvents) // clean the events in the plugin telemetry table
-                    .catch(error => logger_1.logger.error("deleting telemetry events failed", error));
-            }
-            else {
-                telemetryEvents = yield this.databaseSdk
-                    .bulkDocs("telemetry", deleteEvents)
-                    .catch(error => logger_1.logger.error("fetching telemetryEvents failed", error));
-                logger_1.logger.info("deleted telemetry events length", deleteEvents.length);
-            }
-            this.createTelemetryPacket(pluginId);
         });
     }
     syncJob() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const networkStatus = yield this.networkSDK
-                    .isInternetAvailable()
-                    .catch(status => false);
+                const networkStatus = yield this.networkSDK.isInternetAvailable();
                 if (!networkStatus) {
                     // check network connectivity with plugin api base url since we try to sync to that endpoint
-                    logger_1.logger.warn("sync job failed: network not available");
+                    logger_1.logger.warn("sync job failed: internet is not available");
                     return;
                 }
                 let apiKey;
@@ -164,33 +117,32 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                     },
                     limit: 100
                 };
-                const telemetryPackets = yield this.databaseSdk
-                    .find("telemetry_packets", dbFilters) // get the batches from batch table where sync status is false
-                    .catch(error => logger_1.logger.error("fetching telemetryPackets failed", error));
-                logger_1.logger.info("telemetryPackets length", telemetryPackets.docs.length);
-                if (!telemetryPackets.docs.length) {
+                let telemetryPackets = yield this.databaseSdk.find("telemetry_packets", dbFilters);
+                telemetryPackets = telemetryPackets || { docs: [] };
+                if (telemetryPackets.length === 0) {
                     return;
                 }
+                logger_1.logger.info("Syncing telemetry packets of size", telemetryPackets.docs.length);
+                let did = yield this.systemSDK.getDeviceId();
                 for (const telemetryPacket of telemetryPackets.docs) {
-                    yield this.makeSyncApiCall(telemetryPacket, apiKey)
+                    yield this.syncTelemetryPackets(telemetryPacket, apiKey, did)
                         .then(data => {
                         // sync each packet to the plugins  api base url
-                        logger_1.logger.info(`${JSON.stringify(data)} telemetry synced for  packet ${telemetryPacket._id} of events ${telemetryPacket.events.length}`); // on successful sync update the batch sync status to true
+                        logger_1.logger.info(`Telemetry synced for  packet ${telemetryPacket._id} of ${telemetryPacket.events.length} events`); // on successful sync update the batch sync status to true
                         return this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true });
                     })
                         .catch(err => {
-                        logger_1.logger.error(`error while syncing packets to telemetry service for  packet ${telemetryPacket._id} of events ${telemetryPacket.events.length}`);
+                        logger_1.logger.error(`Error while syncing to telemetry service for packetId ${telemetryPacket._id} of ${telemetryPacket.events.length} events`, err);
                     });
                 }
             }
             catch (error) {
-                logger_1.logger.error(`while running the telemetry sync job ${error}`);
+                logger_1.logger.error(`while running the telemetry sync job `, error);
             }
         });
     }
-    makeSyncApiCall(packet, apiKey) {
+    syncTelemetryPackets(packet, apiKey, did) {
         return __awaiter(this, void 0, void 0, function* () {
-            let did = yield this.systemSDK.getDeviceId();
             let headers = {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${apiKey}`,
@@ -219,8 +171,8 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                 for (const batch of batches) {
                     // create gz file with name as batch id with that batch data an store it to telemetry-archive folder
                     // delete the files which are created 10 days back
-                    let { pluginId, events, _id, _rev } = batch;
-                    let fileSDK = new FileSDK_1.default(pluginId);
+                    let { events, _id, _rev } = batch;
+                    let fileSDK = new FileSDK_1.default("");
                     zlib.gzip(JSON.stringify(events), (error, result) => __awaiter(this, void 0, void 0, function* () {
                         if (error) {
                             logger_1.logger.error(`While creating gzip object for telemetry object ${error}`);
@@ -232,10 +184,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                             wstream.write(result);
                             wstream.end();
                             wstream.on("finish", () => __awaiter(this, void 0, void 0, function* () {
-                                logger_1.logger.info(events.length +
-                                    " events are wrote to file " +
-                                    filePath +
-                                    " and  deleting events from telemetry database");
+                                logger_1.logger.info(`${events.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
                                 yield this.databaseSdk
                                     .bulkDocs("telemetry_packets", [
                                     {
@@ -251,17 +200,17 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                         }
                     }));
                 }
-                //TODO: need to delete older archived files
-                //delete if the file is archived file is older than 10 days
-                // let archiveFolderPath = fileSDK.getAbsPath('telemetry_archived');
-                // fs.readdir(archiveFolderPath, (err, files) => {
-                //     //filter gz files
-                //     let gzfiles =
-                // })
             }
             catch (error) {
                 logger_1.logger.error(`while running the telemetry cleanup job ${error}`);
             }
+            //TODO: need to delete older archived files
+            //delete if the file is archived file is older than 10 days
+            // let archiveFolderPath = this.fileSDK.getAbsPath('telemetry_archived');
+            // fs.readdir(archiveFolderPath, (err, files) => {
+            //     //filter gz files
+            //     let gzfiles =
+            // })
         });
     }
     getAPIToken(deviceId) {
@@ -315,10 +264,6 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", DataBaseSDK_1.DataBaseSDK)
 ], TelemetrySyncManager.prototype, "databaseSdk", void 0);
-__decorate([
-    typescript_ioc_1.Inject,
-    __metadata("design:type", api_1.FrameworkAPI)
-], TelemetrySyncManager.prototype, "frameworkAPI", void 0);
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", NetworkSDK_1.default)
