@@ -1,33 +1,33 @@
-import { machineIdSync } from 'node-machine-id';
-
+import { Singleton } from "typescript-ioc";
+const GetMac = require("getmac");
+const crypto = require("crypto");
+import { logger } from "@project-sunbird/ext-framework-server/logger";
+@Singleton
 export default class SystemSDK {
+  private deviceId: string;
+  constructor(pluginId?: string) {}
 
-    private deviceId;
-    constructor(pluginId?: string) {
-        this.deviceId = machineIdSync()
-    }
-
-    getDeviceId() {
-        return this.deviceId;
-    }
-
-    getDiskSpaceInfo() {
-
-    }
-
-    getMemoryInfo() {
-
-    }
-
-    getDeviceInfo() {
-        {
-
+  getDeviceId(): Promise<string> {
+    if (this.deviceId) return Promise.resolve(this.deviceId);
+    return new Promise(resolve => {
+      GetMac.getMac((err, macAddress) => {
+        if (err) {
+          logger.error(`Error while getting deviceId ${err}`);
         }
-    }
+        this.deviceId = crypto
+          .createHash("md5")
+          .update(macAddress)
+          .digest("hex");
+        resolve(this.deviceId);
+      });
+    });
+  }
 
+  getDiskSpaceInfo() {}
 
-    getAll() {
+  getMemoryInfo() {}
 
-    }
+  getDeviceInfo() {}
 
+  getAll() {}
 }

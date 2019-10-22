@@ -1,5 +1,5 @@
 import { DataBaseSDK } from "./DataBaseSDK";
-import { PluginConfig } from "../interfaces";
+import { PluginConfig } from "./../interfaces";
 import * as _ from "lodash";
 /**
  * @author Harish Kumar Gangula <harishg@ilimi.in>
@@ -9,11 +9,14 @@ import * as _ from "lodash";
  * Plugin to register with the container on initialization.
  */
 
-let databaseName = 'plugin_registry';
-export const register = async (pluginId: string, pluginConfig: object): Promise<boolean> => {
-    let dbSDK = new DataBaseSDK()
-    await dbSDK.upsertDoc(databaseName, pluginId, pluginConfig);
-    return true;
+let databaseName = "plugin_registry";
+export const register = async (
+  pluginId: string,
+  pluginConfig: object
+): Promise<boolean> => {
+  let dbSDK = new DataBaseSDK();
+  await dbSDK.upsertDoc(databaseName, pluginId, pluginConfig);
+  return true;
 };
 
 /*
@@ -22,13 +25,12 @@ export const register = async (pluginId: string, pluginConfig: object): Promise<
  * @return pluginConfig
  */
 export const get = async (pluginId: string): Promise<PluginConfig> => {
-    let dbSDK = new DataBaseSDK()
-    let pluginConfig = await dbSDK.getDoc(databaseName, pluginId);
-    delete pluginConfig['_id'];
-    delete pluginConfig['_rev'];
-    return Promise.resolve(pluginConfig)
-}
-
+  let dbSDK = new DataBaseSDK();
+  let pluginConfig = await dbSDK.getDoc(databaseName, pluginId);
+  delete pluginConfig["_id"];
+  delete pluginConfig["_rev"];
+  return Promise.resolve(pluginConfig);
+};
 
 /*
  * list the plugins .
@@ -36,13 +38,13 @@ export const get = async (pluginId: string): Promise<PluginConfig> => {
  * @return plugins
  */
 export const list = async (): Promise<PluginConfig[]> => {
-    let dbSDK = new DataBaseSDK()
-    let { docs } = await dbSDK.find(databaseName, { selector: {} });
-    let pluginConfigs = [];
-    _.forEach(docs, (doc) => {
-        let pluginConfig = _.omit(doc, ['_id', '_rev']);
-        pluginConfig.id = doc['_id']
-        pluginConfigs.push(pluginConfig)
-    });
-    return Promise.resolve(pluginConfigs)
-}
+  let dbSDK = new DataBaseSDK();
+  let { docs } = await dbSDK.find(databaseName, { selector: {} });
+  let pluginConfigs = [];
+  _.forEach(docs, doc => {
+    let pluginConfig = _.omit(doc, ["_id", "_rev"]);
+    pluginConfig.id = doc["_id"];
+    pluginConfigs.push(pluginConfig);
+  });
+  return Promise.resolve(pluginConfigs);
+};

@@ -2,17 +2,18 @@
  * @author Harish Kumar Gangula <harishg@ilimi.in>
  */
 
-import { DownloadObject, DownloadFile } from "../../interfaces";
+import { DownloadObject, DownloadFile } from "./../../interfaces";
 import { Inject } from "typescript-ioc";
 import * as _ from "lodash";
 import uuid4 from "uuid/v4";
 import * as path from "path";
-import { DataBaseSDK } from "../../sdks/DataBaseSDK";
-import FileSDK from "../../sdks/FileSDK";
+import { DataBaseSDK } from "./../../sdks/DataBaseSDK";
+import FileSDK from "./../../sdks/FileSDK";
 import { DownloadManagerHelper } from "./DownloadManagerHelper";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import * as Url from "url";
+import { TelemetryInstance } from "./../../services/telemetry/telemetryInstance";
 
 /*
  * Below are the status for the download manager with different status
@@ -36,6 +37,9 @@ export enum STATUS_MESSAGE {
 export default class DownloadManager {
   @Inject
   private downloadManagerHelper: DownloadManagerHelper;
+
+  @Inject
+  private telemetryInstance: TelemetryInstance;
 
   pluginId: string;
 
@@ -130,7 +134,39 @@ export default class DownloadManager {
           locations,
           this.downloadManagerHelper.downloadObserver(fileId, docId)
         );
+        let telemetryLog = {
+          context: {
+            env: "downloadManager",
+            cdata: [
+              {
+                id: file.id,
+                type: "content"
+              }
+            ]
+          },
+          edata: {
+            level: "INFO",
+            type: "system",
+            message: "request to download content is submitted",
+            params: [
+              {
+                id: docId
+              },
+              {
+                contentIds: fileId
+              },
+              {
+                totalSize: file.size
+              },
+              {
+                status: STATUS.Submitted
+              }
+            ]
+          }
+        };
+        this.telemetryInstance.log(telemetryLog);
       }
+
       await this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
 
       return Promise.resolve(docId);
@@ -174,6 +210,37 @@ export default class DownloadManager {
         url: downloadUrl,
         savePath: this.fileSDK.getAbsPath(path.join(location, fileName))
       };
+      let telemetryLog = {
+        context: {
+          env: "downloadManager",
+          cdata: [
+            {
+              id: fileId,
+              type: "content"
+            }
+          ]
+        },
+        edata: {
+          level: "INFO",
+          type: "system",
+          message: "request to download content is submitted",
+          params: [
+            {
+              id: docId
+            },
+            {
+              contentIds: fileId
+            },
+            {
+              totalSize: totalSize
+            },
+            {
+              status: STATUS.Submitted
+            }
+          ]
+        }
+      };
+      this.telemetryInstance.log(telemetryLog);
       // while adding to queue we will prefix with docId if same content is requested again we will download it again
       this.downloadManagerHelper.queueDownload(
         `${docId}_${fileId}`,
