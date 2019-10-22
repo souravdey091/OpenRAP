@@ -19,7 +19,7 @@ export default class NetworkSDK {
             let endPointUrl: string = baseUrl ? baseUrl : (process.env.APP_BASE_URL as string);
             const url = new URL(endPointUrl);
             dns.lookup(url.hostname, (err) => {
-                if (err && err.code == "ENOTFOUND") {
+                if (err) {
                     resolve(false);
                 }
                 else {
