@@ -1,6 +1,7 @@
 import { HTTPService } from '@project-sunbird/ext-framework-server/services';
 import { EventManager } from '@project-sunbird/ext-framework-server/managers/EventManager';
 import { Singleton } from 'typescript-ioc';
+import * as dns from 'dns';
 
 @Singleton
 export default class NetworkSDK {
@@ -16,14 +17,16 @@ export default class NetworkSDK {
     isInternetAvailable = (baseUrl?: string): Promise<boolean> => {
         return new Promise((resolve) => {
             let endPointUrl: string = baseUrl ? baseUrl : (process.env.APP_BASE_URL as string);
-            HTTPService.head(endPointUrl)
-                .toPromise()
-                .then(() => {
-                    resolve(true)
-                }).catch(err => {
-                    resolve(false)
-                })
-        })
+            const url = new URL(endPointUrl);
+            dns.lookup(url.hostname, (err) => {
+                if (err && err.code == "ENOTFOUND") {
+                    resolve(false);
+                }
+                else {
+                    resolve(true);
+                }
+            });
+        })      
     };
     private async setInitialStatus() {
         this.internetStatus = await this.isInternetAvailable();
