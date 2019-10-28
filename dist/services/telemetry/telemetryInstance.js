@@ -57,6 +57,7 @@ let TelemetryInstance = class TelemetryInstance extends telemetryService_1.Telem
             if (this.telemetryEvents.length > 0) {
                 let events = this.telemetryEvents.splice(0);
                 this.databaseSdk.bulkDocs("telemetry", events).catch(err => {
+                    this.telemetryEvents.push(...events);
                     logger_1.logger.error(`While syncing ${events.length} events from in memory to database`, err);
                 });
             }

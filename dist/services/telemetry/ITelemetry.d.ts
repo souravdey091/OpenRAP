@@ -59,6 +59,10 @@ export interface IFeedBackEventData {
     rating?: number;
     comments?: string;
 }
+export interface IInterruptEventData {
+    type: string;
+    pageid?: string;
+}
 export interface ITelemetryContextData {
     channel: string;
     uid: string;
@@ -187,6 +191,12 @@ export interface IStartEventInput {
         rollup?: {};
     };
     edata: IStartEventData;
+}
+export interface IInterruptEventInput {
+    context: {
+        env: string;
+    };
+    edata: IInterruptEventData;
 }
 export interface IProducerData {
     id: string;

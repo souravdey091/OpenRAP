@@ -27,7 +27,7 @@ let SystemSDK = class SystemSDK {
                     .createHash("sha256")
                     .update(macAddress)
                     .digest("hex");
-                resolve(macAddress);
+                resolve(this.deviceId);
             });
         });
     }

@@ -27,13 +27,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
 const typescript_ioc_1 = require("typescript-ioc");
 const dns = __importStar(require("dns"));
+const telemetryInstance_1 = require("./../services/telemetry/telemetryInstance");
+const typescript_ioc_2 = require("typescript-ioc");
 let NetworkSDK = class NetworkSDK {
     constructor() {
         this.isInternetAvailable = (baseUrl) => {
-            return new Promise((resolve) => {
-                let endPointUrl = baseUrl ? baseUrl : process.env.APP_BASE_URL;
+            return new Promise(resolve => {
+                let endPointUrl = baseUrl
+                    ? baseUrl
+                    : process.env.APP_BASE_URL;
                 const url = new URL(endPointUrl);
-                dns.lookup(url.hostname, (err) => {
+                dns.lookup(url.hostname, err => {
                     if (err) {
                         resolve(false);
                     }
@@ -56,17 +60,29 @@ let NetworkSDK = class NetworkSDK {
             let status = yield this.isInternetAvailable();
             if (this.internetStatus !== status) {
                 if (status) {
-                    EventManager_1.EventManager.emit('network:available', {});
+                    EventManager_1.EventManager.emit("network:available", {});
                     this.internetStatus = status;
                 }
                 else {
-                    EventManager_1.EventManager.emit('network:disconnected', {});
+                    EventManager_1.EventManager.emit("network:disconnected", {});
                     this.internetStatus = status;
                 }
+                this.telemetryInstance.interrupt({
+                    context: {
+                        env: "network"
+                    },
+                    edata: {
+                        type: status ? "connected" : "disconnected"
+                    }
+                });
             }
-        }), 30000);
+        }), 3000);
     }
 };
+__decorate([
+    typescript_ioc_2.Inject,
+    __metadata("design:type", telemetryInstance_1.TelemetryInstance)
+], NetworkSDK.prototype, "telemetryInstance", void 0);
 NetworkSDK = __decorate([
     typescript_ioc_1.Singleton,
     __metadata("design:paramtypes", [])

@@ -152,6 +152,18 @@ class TelemetryHelper {
         }
     }
     /**
+     * Interrupt 'interrupt' telemetry event
+     *
+     * @param {IInterruptEvent} IInterruptEvent
+     * @memberof TelemetryService
+     */
+    interrupt(interruptEventInput) {
+        if (this.isInitialized) {
+            const eventData = this.getEventData(interruptEventInput);
+            this.telemetryProvider.interrupt(eventData.edata, eventData.options);
+        }
+    }
+    /**
      *
      *
      * @private
