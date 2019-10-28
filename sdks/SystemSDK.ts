@@ -15,7 +15,7 @@ export default class SystemSDK {
           logger.error(`Error while getting deviceId ${err}`);
         }
         this.deviceId = crypto
-          .createHash("md5")
+          .createHash("sha256")
           .update(macAddress)
           .digest("hex");
         resolve(this.deviceId);
@@ -23,11 +23,9 @@ export default class SystemSDK {
     });
   }
 
-  getDiskSpaceInfo() {}
+  getHardDiskInfo() {}
 
   getMemoryInfo() {}
 
   getDeviceInfo() {}
-
-  getAll() {}
 }

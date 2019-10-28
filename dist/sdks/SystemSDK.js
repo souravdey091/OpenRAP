@@ -24,17 +24,16 @@ let SystemSDK = class SystemSDK {
                     logger_1.logger.error(`Error while getting deviceId ${err}`);
                 }
                 this.deviceId = crypto
-                    .createHash("md5")
+                    .createHash("sha256")
                     .update(macAddress)
                     .digest("hex");
-                resolve(this.deviceId);
+                resolve(macAddress);
             });
         });
     }
-    getDiskSpaceInfo() { }
+    getHardDiskInfo() { }
     getMemoryInfo() { }
     getDeviceInfo() { }
-    getAll() { }
 };
 SystemSDK = __decorate([
     typescript_ioc_1.Singleton,

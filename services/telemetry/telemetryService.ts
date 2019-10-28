@@ -1,6 +1,8 @@
 import * as _ from "lodash";
 import { TelemetryHelper } from "./telemetry-helper";
-
+import { Singleton } from "typescript-ioc";
+import { logger } from "@project-sunbird/ext-framework-server/logger";
+@Singleton
 export class TelemetryService extends TelemetryHelper {
   telemetryBatch = [];
   telemetryConfig: any = {};
@@ -39,11 +41,6 @@ export class TelemetryService extends TelemetryHelper {
     super.init(telemetryLibConfig);
   }
   dispatcher(data) {
-    this.telemetryBatch.push(data);
-    if (this.telemetryBatch.length >= this.telemetryConfig.batchSize) {
-      this.telemetryConfig.dispatcher(
-        this.telemetryBatch.splice(0, this.telemetryBatch.length)
-      );
-    }
+    this.telemetryConfig.dispatcher(_.cloneDeep([data]));
   }
 }

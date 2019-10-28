@@ -21,10 +21,12 @@ const telemetryService_1 = require("./telemetryService");
 const DataBaseSDK_1 = require("./../../sdks/DataBaseSDK");
 const _ = __importStar(require("lodash"));
 const uuid = require("uuid");
+const logger_1 = require("@project-sunbird/ext-framework-server/logger");
 let TelemetryInstance = class TelemetryInstance extends telemetryService_1.TelemetryService {
     constructor() {
         super();
         this.sessionId = uuid.v4();
+        this.telemetryEvents = [];
         let telemetryValidation = _.toLower(process.env.TELEMETRY_VALIDATION) === "true" ? true : false;
         let config = {
             pdata: {
@@ -36,15 +38,29 @@ let TelemetryInstance = class TelemetryInstance extends telemetryService_1.Telem
             env: "container",
             rootOrgId: process.env.ROOT_ORG_ID,
             hashTagId: process.env.ROOT_ORG_HASH_TAG_ID,
-            batchSize: 10,
+            batchSize: 1,
             enableValidation: telemetryValidation,
             runningEnv: "server",
             dispatcher: this.send.bind(this)
         };
         this.init(config);
+        this.syncToDB();
     }
     send(events) {
-        return this.databaseSdk.bulkDocs("telemetry", events);
+        if (!_.isArray(events))
+            events = [events];
+        this.telemetryEvents.push(...events);
+        return Promise.resolve();
+    }
+    syncToDB() {
+        setInterval(() => {
+            if (this.telemetryEvents.length > 0) {
+                let events = this.telemetryEvents.splice(0);
+                this.databaseSdk.bulkDocs("telemetry", events).catch(err => {
+                    logger_1.logger.error(`While syncing ${events.length} events from in memory to database`, err);
+                });
+            }
+        }, 5000);
     }
 };
 __decorate([

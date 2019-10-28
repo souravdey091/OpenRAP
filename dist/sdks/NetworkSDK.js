@@ -16,21 +16,30 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const services_1 = require("@project-sunbird/ext-framework-server/services");
 const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
 const typescript_ioc_1 = require("typescript-ioc");
+const dns = __importStar(require("dns"));
 let NetworkSDK = class NetworkSDK {
     constructor() {
         this.isInternetAvailable = (baseUrl) => {
             return new Promise((resolve) => {
                 let endPointUrl = baseUrl ? baseUrl : process.env.APP_BASE_URL;
-                services_1.HTTPService.head(endPointUrl)
-                    .toPromise()
-                    .then(() => {
-                    resolve(true);
-                }).catch(err => {
-                    resolve(false);
+                const url = new URL(endPointUrl);
+                dns.lookup(url.hostname, (err) => {
+                    if (err) {
+                        resolve(false);
+                    }
+                    else {
+                        resolve(true);
+                    }
                 });
             });
         };

@@ -132,7 +132,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                         return this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true });
                     })
                         .catch(err => {
-                        logger_1.logger.error(`Error while syncing to telemetry service for packetId ${telemetryPacket._id} of ${telemetryPacket.events.length} events`, err);
+                        logger_1.logger.error(`Error while syncing to telemetry service for packetId ${telemetryPacket._id} of ${telemetryPacket.events.length} events`, err.message);
                     });
                 }
             }

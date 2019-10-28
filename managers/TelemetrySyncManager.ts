@@ -139,7 +139,7 @@ export class TelemetrySyncManager {
           .catch(err => {
             logger.error(
               `Error while syncing to telemetry service for packetId ${telemetryPacket._id} of ${telemetryPacket.events.length} events`,
-              err
+              err.message
             );
           });
       }
