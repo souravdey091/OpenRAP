@@ -5,7 +5,6 @@
 import { DataBaseSDK } from "./../sdks/DataBaseSDK";
 import { Inject, Singleton } from "typescript-ioc";
 import * as _ from "lodash";
-import axios from "axios";
 import SystemSDK from "./../sdks/SystemSDK";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import NetworkSDK from "./../sdks/NetworkSDK";
@@ -13,18 +12,23 @@ import * as zlib from "zlib";
 import * as path from "path";
 import * as fs from "fs";
 import FileSDK from "./../sdks/FileSDK";
+import uuid = require("uuid");
+import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
+import { HTTPService } from "@project-sunbird/ext-framework-server/services";
 
 @Singleton
 export class TelemetrySyncManager {
   @Inject
   private databaseSdk: DataBaseSDK;
   @Inject
-  private networkSDK: NetworkSDK;
-  @Inject
   private systemSDK: SystemSDK;
+  @Inject
+  private telemetryInstance: TelemetryInstance;
 
   private TELEMETRY_PACKET_SIZE =
     parseInt(process.env.TELEMETRY_PACKET_SIZE) || 200;
+
+  private ARCHIVE_EXPIRY_TIME = 10; // in days
 
   async batchJob() {
     try {
@@ -53,7 +57,8 @@ export class TelemetrySyncManager {
           syncStatus: false,
           createdOn: Date.now(),
           updateOn: Date.now(),
-          events: data
+          events: data,
+          _id: uuid.v4()
         })
       );
       await this.databaseSdk.bulkDocs("telemetry_packets", packets);
@@ -67,23 +72,49 @@ export class TelemetrySyncManager {
         "telemetry",
         deleteEvents
       );
+
+      for (const packet of packets) {
+        const logEvent = {
+          context: {
+            env: "telemetryManager"
+          },
+          edata: {
+            level: "INFO",
+            type: "JOB",
+            message: "Batching the telemetry  events",
+            params: [{ packet: packet._id }, { size: packet.events.length }]
+          }
+        };
+        this.telemetryInstance.log(logEvent);
+      }
       logger.info(
         `Deleted telemetry events of size ${deleteEvents.length} from telemetry db`
       );
     } catch (error) {
+      const errorEvent = {
+        context: {
+          env: "telemetryManager"
+        },
+        edata: {
+          err: "SERVER_ERROR",
+          errtype: "SYSTEM",
+          stacktrace: (
+            error.stack ||
+            error.stacktrace ||
+            error.message ||
+            ""
+          ).toString()
+        }
+      };
+      this.telemetryInstance.error(errorEvent);
       logger.error(`error while batching the telemetry events`, error);
     }
   }
 
   async syncJob() {
     try {
-      const networkStatus = await this.networkSDK.isInternetAvailable();
-      if (!networkStatus) {
-        // check network connectivity with plugin api base url since we try to sync to that endpoint
-        logger.warn("sync job failed: internet is not available");
-        return;
-      }
       let apiKey;
+      let did = await this.systemSDK.getDeviceId();
 
       try {
         let { api_key } = await this.databaseSdk.getDoc(
@@ -93,7 +124,6 @@ export class TelemetrySyncManager {
         apiKey = api_key;
       } catch (error) {
         logger.warn("device token is not set getting it from api", error);
-        let did = await this.systemSDK.getDeviceId();
         apiKey = await this.getAPIToken(did).catch(err =>
           logger.error(`while getting the token ${err}`)
         );
@@ -103,48 +133,139 @@ export class TelemetrySyncManager {
         logger.error("sync job failed: api_key not available");
         return;
       }
-      let dbFilters = {
+      let telemetryPackets = await this.databaseSdk.find("telemetry_packets", {
         selector: {
           syncStatus: false
         },
         limit: 100
-      };
-      let telemetryPackets = await this.databaseSdk.find(
-        "telemetry_packets",
-        dbFilters
-      );
-      telemetryPackets = telemetryPackets || { docs: [] };
-      if (telemetryPackets.length === 0) {
+      });
+      if (!telemetryPackets || telemetryPackets.docs.length === 0) {
         return;
       }
       logger.info(
         "Syncing telemetry packets of size",
         telemetryPackets.docs.length
       );
-      let did = await this.systemSDK.getDeviceId();
-
-      for (const telemetryPacket of telemetryPackets.docs) {
-        await this.syncTelemetryPackets(telemetryPacket, apiKey, did)
-          .then(data => {
-            // sync each packet to the plugins  api base url
-            logger.info(
-              `Telemetry synced for  packet ${telemetryPacket._id} of ${telemetryPacket.events.length} events`
-            ); // on successful sync update the batch sync status to true
-            return this.databaseSdk.updateDoc(
-              "telemetry_packets",
-              telemetryPacket._id,
-              { syncStatus: true }
-            );
-          })
-          .catch(err => {
-            logger.error(
-              `Error while syncing to telemetry service for packetId ${telemetryPacket._id} of ${telemetryPacket.events.length} events`,
-              err.message
-            );
+      let isInitialSyncSuccessful = false;
+      let packet = telemetryPackets.docs.pop();
+      await this.syncTelemetryPackets(packet, apiKey, did)
+        .then(data => {
+          isInitialSyncSuccessful = true;
+          const logEvent = {
+            context: {
+              env: "telemetryManager"
+            },
+            edata: {
+              level: "INFO",
+              type: "JOB",
+              message: "Syncing the telemetry events to server",
+              params: [{ packet: packet._id }, { size: packet.events.length }]
+            }
+          };
+          this.telemetryInstance.log(logEvent);
+          // sync each packet to the plugins  api base url
+          logger.info(
+            `Telemetry synced for  packet ${packet._id} of ${packet.events.length} events`
+          ); // on successful sync update the batch sync status to true
+          return this.databaseSdk.updateDoc("telemetry_packets", packet._id, {
+            syncStatus: true
           });
+        })
+        .catch(error => {
+          logger.error(
+            `Error while syncing to telemetry service for packetId ${packet._id} of ${packet.events.length} events`,
+            error.message
+          );
+          const errorEvent = {
+            context: {
+              env: "telemetryManager"
+            },
+            edata: {
+              err: "SERVER_ERROR",
+              errtype: "SYSTEM",
+              stacktrace: (
+                error.stack ||
+                error.stacktrace ||
+                error.message ||
+                ""
+              ).toString()
+            }
+          };
+          this.telemetryInstance.error(errorEvent);
+        });
+      if (isInitialSyncSuccessful) {
+        for (const telemetryPacket of telemetryPackets.docs) {
+          await this.syncTelemetryPackets(telemetryPacket, apiKey, did)
+            .then(data => {
+              // sync each packet to the plugins  api base url
+              logger.info(
+                `Telemetry synced for  packet ${telemetryPacket._id} of ${telemetryPacket.events.length} events`
+              );
+              const logEvent = {
+                context: {
+                  env: "telemetryManager"
+                },
+                edata: {
+                  level: "INFO",
+                  type: "JOB",
+                  message: "Syncing the telemetry events to server",
+                  params: [
+                    { packet: telemetryPacket._id },
+                    { size: telemetryPacket.events.length }
+                  ]
+                }
+              };
+              this.telemetryInstance.log(logEvent);
+              // on successful sync update the batch sync status to true
+
+              return this.databaseSdk.updateDoc(
+                "telemetry_packets",
+                telemetryPacket._id,
+                { syncStatus: true }
+              );
+            })
+            .catch(error => {
+              logger.error(
+                `Error while syncing to telemetry service for packetId ${telemetryPacket._id} of ${telemetryPacket.events.length} events`,
+                error.message
+              );
+              const errorEvent = {
+                context: {
+                  env: "telemetryManager"
+                },
+                edata: {
+                  err: "SERVER_ERROR",
+                  errtype: "SYSTEM",
+                  stacktrace: (
+                    error.stack ||
+                    error.stacktrace ||
+                    error.message ||
+                    ""
+                  ).toString()
+                }
+              };
+              this.telemetryInstance.error(errorEvent);
+            });
+        }
       }
     } catch (error) {
       logger.error(`while running the telemetry sync job `, error);
+      const errorEvent = {
+        context: {
+          env: "telemetryManager"
+        },
+        edata: {
+          err: "SERVER_ERROR",
+          errtype: "SYSTEM",
+          stacktrace: (
+            error.stack ||
+            error.stacktrace ||
+            error.message ||
+            ""
+          ).toString()
+        }
+      };
+      this.telemetryInstance.error(errorEvent);
     }
   }
   async syncTelemetryPackets(packet, apiKey, did) {
@@ -160,11 +281,11 @@ export class TelemetrySyncManager {
       id: "api.telemetry",
       ver: "1.0"
     };
-    return await axios.post(
+    return await HTTPService.post(
       process.env.APP_BASE_URL + "/api/data/v1/telemetry",
       body,
       { headers: headers }
-    );
+    ).toPromise();
   }
   // Clean up job implementation
 
@@ -219,18 +340,72 @@ export class TelemetrySyncManager {
             });
           }
         });
+        const logEvent = {
+          context: {
+            env: "telemetryManager"
+          },
+          edata: {
+            level: "INFO",
+            type: "JOB",
+            message: "Archived the telemetry events to file system",
+            params: [{ packet: batch._id }, { size: batch.events.length }]
+          }
+        };
+        this.telemetryInstance.log(logEvent);
       }
+
+      //delete if the file is archived file is older than 10 days
+      let fileSDK = new FileSDK("");
+      let archiveFolderPath = fileSDK.getAbsPath("telemetry_archived");
+      fs.readdir(archiveFolderPath, (error, files) => {
+        //filter gz files
+        if (error) {
+          const errorEvent = {
+            context: {
+              env: "telemetryManager"
+            },
+            edata: {
+              err: "SERVER_ERROR",
+              errtype: "SYSTEM",
+              stacktrace: (error.stack || error.message || "").toString()
+            }
+          };
+          this.telemetryInstance.error(errorEvent);
+        } else if (files.length !== 0) {
+          let now = Date.now();
+          let expiry = this.ARCHIVE_EXPIRY_TIME * 86400;
+          for (const file of files) {
+            let fileArr = file.split(".");
+
+            let createdOn = Number(fileArr[fileArr.length - 2]);
+            if ((now - createdOn) / 1000 > expiry) {
+              logger.info(
+                `deleting file ${file} which is created on ${createdOn}`
+              );
+              fileSDK.remove(path.join("telemetry_archived", file));
+            }
+          }
+        }
+      });
     } catch (error) {
       logger.error(`while running the telemetry cleanup job ${error}`);
+      const errorEvent = {
+        context: {
+          env: "telemetryManager"
+        },
+        edata: {
+          err: "SERVER_ERROR",
+          errtype: "SYSTEM",
+          stacktrace: (
+            error.stack ||
+            error.stacktrace ||
+            error.message ||
+            ""
+          ).toString()
+        }
+      };
+      this.telemetryInstance.error(errorEvent);
     }
-    //TODO: need to delete older archived files
-    //delete if the file is archived file is older than 10 days
-    // let archiveFolderPath = this.fileSDK.getAbsPath('telemetry_archived');
-    // fs.readdir(archiveFolderPath, (err, files) => {
-    //     //filter gz files
-    //     let gzfiles =
-
-    // })
   }
   async getAPIToken(deviceId) {
     //const apiKey =;

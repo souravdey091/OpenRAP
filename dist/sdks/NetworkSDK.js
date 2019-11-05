@@ -76,7 +76,7 @@ let NetworkSDK = class NetworkSDK {
                     }
                 });
             }
-        }), 3000);
+        }), 300000);
     }
 };
 __decorate([

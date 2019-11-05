@@ -48,6 +48,7 @@
     "pouchdb": "^7.1.1",
     "pouchdb-find": "^7.1.1",
     "su-downloader3": "^1.0.8",
+    "systeminformation": "^4.14.17",
     "typescript-ioc": "^1.2.5"
   },
   "devDependencies": {

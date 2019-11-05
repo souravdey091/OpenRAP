@@ -30,20 +30,20 @@ class FileSDK {
         this.prefixPath = path.join(fileBasePath, this.pluginId);
     }
     /**
-    * @param foldersPath
-    * This method creates the folders it adds the plugin id as prefix so that conflicts with folder path
-    * with other plugins are resolved
-    * @returns Promise
-    */
+     * @param foldersPath
+     * This method creates the folders it adds the plugin id as prefix so that conflicts with folder path
+     * with other plugins are resolved
+     * @returns Promise
+     */
     mkdir(foldersPath) {
         return fse.ensureDir(path.join(this.prefixPath, foldersPath));
     }
     /**
-        * @param sourcePath
-        * @param destPath
-        * This method copy data from sourcePath to destPath
-        * @returns Promise
-        */
+     * @param sourcePath
+     * @param destPath
+     * This method copy data from sourcePath to destPath
+     * @returns Promise
+     */
     copy(sourcePath, destPath) {
         let isAbsoluteSourcePath = path.isAbsolute(sourcePath);
         if (!isAbsoluteSourcePath) {
@@ -71,19 +71,19 @@ class FileSDK {
     zip(Path, destPath, fileName) {
         return new Promise((resolve, reject) => {
             let output = fs.createWriteStream(path.join(this.prefixPath, destPath, fileName));
-            let archive = archiver('zip');
-            output.on('finish', () => {
+            let archive = archiver("zip");
+            output.on("finish", () => {
                 resolve();
             });
-            archive.on('warning', (err) => {
-                if (err.code === 'ENOENT') {
+            archive.on("warning", err => {
+                if (err.code === "ENOENT") {
                     // log warning
                 }
                 else {
                     reject(err);
                 }
             });
-            archive.on('error', (err) => {
+            archive.on("error", err => {
                 reject(err);
             });
             archive.pipe(output);
@@ -95,7 +95,9 @@ class FileSDK {
                 else {
                     if (stats.isFile()) {
                         let file = path.join(this.prefixPath, Path);
-                        archive.append(fs.createReadStream(file), { name: path.basename(Path) });
+                        archive.append(fs.createReadStream(file), {
+                            name: path.basename(Path)
+                        });
                     }
                     else {
                         archive.directory(path.join(this.prefixPath, Path), false);
@@ -106,7 +108,6 @@ class FileSDK {
             });
         });
     }
-    ;
     /**
      * @param filePath
      * @param  destPath
@@ -126,10 +127,10 @@ class FileSDK {
         }
         return new Promise((resolve, reject) => {
             let unzipper = new decompress_zip_1.default(srcFilePath);
-            unzipper.on('error', (err) => {
+            unzipper.on("error", (err) => {
                 reject(err.message);
             });
-            unzipper.on('extract', () => {
+            unzipper.on("extract", () => {
                 resolve(path.join(destFolderName));
             });
             unzipper.extract({

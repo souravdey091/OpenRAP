@@ -36,11 +36,11 @@ class SettingSDK {
         this.put = (key, value) => __awaiter(this, void 0, void 0, function* () {
             this.telemetryInstance.log({
                 context: {
-                    env: "settings"
+                    env: "settingSDK"
                 },
                 edata: {
                     level: "INFO",
-                    type: "system",
+                    type: "OTHER",
                     message: `${key} is updated`,
                     params: [
                         {

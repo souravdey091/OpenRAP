@@ -9,6 +9,7 @@ import { STATUS, STATUS_MESSAGE } from "./DownloadManager";
 import { DataBaseSDK } from "./../../sdks/DataBaseSDK";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import { TelemetryInstance } from "./../../services/telemetry/telemetryInstance";
+
 @Singleton
 export class DownloadManagerHelper {
   @Inject
@@ -93,16 +94,13 @@ export class DownloadManagerHelper {
               let duration = (Date.now() - parseInt(doc.updatedOn)) / 1000;
               let telemetryEvent = {
                 context: {
-                  env: "downloadManager",
-                  cdata: [
-                    {
-                      id: downloadId,
-                      type: "content"
-                    }
-                  ]
+                  env: "downloadManager"
+                },
+                object: {
+                  id: downloadId,
+                  type: "content"
                 },
                 edata: {
-                  type: "OTHER",
                   state: STATUS.InProgress,
                   prevstate: STATUS.Submitted,
                   props: ["stats.downloadedSize", "status", "updatedOn"],
@@ -156,6 +154,9 @@ export class DownloadManagerHelper {
             doc.id = doc._id;
             delete doc._id;
             EventManager.emit(`${pluginId}:download:failed`, doc);
+            const stackTrace = error.toJSON
+              ? JSON.stringify(error.toJSON())
+              : error.stack || error.stacktrace || error.message;
             const telemetryError = {
               context: {
                 env: "downloadManager"
@@ -166,11 +167,28 @@ export class DownloadManagerHelper {
               },
               edata: {
                 err: "SERVER_ERROR",
-                errtype: "system",
-                stacktrace: _.toString(error)
+                errtype: "SYSTEM",
+                stacktrace: stackTrace
               }
             };
             this.telemetryInstance.error(telemetryError);
+            const duration = (Date.now() - parseInt(doc.updatedOn)) / 1000;
+            const telemetryAuditEvent = {
+              context: {
+                env: "downloadManager"
+              },
+              object: {
+                id: downloadId,
+                type: "content"
+              },
+              edata: {
+                state: STATUS.Failed,
+                prevstate: STATUS.InProgress,
+                props: ["status", "updatedOn"],
+                duration: duration
+              }
+            };
+            this.telemetryInstance.audit(telemetryAuditEvent);
           } catch (error) {
             logger.error(
               `DownloadManager: Error while downloading the data, ${error}`
@@ -193,16 +211,13 @@ export class DownloadManagerHelper {
             let duration = (Date.now() - parseInt(doc.updatedOn)) / 1000;
             let telemetryEvent = {
               context: {
-                env: "downloadManager",
-                cdata: [
-                  {
-                    id: downloadId,
-                    type: "content"
-                  }
-                ]
+                env: "downloadManager"
+              },
+              object: {
+                id: downloadId,
+                type: "content"
               },
               edata: {
-                type: "OTHER",
                 state: STATUS.Completed,
                 prevstate: STATUS.InProgress,
                 props: ["stats.downloadedSize", "status", "updatedOn"],

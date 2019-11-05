@@ -134,37 +134,28 @@ export default class DownloadManager {
           locations,
           this.downloadManagerHelper.downloadObserver(fileId, docId)
         );
-        let telemetryLog = {
+
+        let telemetryEvent = {
           context: {
-            env: "downloadManager",
-            cdata: [
-              {
-                id: file.id,
-                type: "content"
-              }
-            ]
+            env: "downloadManager"
+          },
+          object: {
+            id: fileId,
+            type: "content"
           },
           edata: {
-            level: "INFO",
-            type: "system",
-            message: "request to download content is submitted",
-            params: [
-              {
-                id: docId
-              },
-              {
-                contentIds: fileId
-              },
-              {
-                totalSize: file.size
-              },
-              {
-                status: STATUS.Submitted
-              }
+            state: STATUS.Submitted,
+            props: [
+              "pluginId",
+              "stats",
+              "status",
+              "updatedOn",
+              "createdOn",
+              "files"
             ]
           }
         };
-        this.telemetryInstance.log(telemetryLog);
+        this.telemetryInstance.audit(telemetryEvent);
       }
 
       await this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
@@ -210,37 +201,20 @@ export default class DownloadManager {
         url: downloadUrl,
         savePath: this.fileSDK.getAbsPath(path.join(location, fileName))
       };
-      let telemetryLog = {
+      let telemetryEvent = {
         context: {
-          env: "downloadManager",
-          cdata: [
-            {
-              id: fileId,
-              type: "content"
-            }
-          ]
+          env: "downloadManager"
+        },
+        object: {
+          id: fileId,
+          type: "content"
         },
         edata: {
-          level: "INFO",
-          type: "system",
-          message: "request to download content is submitted",
-          params: [
-            {
-              id: docId
-            },
-            {
-              contentIds: fileId
-            },
-            {
-              totalSize: totalSize
-            },
-            {
-              status: STATUS.Submitted
-            }
-          ]
+          state: STATUS.Submitted,
+          props: ["stats", "status", "updatedOn", "createdOn", "files"]
         }
       };
-      this.telemetryInstance.log(telemetryLog);
+      this.telemetryInstance.audit(telemetryEvent);
       // while adding to queue we will prefix with docId if same content is requested again we will download it again
       this.downloadManagerHelper.queueDownload(
         `${docId}_${fileId}`,
@@ -413,7 +387,10 @@ export default class DownloadManager {
 export const reconciliation = async () => {
   // Get the data from database where status is completed
   let dbSDK = new DataBaseSDK();
+
+  let telemetryInstance = new TelemetryInstance();
   let dataBaseName = "download_queue";
+
   let completedData = await dbSDK
     .find(dataBaseName, {
       selector: {
@@ -466,4 +443,28 @@ export const reconciliation = async () => {
       });
     }
   }
+  let telemetryEvent = {
+    context: {
+      env: "downloadManager"
+    },
+    edata: {
+      level: "INFO",
+      type: "OTHER",
+      message: "Download manager reconciliation on starting the app",
+      params: [
+        {
+          PENDING: _.get(pendingDownloads, "docs")
+            ? _.get(pendingDownloads, "docs").length
+            : 0
+        },
+        {
+          COMPLETED: _.get(completedData, "docs")
+            ? _.get(completedData, "docs").length
+            : 0
+        }
+      ]
+    }
+  };
+
+  telemetryInstance.log(telemetryEvent);
 };

@@ -116,37 +116,27 @@ class DownloadManager {
                     };
                     // while adding to queue we will prefix with docId if same content is requested again we will download it again
                     this.downloadManagerHelper.queueDownload(`${docId}_${fileId}`, this.pluginId, locations, this.downloadManagerHelper.downloadObserver(fileId, docId));
-                    let telemetryLog = {
+                    let telemetryEvent = {
                         context: {
-                            env: "downloadManager",
-                            cdata: [
-                                {
-                                    id: file.id,
-                                    type: "content"
-                                }
-                            ]
+                            env: "downloadManager"
+                        },
+                        object: {
+                            id: fileId,
+                            type: "content"
                         },
                         edata: {
-                            level: "INFO",
-                            type: "system",
-                            message: "request to download content is submitted",
-                            params: [
-                                {
-                                    id: docId
-                                },
-                                {
-                                    contentIds: fileId
-                                },
-                                {
-                                    totalSize: file.size
-                                },
-                                {
-                                    status: STATUS.Submitted
-                                }
+                            state: STATUS.Submitted,
+                            props: [
+                                "pluginId",
+                                "stats",
+                                "status",
+                                "updatedOn",
+                                "createdOn",
+                                "files"
                             ]
                         }
                     };
-                    this.telemetryInstance.log(telemetryLog);
+                    this.telemetryInstance.audit(telemetryEvent);
                 }
                 yield this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
                 return Promise.resolve(docId);
@@ -183,37 +173,20 @@ class DownloadManager {
                     url: downloadUrl,
                     savePath: this.fileSDK.getAbsPath(path.join(location, fileName))
                 };
-                let telemetryLog = {
+                let telemetryEvent = {
                     context: {
-                        env: "downloadManager",
-                        cdata: [
-                            {
-                                id: fileId,
-                                type: "content"
-                            }
-                        ]
+                        env: "downloadManager"
+                    },
+                    object: {
+                        id: fileId,
+                        type: "content"
                     },
                     edata: {
-                        level: "INFO",
-                        type: "system",
-                        message: "request to download content is submitted",
-                        params: [
-                            {
-                                id: docId
-                            },
-                            {
-                                contentIds: fileId
-                            },
-                            {
-                                totalSize: totalSize
-                            },
-                            {
-                                status: STATUS.Submitted
-                            }
-                        ]
+                        state: STATUS.Submitted,
+                        props: ["stats", "status", "updatedOn", "createdOn", "files"]
                     }
                 };
-                this.telemetryInstance.log(telemetryLog);
+                this.telemetryInstance.audit(telemetryEvent);
                 // while adding to queue we will prefix with docId if same content is requested again we will download it again
                 this.downloadManagerHelper.queueDownload(`${docId}_${fileId}`, this.pluginId, locations, this.downloadManagerHelper.downloadObserver(fileId, docId));
                 return Promise.resolve(docId);
@@ -386,6 +359,7 @@ exports.default = DownloadManager;
 exports.reconciliation = () => __awaiter(this, void 0, void 0, function* () {
     // Get the data from database where status is completed
     let dbSDK = new DataBaseSDK_1.DataBaseSDK();
+    let telemetryInstance = new telemetryInstance_1.TelemetryInstance();
     let dataBaseName = "download_queue";
     let completedData = yield dbSDK
         .find(dataBaseName, {
@@ -429,4 +403,27 @@ exports.reconciliation = () => __awaiter(this, void 0, void 0, function* () {
             });
         }
     }
+    let telemetryEvent = {
+        context: {
+            env: "downloadManager"
+        },
+        edata: {
+            level: "INFO",
+            type: "OTHER",
+            message: "Download manager reconciliation on starting the app",
+            params: [
+                {
+                    PENDING: _.get(pendingDownloads, "docs")
+                        ? _.get(pendingDownloads, "docs").length
+                        : 0
+                },
+                {
+                    COMPLETED: _.get(completedData, "docs")
+                        ? _.get(completedData, "docs").length
+                        : 0
+                }
+            ]
+        }
+    };
+    telemetryInstance.log(telemetryEvent);
 });

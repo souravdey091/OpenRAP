@@ -1,4 +1,4 @@
-import * as chokidar from 'chokidar';
+import * as chokidar from "chokidar";
 /**
  * This SDK provides methods to handle file deleting , folder creation and deletion prefixed with pluginId
  *
@@ -8,18 +8,18 @@ export default class FileSDK {
     private prefixPath;
     constructor(pluginId: string);
     /**
-    * @param foldersPath
-    * This method creates the folders it adds the plugin id as prefix so that conflicts with folder path
-    * with other plugins are resolved
-    * @returns Promise
-    */
+     * @param foldersPath
+     * This method creates the folders it adds the plugin id as prefix so that conflicts with folder path
+     * with other plugins are resolved
+     * @returns Promise
+     */
     mkdir(foldersPath: string): Promise<void>;
     /**
-        * @param sourcePath
-        * @param destPath
-        * This method copy data from sourcePath to destPath
-        * @returns Promise
-        */
+     * @param sourcePath
+     * @param destPath
+     * This method copy data from sourcePath to destPath
+     * @returns Promise
+     */
     copy(sourcePath: string, destPath: string): Promise<void>;
     move(source: string, destination: string): Promise<void>;
     /**

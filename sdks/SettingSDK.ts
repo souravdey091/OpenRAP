@@ -25,11 +25,11 @@ export default class SettingSDK {
   put = async (key: string, value: object): Promise<boolean> => {
     this.telemetryInstance.log({
       context: {
-        env: "settings"
+        env: "settingSDK"
       },
       edata: {
         level: "INFO",
-        type: "system",
+        type: "OTHER",
         message: `${key} is updated`,
         params: [
           {
