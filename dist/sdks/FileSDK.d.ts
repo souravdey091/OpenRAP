@@ -30,6 +30,7 @@ export default class FileSDK {
      * @returns Promise
      */
     remove(file: string): Promise<void>;
+    archiver(): any;
     zip(Path: string, destPath: string, fileName: string): Promise<{}>;
     /**
      * @param filePath

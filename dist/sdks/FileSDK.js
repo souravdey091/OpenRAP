@@ -68,6 +68,9 @@ class FileSDK {
     remove(file) {
         return fse.remove(path.join(this.prefixPath, file));
     }
+    archiver() {
+        return archiver('zip');
+    }
     zip(Path, destPath, fileName) {
         return new Promise((resolve, reject) => {
             let output = fs.createWriteStream(path.join(this.prefixPath, destPath, fileName));
