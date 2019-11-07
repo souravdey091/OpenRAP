@@ -1,7 +1,7 @@
 export interface IStartEventData {
   type: string;
-  pageid: string;
-  mode: string;
+  pageid?: string;
+  mode?: string;
   dspec?: {};
   uaspec?: {};
   loc?: string;
