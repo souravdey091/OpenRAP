@@ -47,6 +47,35 @@ let TelemetrySyncManager = class TelemetrySyncManager {
         this.TELEMETRY_PACKET_SIZE = parseInt(process.env.TELEMETRY_PACKET_SIZE) || 200;
         this.ARCHIVE_EXPIRY_TIME = 10; // in days
     }
+    registerDevice() {
+        var interval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
+            let deviceId = yield this.systemSDK.getDeviceId();
+            let deviceSpec = yield this.systemSDK.getDeviceInfo();
+            let body = {
+                id: process.env.APP_ID,
+                ver: process.env.APP_VERSION,
+                ts: new Date().toISOString(),
+                params: {
+                    msgid: uuid.v4()
+                },
+                request: {
+                    channel: process.env.CHANNEL,
+                    producer: process.env.APP_ID,
+                    dspec: deviceSpec
+                }
+            };
+            services_1.HTTPService.post(`${process.env.DEVICE_REGISTRY_URL}/${deviceId}`, body, {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .toPromise()
+                .then(data => {
+                logger_1.logger.info(`device registred successfully ${data.status}`);
+                clearInterval(interval);
+            });
+        }), 30000);
+    }
     batchJob() {
         return __awaiter(this, void 0, void 0, function* () {
             try {

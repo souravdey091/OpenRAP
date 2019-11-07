@@ -31,6 +31,7 @@ const bootstrap = async () => {
   }
   await DownloadManagerReconciliation();
   const telemetrySyncManager = new TelemetrySyncManager();
+  telemetrySyncManager.registerDevice();
   let interval =
     parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
   setInterval(() => telemetrySyncManager.batchJob(), interval);

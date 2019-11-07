@@ -46,6 +46,7 @@ const bootstrap = () => __awaiter(this, void 0, void 0, function* () {
     }
     yield DownloadManager_1.reconciliation();
     const telemetrySyncManager = new TelemetrySyncManager_1.TelemetrySyncManager();
+    telemetrySyncManager.registerDevice();
     let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
     setInterval(() => telemetrySyncManager.batchJob(), interval);
     setInterval(() => telemetrySyncManager.syncJob(), interval);
