@@ -73,6 +73,9 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                 .then(data => {
                 logger_1.logger.info(`device registred successfully ${data.status}`);
                 clearInterval(interval);
+            })
+                .catch(error => {
+                logger_1.logger.error(`Unable to sync device data: ${error.message}`);
             });
         }), 30000);
     }

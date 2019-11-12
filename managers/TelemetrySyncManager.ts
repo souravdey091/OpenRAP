@@ -56,6 +56,9 @@ export class TelemetrySyncManager {
         .then(data => {
           logger.info(`device registred successfully ${data.status}`);
           clearInterval(interval);
+        })
+        .catch(error => {
+          logger.error(`Unable to sync device data: ${error.message}`);
         });
     }, 30000);
   }
