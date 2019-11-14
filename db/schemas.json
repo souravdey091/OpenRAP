@@ -47,6 +47,18 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "user",
+            "indexes": [
+                {
+                    "index": {
+                        "fields": [
+                            "name"
+                        ]
+                    }
+                }
+            ]
         }
     ]
 }

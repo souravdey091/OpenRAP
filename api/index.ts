@@ -12,8 +12,13 @@ import NetworkSDK from "./../sdks/NetworkSDK";
 import DownloadManager from "./../managers/DownloadManager/DownloadManager";
 import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
+import { UserSDK } from "./../sdks/UserSDK";
+
 @Singleton
 class ContainerAPI {
+
+  @Inject userSdk : UserSDK;
+
   public async bootstrap() {
     await bootstrap();
   }
@@ -53,6 +58,10 @@ class ContainerAPI {
 
   public getTelemetrySDKInstance() {
     return new TelemetrySDK();
+  }
+
+  public getUserSdkInstance(){
+    return this.userSdk;
   }
 }
 
