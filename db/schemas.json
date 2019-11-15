@@ -49,7 +49,7 @@
             ]
         },
         {
-            "name": "user",
+            "name": "users",
             "indexes": [
                 {
                     "index": {
