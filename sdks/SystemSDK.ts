@@ -5,10 +5,8 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 import * as os from "os";
 import * as si from "systeminformation";
 import * as _ from "lodash";
-
 @Singleton
 export default class SystemSDK {
-
   private deviceId: string;
   constructor(pluginId?: string) {}
 
