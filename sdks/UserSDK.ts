@@ -24,7 +24,7 @@ export class UserSDK {
     user._id = !user.name ?  DEFAULT_USER_ID : uuid();
     user.createdOn = Date.now();
     user.updatedOn = Date.now();
-    return this.dbSDK.insertDoc(USER_DB, user, user.name || 'guest');
+    return this.dbSDK.insertDoc(USER_DB, user, user._id);
   }
 
 }
