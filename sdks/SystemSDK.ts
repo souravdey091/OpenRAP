@@ -5,13 +5,10 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 import * as os from "os";
 import * as si from "systeminformation";
 import * as _ from "lodash";
-import { DataBaseSDK } from "./DataBaseSDK";
-import { Inject } from "typescript-ioc";
 
 @Singleton
 export default class SystemSDK {
-  @Inject
-  private dbSDK: DataBaseSDK;
+
   private deviceId: string;
   constructor(pluginId?: string) {}
 
@@ -30,6 +27,7 @@ export default class SystemSDK {
       });
     });
   }
+
   async getHardDiskInfo() {
     let totalHarddisk = 0;
     let availableHarddisk = 0;

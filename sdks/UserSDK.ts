@@ -20,12 +20,8 @@ export class UserSDK {
   }
 
   public async create(user: IUser){
-    if(!user.name){
-      user.name = user.name || DEFAULT_USER_ID;
-      user._id = DEFAULT_USER_ID;
-    } else {
-      user._id = uuid();
-    }
+    user.name = user.name || DEFAULT_USER_ID;
+    user._id = !user.name ?  DEFAULT_USER_ID : uuid();
     user.createdOn = Date.now();
     user.updatedOn = Date.now();
     return this.dbSDK.insertDoc(USER_DB, user, user.name || 'guest');
