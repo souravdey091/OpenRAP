@@ -7,7 +7,7 @@ let telemetryInstance: TelemetryInstance = new TelemetryInstance();
 
 let telemetrySDK = new TelemetrySDK();
 
-describe.only("TelemetrySDK", () => {
+describe("TelemetrySDK", () => {
   it("should get the telemetryInstance", () => {
     expect(telemetrySDK.getInstance()).to.eq(telemetryInstance);
   });
