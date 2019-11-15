@@ -15,13 +15,13 @@ export class UserSDK {
   private dbSDK: DataBaseSDK;
   constructor() {}
 
-  public async read(_id = DEFAULT_USER_ID){
+  public async read(_id = DEFAULT_USER_ID): Promise<IUser>{
     return this.dbSDK.getDoc(USER_DB, _id);
   }
 
-  public async create(user: IUser){
-    user.name = user.name || DEFAULT_USER_ID;
+  public async create(user: IUser): Promise<any>{
     user._id = !user.name ?  DEFAULT_USER_ID : uuid();
+    user.name = user.name || DEFAULT_USER_ID;
     user.createdOn = Date.now();
     user.updatedOn = Date.now();
     return this.dbSDK.insertDoc(USER_DB, user, user._id);
