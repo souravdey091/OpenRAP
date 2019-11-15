@@ -7,7 +7,6 @@ import * as si from "systeminformation";
 import * as _ from "lodash";
 import { DataBaseSDK } from "./DataBaseSDK";
 import { Inject } from "typescript-ioc";
-import { ILocation } from "./../interfaces";
 
 @Singleton
 export default class SystemSDK {
@@ -30,12 +29,6 @@ export default class SystemSDK {
         resolve(this.deviceId);
       });
     });
-  }
-  public async getLocation(){
-    return this.dbSDK.getDoc('settings', 'location').then(doc => doc.value);
-  }
-  public async setLocation(location: ILocation){
-    return this.dbSDK.upsertDoc('settings', 'location', { value: location });
   }
   async getHardDiskInfo() {
     let totalHarddisk = 0;
