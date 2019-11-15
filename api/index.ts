@@ -17,7 +17,7 @@ import { UserSDK } from "./../sdks/UserSDK";
 @Singleton
 class ContainerAPI {
 
-  @Inject userSdk : UserSDK;
+  @Inject userSDK : UserSDK;
 
   public async bootstrap() {
     await bootstrap();
@@ -61,7 +61,7 @@ class ContainerAPI {
   }
 
   public getUserSdkInstance(){
-    return this.userSdk;
+    return this.userSDK;
   }
 }
 
