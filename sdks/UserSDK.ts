@@ -4,7 +4,7 @@ import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
 import { DataBaseSDK, DBError } from "./DataBaseSDK";
 import { IUser } from "./../interfaces";
-const DEFAULT_USER = 'guest1';
+const DEFAULT_USER = 'guest';
 const USER_DB = 'users';
 
 @Singleton
@@ -23,13 +23,13 @@ export class UserSDK {
     });
   }
 
-  public async create(user: IUser): Promise<{id: string} | DBError>{
+  public async create(user: IUser): Promise<{_id: string} | DBError>{
     user._id = !user.name ?  DEFAULT_USER : user.name.replace(/ /g,'').toLowerCase();
     user.name = user.name || DEFAULT_USER;
     user.createdOn = Date.now();
     user.updatedOn = Date.now();
     return this.dbSDK.insertDoc(USER_DB, user, user._id)
-    .then(data => ({id: data.id}))
+    .then(data => ({_id: data.id}))
     .catch(error => {
       throw this.dbSDK.handleError(error);
     });;
