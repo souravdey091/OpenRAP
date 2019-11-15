@@ -4,6 +4,9 @@ import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
 import { DataBaseSDK } from "./DataBaseSDK";
 import { IUser } from "./../interfaces";
+import uuid from "uuid/v4";
+const DEFAULT_USER_ID = 'guest';
+const USER_DB = 'user';
 
 @Singleton
 export class UserSDK {
@@ -11,10 +14,21 @@ export class UserSDK {
   @Inject
   private dbSDK: DataBaseSDK;
   constructor() {}
-  public async read(name = 'guest'){
-    return this.dbSDK.getDoc('user', name);
+
+  public async read(_id = DEFAULT_USER_ID){
+    return this.dbSDK.getDoc(USER_DB, _id);
   }
+
   public async create(user: IUser){
-    return this.dbSDK.insertDoc('user', user, user.name || 'guest');
+    if(!user.name){
+      user.name = user.name || DEFAULT_USER_ID;
+      user._id = DEFAULT_USER_ID;
+    } else {
+      user._id = uuid();
+    }
+    user.createdOn = Date.now();
+    user.updatedOn = Date.now();
+    return this.dbSDK.insertDoc(USER_DB, user, user.name || 'guest');
   }
+
 }

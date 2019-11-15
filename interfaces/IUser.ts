@@ -1,6 +1,6 @@
 export interface IUser {
+  _id?: string;
   name?: string;
-  formattedName?: string;
   framework: IFramework;
   createdOn?: number;
   updatedOn?: number;
