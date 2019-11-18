@@ -8,9 +8,9 @@ const userCreateWithDefaultName = {
 }};
 
 const userCreateWithName1 = {
-  _id: "anoop",
+  name: "anoop",
   data: {
-  name: "Anoop",
+  formatedName: "Anoop",
   framework: {
   board: 'English',
   medium: ['English'],
@@ -18,19 +18,9 @@ const userCreateWithName1 = {
 }}};
 
 const userCreateWithName2 = {
-  _id: "anoophm",
+  name: " anoop hm ",
   data: {
-  name: "Anoop HM",
-  framework: {
-  board: 'English',
-  medium: ['English'],
-  gradeLevel: ['Class 5']
-}}};
-
-const userCreateWithName3 = {
-  _id: "anuphm",
-  data: {
-  name: "  Anup HM ",
+  formatedName: " Anoop HM ",
   framework: {
   board: 'English',
   medium: ['English'],
@@ -40,20 +30,19 @@ const userCreateWithName3 = {
 const createError = {
   code: "UPDATE_CONFLICT",
   status: 409,
-  message: `Document already exist with id`
+  message: `User already exist with name`
 }
 
 const readError = {
-  code: "DOC_NOT_FOUND",
+  code: "USER_NOT_FOUND",
   status: 404,
-  message: `Document not found with id`
+  message: `User not found with name`
 }
 
 export {
   userCreateWithDefaultName,
   userCreateWithName1,
   userCreateWithName2,
-  userCreateWithName3,
   createError,
   readError,
   DEFAULT_USER
