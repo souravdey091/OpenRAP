@@ -46,7 +46,7 @@ export class UserSDK {
     .then(data => ({_id: data.id}));
   }
 
-  async findByName(name){
+  private async findByName(name){
     const query = {
       selector: { name }
     }
