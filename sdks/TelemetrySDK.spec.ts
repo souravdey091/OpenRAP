@@ -9,7 +9,7 @@ let telemetrySDK = new TelemetrySDK();
 
 describe("TelemetrySDK", () => {
   it("should get the telemetryInstance", () => {
-    expect(telemetrySDK.getInstance()).to.eq(telemetryInstance);
+    expect(telemetrySDK.getInstance()).to.be.instanceOf(TelemetryInstance);
   });
 
   it("should send the telemetryEvents", () => {

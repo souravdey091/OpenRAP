@@ -3,6 +3,9 @@ import { containerAPI } from "./index";
 import SettingSDK from "./../sdks/SettingSDK";
 import FileSDK from "./../sdks/FileSDK";
 import DownloadManager from "./../managers/DownloadManager/DownloadManager";
+import { statSync } from "fs";
+import SystemSDK from "../sdks/SystemSDK";
+import TelemetrySDK from "../sdks/TelemetrySDK";
 
 describe("ContainerAPI", () => {
   it("should call bootstrap method", done => {
@@ -26,5 +29,24 @@ describe("ContainerAPI", () => {
       "sunbird-test-plugin"
     );
     expect(downloadManager).to.be.instanceOf(DownloadManager);
+  });
+
+  it("should get internet status", async () => {
+    containerAPI.getNetworkStatus('https://www.sunbird.org/').then(status => {
+    if(status)  
+    expect(status).to.be.true;
+    else
+    expect(status).to.be.false;
+    })
+  });
+
+  it("should get file SDK instance", () => {
+    let systemSDK = containerAPI.getSystemSDKInstance("sunbird-test-plugin");
+    expect(systemSDK).to.be.instanceOf(SystemSDK);
+  });
+
+  it("should get file SDK instance", () => {
+    let telemetrySDK = containerAPI.getTelemetrySDKInstance();
+    expect(telemetrySDK).to.be.instanceOf(TelemetrySDK);
   });
 });
