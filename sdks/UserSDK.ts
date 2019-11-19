@@ -30,7 +30,7 @@ export class UserSDK {
 
   public async create(user: IUser): Promise<{_id: string} | UserSDKError>{
     user.formatedName = user.formatedName || DEFAULT_USER_NAME; // user entered name
-    user.name = user.formatedName.toLowerCase();
+    user.name = user.formatedName.toLowerCase().trim();
     const userExist = await this.findByName(user.name);
     if(!_.isEmpty(userExist)){
       throw {

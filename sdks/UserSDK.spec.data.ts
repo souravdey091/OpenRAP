@@ -18,7 +18,7 @@ const userCreateWithName1 = {
 }}};
 
 const userCreateWithName2 = {
-  name: " anoop hm ",
+  name: "anoop hm",
   data: {
   formatedName: " Anoop HM ",
   framework: {
