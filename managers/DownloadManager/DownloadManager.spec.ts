@@ -9,7 +9,7 @@ let fileSDK = new FileSDK("testplugindownload");
 
 describe("DownloadManager", () => {
   before(async () => {
-    process.env.DATABASE_PATH = __dirname;
+    process.env.DATABASE_PATH = fileSDK.getAbsPath("");
   });
 
   it("should download multiple files successfully", function(done) {

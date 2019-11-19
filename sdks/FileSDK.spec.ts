@@ -13,6 +13,7 @@ describe('FileSDK', () => {
       .all([fileSDK.mkdir('test1'), fileSDK.mkdir('test2')])
       .then(() => {
         let stats1 = fs.statSync(fileSDK.getAbsPath('test1'));
+        console.log(fileSDK.getAbsPath('test1'))
         expect(stats1.isDirectory()).to.be.true;
         let stats2 = fs.statSync(fileSDK.getAbsPath('test2'));
         expect(stats2.isDirectory()).to.be.true;
@@ -59,7 +60,7 @@ describe('FileSDK', () => {
   it('should zip folder', async () => {
     let src = 'test1';
     let dest = 'test-folder.zip';
-    await fileSDK.zip(src, 'test1', dest);
+    await fileSDK.zip(src, '', dest);
   })
 
   it('should unzip folder', async () => {
@@ -89,7 +90,7 @@ describe('FileSDK', () => {
   })
 
   it('should remove directory', (done) => {
-    fileSDK.remove('').then(done);
+   fileSDK.remove('').then(done);
   })
 
 });
