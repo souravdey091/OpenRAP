@@ -79,4 +79,40 @@ export class DataBaseSDK {
     find(database: string, searchObj: Object) {
         return this.getDBInstance(database).find(searchObj);
     }
+    
+    handleError(error: PouchDBErrorRes): DBError{
+        if(error.status === 404 && error.name === 'not_found'){
+            return {
+                code: "DOC_NOT_FOUND",
+                status: error.status,
+                message: `Document not found with id ${error.docId}`
+            }
+        } else if(error.status === 409 && error.name === 'conflict'){
+            return {
+                code: "UPDATE_CONFLICT",
+                status: error.status,
+                message: `Document already exist with id ${error.docId}`
+            }
+        } else {
+            return {
+                code: error.name,
+                status: error.status,
+                message: error.message
+            }
+        }
+    }
+}
+export interface PouchDBErrorRes {
+    'status': number;
+    'name': string; 
+    'message': string; 
+    'error': boolean
+    'reason': string;
+    'docId': string;
+}
+
+export interface DBError {
+    code: string;
+    status: number;
+    message: string;
 }
