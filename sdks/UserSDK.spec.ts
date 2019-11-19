@@ -6,7 +6,7 @@ import {
   userCreateWithDefaultName, userCreateWithName1, userCreateWithName2,
   createError, readError, DEFAULT_USER } from './UserSDK.spec.data';
 
-describe.only('UserSDK', async () => {
+describe('UserSDK', async () => {
   let userSDK;
   before(async () => {
     userSDK = new UserSDK();
