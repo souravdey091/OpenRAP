@@ -10,7 +10,7 @@ describe('SystemSDK', () => {
     })
 
 
-    xit('should get deviceSpec',  (done) => {
+    it('should get deviceSpec',  (done) => {
         let systemSDK = new SystemSDK()
         systemSDK.getDeviceInfo().then(id => {
             expect(id).to.be.haveOwnProperty('platform');
