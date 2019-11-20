@@ -29,6 +29,13 @@ export class UserSDK {
   }
 
   public async create(user: IUser): Promise<{_id: string} | UserSDKError>{
+    if(_.isEmpty(_.get(user, 'framework'))){
+      throw {
+        code: "BAD_REQUEST",
+        status: 400,
+        message: `Framework is mandatory to create user`
+      }
+    }
     user.formatedName = user.formatedName || DEFAULT_USER_NAME; // user entered name
     user.name = user.formatedName.toLowerCase().trim();
     const userExist = await this.findByName(user.name);
@@ -59,3 +66,5 @@ export interface UserSDKError {
   status: number;
   message: string;
 }
+
+export * from './../interfaces/IUser';

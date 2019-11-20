@@ -38,6 +38,11 @@ const readError = {
   status: 404,
   message: `User not found with name`
 }
+const mandatoryFrameworkError = {
+  code: "BAD_REQUEST",
+  status: 400,
+  message: `Framework is mandatory to create user`
+}
 
 export {
   userCreateWithDefaultName,
@@ -45,5 +50,6 @@ export {
   userCreateWithName2,
   createError,
   readError,
-  DEFAULT_USER
+  DEFAULT_USER,
+  mandatoryFrameworkError
 }
