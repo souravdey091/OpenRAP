@@ -128,7 +128,7 @@ export default class SystemSDK {
     let graphics = await si
       .graphics()
       .catch(err => logger.error("while reading graphics info", err));
-    if (!_.isEmpty(graphics)) {
+    if (!_.isEmpty(graphics["displays"][0])) {
       deviceInfo.displayResolution =
         graphics["displays"][0].currentResX +
         "*" +

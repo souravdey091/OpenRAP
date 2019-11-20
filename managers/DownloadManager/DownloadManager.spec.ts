@@ -1,16 +1,20 @@
+import FileSDK from "./../../sdks/FileSDK";
+process.env.FILES_PATH = __dirname;
+
+let fileSDK = new FileSDK("testplugindownload");
+process.env.DATABASE_PATH = fileSDK.getAbsPath("database");
+
 import { expect } from "chai";
 import DownloadManager, { reconciliation } from "./DownloadManager";
-import FileSDK from "./../../sdks/FileSDK";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import * as _ from "lodash";
+let downloadManager;
 
-let downloadManager = new DownloadManager("testplugindownload");
-let fileSDK = new FileSDK("testplugindownload");
 
 describe("DownloadManager", () => {
-  before(async () => {
-    process.env.FILES_PATH = __dirname;
-    process.env.DATABASE_PATH = fileSDK.getAbsPath("");
+  before( async() => {
+    await fileSDK.mkdir("database");
+    downloadManager = new DownloadManager("testplugindownload");
   });
 
   it("should download multiple files successfully", function(done) {
@@ -47,13 +51,14 @@ describe("DownloadManager", () => {
   });
 
   it("should download single file successfully", function(done) {
-    this.timeout(10000);
+    this.timeout(100000);
     downloadManager
       .download(
         {
-          id: "10MB_FILE",
-          url: "https://sample-videos.com/zip/10mb.zip",
-          size: 10503575
+          id: "do_112210971791319040141",
+          url:
+            "https://ekstep-public-dev.s3-ap-south-1.amazonaws.com/content/do_112210971791319040141/artifact/1490597285153_do_112210971791319040141.zip",
+          size: 361
         },
         "ecars"
       )
@@ -63,7 +68,8 @@ describe("DownloadManager", () => {
     let flag = false;
     EventManager.subscribe(`testplugindownload:download:complete`, data => {
       expect(data.status).to.be.equal("COMPLETED");
-      if (!_.isEmpty(_.find(data.files, { id: "10MB_FILE" }))) {
+      console.log(data.files)
+      if (!_.isEmpty(_.find(data.files, { id: "do_112210971791319040141" }))) {
         flag = true;
       }
     });
@@ -104,7 +110,7 @@ describe("DownloadManager", () => {
 
   it("should reconciliation after service restart", function(done) {
     // make a item to completed and add two item to queue each with inprogress and submitted status
-    this.timeout(10000);
+    this.timeout(100000);
     downloadManager
       .download(
         [
