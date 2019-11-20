@@ -1,17 +1,18 @@
+import FileSDK from "./../../sdks/FileSDK";
+process.env.FILES_PATH = __dirname;
+
+let fileSDK = new FileSDK("testplugindownload");
+process.env.DATABASE_PATH = fileSDK.getAbsPath("download");
+
 import { expect } from "chai";
 import DownloadManager, { reconciliation } from "./DownloadManager";
-import FileSDK from "./../../sdks/FileSDK";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import * as _ from "lodash";
-
 let downloadManager;
-let fileSDK = new FileSDK("testplugindownload");
+
 
 describe("DownloadManager", () => {
-  before(async () => {
-    process.env.FILES_PATH = __dirname;
-    await fileSDK.mkdir("download")
-    process.env.DATABASE_PATH = fileSDK.getAbsPath("download");
+  before( () => {
     downloadManager = new DownloadManager("testplugindownload");
   });
 
