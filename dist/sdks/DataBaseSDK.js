@@ -98,6 +98,29 @@ let DataBaseSDK = class DataBaseSDK {
     find(database, searchObj) {
         return this.getDBInstance(database).find(searchObj);
     }
+    handleError(error) {
+        if (error.status === 404 && error.name === 'not_found') {
+            return {
+                code: "DOC_NOT_FOUND",
+                status: error.status,
+                message: `Document not found with id ${error.docId}`
+            };
+        }
+        else if (error.status === 409 && error.name === 'conflict') {
+            return {
+                code: "UPDATE_CONFLICT",
+                status: error.status,
+                message: `Document already exist with id ${error.docId}`
+            };
+        }
+        else {
+            return {
+                code: error.name,
+                status: error.status,
+                message: error.message
+            };
+        }
+    }
 };
 DataBaseSDK = __decorate([
     typescript_ioc_1.Singleton,

@@ -4,7 +4,7 @@ import * as fse from 'fs-extra';
 import * as path from "path";
 import {
   userCreateWithDefaultName, userCreateWithName1, userCreateWithName2,
-  createError, readError, DEFAULT_USER } from './UserSDK.spec.data';
+  createError, readError, DEFAULT_USER, mandatoryFrameworkError } from './UserSDK.spec.data';
 
 describe('UserSDK', async () => {
   let userSDK;
@@ -51,10 +51,17 @@ describe('UserSDK', async () => {
     });
   });
   it('should throw error if tried to create record with name that has been used already', async () => {
-    await userSDK.create(userCreateWithName1).catch(error => {
+    await userSDK.create(userCreateWithName1.data).catch(error => {
       expect(error.code).to.be.equal(createError.code);
       expect(error.status).to.be.equal(createError.status);
       expect(error.message).to.be.includes(createError.message);
+    });
+  });
+  it('should throw error if tried to create record without passing framework', async () => {
+    await userSDK.create().catch(error => {
+      expect(error.code).to.be.equal(mandatoryFrameworkError.code);
+      expect(error.status).to.be.equal(mandatoryFrameworkError.status);
+      expect(error.message).to.be.includes(mandatoryFrameworkError.message);
     });
   });
 
