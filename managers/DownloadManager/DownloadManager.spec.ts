@@ -68,7 +68,8 @@ describe("DownloadManager", () => {
     let flag = false;
     EventManager.subscribe(`testplugindownload:download:complete`, data => {
       expect(data.status).to.be.equal("COMPLETED");
-      if (!_.isEmpty(_.find(data.files, { id: "10MB_FILE" }))) {
+      console.log(data.files)
+      if (!_.isEmpty(_.find(data.files, { id: "do_112210971791319040141" }))) {
         flag = true;
       }
     });

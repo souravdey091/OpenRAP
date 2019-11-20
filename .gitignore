@@ -6,3 +6,4 @@ content_files
 log
 coverage
 .nyc_output
+managers/DownloadManager/testplugindownload
