@@ -8,7 +8,7 @@ jobs:
       - checkout
       - run:
           name: Install npm modules
-          command: npm i
+          command: npm i --unsafe-perm
 
       - run:
           name: Run test cases
