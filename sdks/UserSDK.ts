@@ -29,7 +29,7 @@ export class UserSDK {
   }
 
   public async create(user: IUser): Promise<{_id: string} | UserSDKError>{
-    if(_.get(user, 'framework')){
+    if(_.isEmpty(_.get(user, 'framework'))){
       throw {
         code: "BAD_REQUEST",
         status: 400,
