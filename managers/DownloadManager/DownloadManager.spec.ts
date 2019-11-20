@@ -2,7 +2,7 @@ import FileSDK from "./../../sdks/FileSDK";
 process.env.FILES_PATH = __dirname;
 
 let fileSDK = new FileSDK("testplugindownload");
-process.env.DATABASE_PATH = fileSDK.getAbsPath("download");
+process.env.DATABASE_PATH = fileSDK.getAbsPath("database");
 
 import { expect } from "chai";
 import DownloadManager, { reconciliation } from "./DownloadManager";
@@ -12,7 +12,8 @@ let downloadManager;
 
 
 describe("DownloadManager", () => {
-  before( () => {
+  before( async() => {
+    await fileSDK.mkdir("database");
     downloadManager = new DownloadManager("testplugindownload");
   });
 
