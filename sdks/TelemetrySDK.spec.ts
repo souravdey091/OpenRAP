@@ -8,6 +8,10 @@ let telemetryInstance: TelemetryInstance = new TelemetryInstance();
 let telemetrySDK = new TelemetrySDK();
 
 describe("TelemetrySDK", () => {
+
+  before( () => {
+    process.env.FILES_PATH = __dirname
+  })
   it("should get the telemetryInstance", () => {
     expect(telemetrySDK.getInstance()).to.be.instanceOf(TelemetryInstance);
   });
