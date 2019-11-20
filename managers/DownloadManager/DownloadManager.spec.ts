@@ -55,9 +55,10 @@ describe("DownloadManager", () => {
     downloadManager
       .download(
         {
-          id: "10MB_FILE",
-          url: "https://sample-videos.com/zip/10mb.zip",
-          size: 10503575
+          id: "do_3125888832520601601177451",
+          url:
+            "https://ntpproductionall.blob.core.windows.net/ntp-content-production/ecar_files/do_312588883252060160117745/raindrops_1554477690491_do_312588883252060160117745_2.0_spine.ecar",
+          size: 267849
         },
         "ecars"
       )
