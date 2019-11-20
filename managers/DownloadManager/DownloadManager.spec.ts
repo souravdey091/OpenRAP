@@ -10,7 +10,7 @@ let fileSDK = new FileSDK("testplugindownload");
 describe("DownloadManager", () => {
   before(async () => {
     process.env.FILES_PATH = __dirname;
-    console.log(process.env.FILES_PATH)
+    console.log(process.env.FILES_PATH);
     process.env.DATABASE_PATH = fileSDK.getAbsPath("");
   });
 
