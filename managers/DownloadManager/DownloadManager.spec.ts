@@ -4,14 +4,15 @@ import FileSDK from "./../../sdks/FileSDK";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import * as _ from "lodash";
 
-let downloadManager = new DownloadManager("testplugindownload");
+let downloadManager;
 let fileSDK = new FileSDK("testplugindownload");
 
 describe("DownloadManager", () => {
   before(async () => {
     process.env.FILES_PATH = __dirname;
     await fileSDK.mkdir("download")
-    process.env.DATABASE_PATH = fileSDK.getAbsPath("");
+    process.env.DATABASE_PATH = fileSDK.getAbsPath("download");
+    downloadManager = new DownloadManager("testplugindownload");
   });
 
   it("should download multiple files successfully", function(done) {
