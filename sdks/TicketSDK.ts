@@ -42,9 +42,9 @@ export class TicketSDK {
       Authorization: `Basic ${process.env.FRESH_DESK_TOKEN}`,
       ...formData.getHeaders(),
     }
-    await HTTPService.post(`${process.env.FRESH_DESK_BASE_URL}/api/v2/tickets`, formData, {headers}).toPromise() // const axios = require('axios'); await axios.post(FRESH_DESK_URL, formData, {headers})
+    return HTTPService.post(`${process.env.FRESH_DESK_BASE_URL}/api/v2/tickets`, formData, {headers}).toPromise() // const axios = require('axios'); await axios.post(FRESH_DESK_URL, formData, {headers})
     .then((data: any) => {
-      logger.info('Ticket created successfully', Object.keys(data), data.response, data.data);
+      logger.info('Ticket created successfully', data.data);
       return {
         status: 200,
         code: 'SUCCESS',
@@ -52,7 +52,7 @@ export class TicketSDK {
       }
     })
     .catch(error => {
-      logger.log('Error while creating tickets', Object.keys(error), error.response);
+      logger.log('Error while creating tickets', error.response);
       throw {
         status: _.get(error, 'response.status') || 400,
         code: _.get(error, 'response.data.code') || 'FRESH_DESK_API_ERROR',
