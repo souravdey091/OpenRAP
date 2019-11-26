@@ -33,6 +33,7 @@ const DownloadManager_1 = __importDefault(require("./../managers/DownloadManager
 const SystemSDK_1 = __importDefault(require("./../sdks/SystemSDK"));
 const TelemetrySDK_1 = __importDefault(require("./../sdks/TelemetrySDK"));
 const UserSDK_1 = require("./../sdks/UserSDK");
+const TicketSDK_1 = require("./../sdks/TicketSDK");
 let ContainerAPI = class ContainerAPI {
     bootstrap() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -73,11 +74,18 @@ let ContainerAPI = class ContainerAPI {
     getUserSdkInstance() {
         return this.userSDK;
     }
+    getTicketSdkInstance() {
+        return this.ticketSDK;
+    }
 };
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", UserSDK_1.UserSDK)
 ], ContainerAPI.prototype, "userSDK", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", TicketSDK_1.TicketSDK)
+], ContainerAPI.prototype, "ticketSDK", void 0);
 ContainerAPI = __decorate([
     typescript_ioc_1.Singleton
 ], ContainerAPI);

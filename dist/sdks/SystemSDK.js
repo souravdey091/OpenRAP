@@ -90,6 +90,22 @@ let SystemSDK = class SystemSDK {
             return { totalMemory, availableMemory };
         });
     }
+    getCpuLoad() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let currentLoad = yield si
+                .currentLoad()
+                .catch(err => logger_1.logger.error("while reading CPU Load ", err));
+            return currentLoad;
+        });
+    }
+    getNetworkInfo() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let networkInfo = yield si
+                .networkInterfaces()
+                .catch(err => logger_1.logger.error("while reading Network info", err));
+            return networkInfo;
+        });
+    }
     getDeviceInfo() {
         return __awaiter(this, void 0, void 0, function* () {
             let deviceInfo = {
@@ -150,7 +166,7 @@ let SystemSDK = class SystemSDK {
             let graphics = yield si
                 .graphics()
                 .catch(err => logger_1.logger.error("while reading graphics info", err));
-            if (!_.isEmpty(graphics)) {
+            if (!_.isEmpty(graphics["displays"][0])) {
                 deviceInfo.displayResolution =
                     graphics["displays"][0].currentResX +
                         "*" +
