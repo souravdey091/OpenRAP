@@ -33,13 +33,11 @@ export class TicketSDK {
     formData.append('description', req.description);
     formData.append('subject',`${process.env.APP_NAME} Desktop App Support request - ${deviceId}`)
     formData.append('email', req.email);
-    formData.append('custom_fields', JSON.stringify({
-      cf_ticket_current_status: "FD-L1-Unclassified",
-      cf_severity: "S2",
-      cf_reqeststatus: "None",
-      cf_reasonforseverity: "Offline Desktop App Query"
-    }))
-    formData.append('deviceSpec.json', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json'});
+    formData.append('custom_fields[cf_ticket_current_status]', "FD-L1-Unclassified");
+    formData.append('custom_fields[cf_severity]', "S2");
+    formData.append('custom_fields[cf_reqeststatus]', "None");
+    formData.append('custom_fields[cf_reasonforseverity]', "Offline Desktop App Query");
+    formData.append('attachments[]', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json'});
     const headers = {
       Authorization: `Basic ${process.env.FRESH_DESK_TOKEN}`,
       ...formData.getHeaders(),
