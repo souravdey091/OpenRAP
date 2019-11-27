@@ -1,3 +1,4 @@
+import * as si from "systeminformation";
 export default class SystemSDK {
     private deviceId;
     constructor(pluginId?: string);
@@ -10,6 +11,8 @@ export default class SystemSDK {
         totalMemory: number;
         availableMemory: number;
     }>;
+    getCpuLoad(): Promise<void | si.Systeminformation.CurrentLoadData>;
+    getNetworkInfo(): Promise<void | si.Systeminformation.NetworkInterfacesData[]>;
     getDeviceInfo(): Promise<{
         platform: string;
         distro: string;

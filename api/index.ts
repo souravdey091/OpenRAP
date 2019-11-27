@@ -13,11 +13,13 @@ import DownloadManager from "./../managers/DownloadManager/DownloadManager";
 import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
+import { TicketSDK } from "./../sdks/TicketSDK";
 
 @Singleton
 class ContainerAPI {
 
   @Inject userSDK : UserSDK;
+  @Inject ticketSDK : TicketSDK;
 
   public async bootstrap() {
     await bootstrap();
@@ -62,6 +64,9 @@ class ContainerAPI {
 
   public getUserSdkInstance(){
     return this.userSDK;
+  }
+  public getTicketSdkInstance(){
+    return this.ticketSDK;
   }
 }
 

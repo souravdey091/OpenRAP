@@ -63,7 +63,18 @@ export default class SystemSDK {
     }
     return { totalMemory, availableMemory };
   }
-
+  async getCpuLoad(){
+    let currentLoad = await si
+    .currentLoad()
+    .catch(err => logger.error("while reading CPU Load ", err));
+    return currentLoad;
+  }
+  async getNetworkInfo(){
+    let networkInfo = await si
+    .networkInterfaces()
+    .catch(err => logger.error("while reading Network info", err));
+    return networkInfo;
+  }
   async getDeviceInfo() {
     let deviceInfo = {
       platform: "",
