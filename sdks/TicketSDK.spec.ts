@@ -11,6 +11,10 @@ describe('TicketSDK', async () => {
   let ticketSDK;
   beforeEach(async () => {
     ticketSDK = new TicketSDK();
+    spy.on(ticketSDK.systemSDK, 'getDeviceId', data => Promise.resolve('deviceId'));
+    spy.on(ticketSDK.systemSDK, 'getDeviceInfo', data => Promise.resolve({}));
+    spy.on(ticketSDK.systemSDK, 'getNetworkInfo', data => Promise.resolve({}));
+    spy.on(ticketSDK.systemSDK, 'getCpuLoad', data => Promise.resolve({}));
   });
   afterEach(async () => {
     spy.restore();
