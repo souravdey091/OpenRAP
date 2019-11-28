@@ -1,7 +1,7 @@
 import { TicketSDK } from './TicketSDK';
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
 import { of, throwError } from 'rxjs';
-import { networkError, helpDeskError, helpDeskSuccess, ticketReq } from './TicketSDK.spec.data';
+import { networkError, helpDeskError, helpDeskSuccess, ticketReq, mandatoryFieldError } from './TicketSDK.spec.data';
 const chai = require('chai'), spies = require('chai-spies');
 chai.use(spies);
 const spy = chai.spy.sandbox();
@@ -15,6 +15,17 @@ describe('TicketSDK', async () => {
   afterEach(async () => {
     spy.restore();
   })
+  it('should throw error if mandatory fields are not sent', async () => {
+    await ticketSDK.createTicket().catch(err => {
+      expect(err).to.deep.equal(mandatoryFieldError);
+    });
+    await ticketSDK.createTicket({email:"anoopm@ilimi.in"}).catch(err => {
+      expect(err).to.deep.equal(mandatoryFieldError);
+    });
+    await ticketSDK.createTicket({description: "help"}).catch(err => {
+      expect(err).to.deep.equal(mandatoryFieldError);
+    });
+  });
   it('should throw error if internet is not available', async () => {
     const isInternetAvailableSpy = spy.on(ticketSDK.networkSDK, 'isInternetAvailable', data => Promise.resolve(false));
     await ticketSDK.createTicket(ticketReq).catch(err => {
