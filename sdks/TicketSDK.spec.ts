@@ -8,7 +8,7 @@ const spy = chai.spy.sandbox();
 const expect = chai.expect;
 
 describe('TicketSDK', async () => {
-  let ticketSDK, getDeviceIdSpy, getDeviceInfoSpy, getNetworkInfoSpy, getCpuLoadSpy;
+  let ticketSDK;
   beforeEach(async () => {
     ticketSDK = new TicketSDK();
   });
@@ -44,10 +44,10 @@ describe('TicketSDK', async () => {
   it('should return success if helpdesk api return success', async () => {
     spy.on(ticketSDK.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
     const HTTPServiceSpy = spy.on(HTTPService, 'post', data => of({message: helpDeskSuccess.message}));
-    getDeviceIdSpy = spy.on(ticketSDK.systemSDK, 'getDeviceId', data => Promise.resolve('deviceId'));
-    getDeviceInfoSpy = spy.on(ticketSDK.systemSDK, 'getDeviceInfo', data => Promise.resolve({}));
-    getNetworkInfoSpy = spy.on(ticketSDK.systemSDK, 'getNetworkInfo', data => Promise.resolve({}));
-    getCpuLoadSpy = spy.on(ticketSDK.systemSDK, 'getCpuLoad', data => Promise.resolve({}));
+    let getDeviceIdSpy = spy.on(ticketSDK.systemSDK, 'getDeviceId', data => Promise.resolve('deviceId'));
+    let getDeviceInfoSpy = spy.on(ticketSDK.systemSDK, 'getDeviceInfo', data => Promise.resolve({}));
+    let getNetworkInfoSpy = spy.on(ticketSDK.systemSDK, 'getNetworkInfo', data => Promise.resolve({}));
+    let getCpuLoadSpy = spy.on(ticketSDK.systemSDK, 'getCpuLoad', data => Promise.resolve({}));
     const response = await ticketSDK.createTicket(ticketReq);
     expect(response).to.deep.equal(helpDeskSuccess);
     expect(getDeviceIdSpy).to.have.been.called();
