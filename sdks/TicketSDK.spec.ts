@@ -35,6 +35,10 @@ describe('TicketSDK', async () => {
   });
   it('should throw error if helpdesk api throws error', async () => {
     spy.on(ticketSDK.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
+    let getDeviceIdSpy = spy.on(ticketSDK.systemSDK, 'getDeviceId', data => Promise.resolve('deviceId'));
+    let getDeviceInfoSpy = spy.on(ticketSDK.systemSDK, 'getDeviceInfo', data => Promise.resolve({}));
+    let getNetworkInfoSpy = spy.on(ticketSDK.systemSDK, 'getNetworkInfo', data => Promise.resolve({}));
+    let getCpuLoadSpy = spy.on(ticketSDK.systemSDK, 'getCpuLoad', data => Promise.resolve({}));
     const HTTPServiceSpy = spy.on(HTTPService, 'post', data => throwError({message: helpDeskError.message}));
     await ticketSDK.createTicket(ticketReq).catch(err => {
       expect(err).to.deep.equal(helpDeskError);
