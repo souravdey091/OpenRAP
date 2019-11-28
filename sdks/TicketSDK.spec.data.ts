@@ -1,3 +1,8 @@
+export const mandatoryFieldError = {
+  status: 400,
+  code: 'MANDATORY_FIELD_MISSING',
+  message: 'Mandatory fields are missing'
+}
 export const networkError = {
   status: 400,
   code: 'NETWORK_UNAVAILABLE',

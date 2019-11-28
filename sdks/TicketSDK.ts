@@ -14,7 +14,14 @@ export class TicketSDK {
   @Inject private systemSDK: SystemSDK;
   constructor() {}
 
-  async createTicket(req: ITicketReq): Promise<{message: string, code: string, status: number} | any> {
+  async createTicket(ticketReq: ITicketReq): Promise<{message: string, code: string, status: number}> {
+    if(!ticketReq || !ticketReq.email || !ticketReq.description){
+      throw {
+        status: 400,
+        code: 'MANDATORY_FIELD_MISSING',
+        message: 'Mandatory fields are missing'
+      }
+    }
     const networkAvailable = await this.networkSDK.isInternetAvailable();
     if(!networkAvailable){
       throw {
@@ -30,9 +37,9 @@ export class TicketSDK {
     const formData = new FormData();
     formData.append('status', 2);
     formData.append('priority', 2);
-    formData.append('description', req.description);
+    formData.append('description', ticketReq.description);
     formData.append('subject',`${process.env.APP_NAME} Desktop App Support request - ${deviceId}`)
-    formData.append('email', req.email);
+    formData.append('email', ticketReq.email);
     formData.append('custom_fields[cf_ticket_current_status]', "FD-L1-Unclassified");
     formData.append('custom_fields[cf_severity]', "S2");
     formData.append('custom_fields[cf_reqeststatus]', "None");
