@@ -49,7 +49,7 @@ export class TicketSDK {
       authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`,
       ...formData.getHeaders(),
     }
-    return HTTPService.post(`${process.env.APP_BASE_URL}/api/v2/tickets`, formData, {headers}).toPromise()
+    return HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create `, formData, {headers}).toPromise()
     .then((data: any) => {
       logger.info('Ticket created successfully', data.data);
       return {
