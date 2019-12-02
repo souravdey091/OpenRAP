@@ -37,8 +37,15 @@ const services_1 = require("@project-sunbird/ext-framework-server/services");
 const FormData = require('form-data');
 let TicketSDK = class TicketSDK {
     constructor() { }
-    createTicket(req) {
+    createTicket(ticketReq) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!ticketReq || !ticketReq.email || !ticketReq.description) {
+                throw {
+                    status: 400,
+                    code: 'MANDATORY_FIELD_MISSING',
+                    message: 'Mandatory fields are missing'
+                };
+            }
             const networkAvailable = yield this.networkSDK.isInternetAvailable();
             if (!networkAvailable) {
                 throw {
@@ -54,16 +61,16 @@ let TicketSDK = class TicketSDK {
             const formData = new FormData();
             formData.append('status', 2);
             formData.append('priority', 2);
-            formData.append('description', req.description);
+            formData.append('description', ticketReq.description);
             formData.append('subject', `${process.env.APP_NAME} Desktop App Support request - ${deviceId}`);
-            formData.append('email', req.email);
+            formData.append('email', ticketReq.email);
             formData.append('custom_fields[cf_ticket_current_status]', "FD-L1-Unclassified");
             formData.append('custom_fields[cf_severity]', "S2");
             formData.append('custom_fields[cf_reqeststatus]', "None");
             formData.append('custom_fields[cf_reasonforseverity]', "Offline Desktop App Query");
             formData.append('attachments[]', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json' });
-            const headers = Object.assign({ Authorization: `Basic ${process.env.FRESH_DESK_TOKEN}` }, formData.getHeaders());
-            return services_1.HTTPService.post(`${process.env.FRESH_DESK_BASE_URL}/api/v2/tickets`, formData, { headers }).toPromise() // const axios = require('axios'); await axios.post(FRESH_DESK_URL, formData, {headers})
+            const headers = Object.assign({ authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}` }, formData.getHeaders());
+            return services_1.HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create `, formData, { headers }).toPromise()
                 .then((data) => {
                 logger_1.logger.info('Ticket created successfully', data.data);
                 return {
@@ -73,7 +80,7 @@ let TicketSDK = class TicketSDK {
                 };
             })
                 .catch(error => {
-                logger_1.logger.log('Error while creating tickets', error.response);
+                logger_1.logger.error('Error while creating tickets', _.get(error, 'response.data') || error.message);
                 throw {
                     status: _.get(error, 'response.status') || 400,
                     code: _.get(error, 'response.data.code') || 'FRESH_DESK_API_ERROR',
