@@ -46,10 +46,10 @@ export class TicketSDK {
     formData.append('custom_fields[cf_reasonforseverity]', "Offline Desktop App Query");
     formData.append('attachments[]', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json'});
     const headers = {
-      Authorization: `Basic ${process.env.FRESH_DESK_TOKEN}`,
+      authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`,
       ...formData.getHeaders(),
     }
-    return HTTPService.post(`${process.env.FRESH_DESK_BASE_URL}/api/v2/tickets`, formData, {headers}).toPromise() // const axios = require('axios'); await axios.post(FRESH_DESK_URL, formData, {headers})
+    return HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create `, formData, {headers}).toPromise()
     .then((data: any) => {
       logger.info('Ticket created successfully', data.data);
       return {
@@ -59,7 +59,7 @@ export class TicketSDK {
       }
     })
     .catch(error => {
-      logger.log('Error while creating tickets', error.response);
+      logger.error('Error while creating tickets', _.get(error, 'response.data') || error.message);
       throw {
         status: _.get(error, 'response.status') || 400,
         code: _.get(error, 'response.data.code') || 'FRESH_DESK_API_ERROR',
