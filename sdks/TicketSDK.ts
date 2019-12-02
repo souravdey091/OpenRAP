@@ -59,7 +59,7 @@ export class TicketSDK {
       }
     })
     .catch(error => {
-      logger.log('Error while creating tickets', _.get(error, 'response.data') || error.message);
+      logger.error('Error while creating tickets', _.get(error, 'response.data') || error.message);
       throw {
         status: _.get(error, 'response.status') || 400,
         code: _.get(error, 'response.data.code') || 'FRESH_DESK_API_ERROR',
