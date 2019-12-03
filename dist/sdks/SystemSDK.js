@@ -109,6 +109,7 @@ let SystemSDK = class SystemSDK {
     getDeviceInfo() {
         return __awaiter(this, void 0, void 0, function* () {
             let deviceInfo = {
+                id: "",
                 platform: "",
                 distro: "",
                 osVersion: "",
@@ -129,6 +130,7 @@ let SystemSDK = class SystemSDK {
                 totalHarddisk: 0,
                 availableHarddisk: 0
             };
+            deviceInfo.id = yield this.getDeviceId();
             let osInfo = yield si
                 .osInfo()
                 .catch(err => logger_1.logger.error("while reading os info ", err));

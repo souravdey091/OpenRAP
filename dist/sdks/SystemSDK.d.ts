@@ -14,6 +14,7 @@ export default class SystemSDK {
     getCpuLoad(): Promise<void | si.Systeminformation.CurrentLoadData>;
     getNetworkInfo(): Promise<void | si.Systeminformation.NetworkInterfacesData[]>;
     getDeviceInfo(): Promise<{
+        id: string;
         platform: string;
         distro: string;
         osVersion: string;

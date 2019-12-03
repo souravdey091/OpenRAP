@@ -77,6 +77,7 @@ export default class SystemSDK {
   }
   async getDeviceInfo() {
     let deviceInfo = {
+      id: "",
       platform: "",
       distro: "",
       osVersion: "",
@@ -97,6 +98,8 @@ export default class SystemSDK {
       totalHarddisk: 0,
       availableHarddisk: 0
     };
+
+    deviceInfo.id = await this.getDeviceId();
     let osInfo = await si
       .osInfo()
       .catch(err => logger.error("while reading os info ", err));
