@@ -5,6 +5,7 @@ export declare class TelemetrySyncManager {
     private databaseSdk;
     private systemSDK;
     private telemetryInstance;
+    private settingSDK;
     private TELEMETRY_PACKET_SIZE;
     private ARCHIVE_EXPIRY_TIME;
     registerDevice(): void;

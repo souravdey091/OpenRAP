@@ -15,6 +15,7 @@ import FileSDK from "./../sdks/FileSDK";
 import uuid = require("uuid");
 import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
+import SettingSDK from "./../sdks/SettingSDK";
 
 @Singleton
 export class TelemetrySyncManager {
@@ -24,7 +25,7 @@ export class TelemetrySyncManager {
   private systemSDK: SystemSDK;
   @Inject
   private telemetryInstance: TelemetryInstance;
-
+  private settingSDK = new SettingSDK('openrap-sunbirded-plugin');
   private TELEMETRY_PACKET_SIZE =
     parseInt(process.env.TELEMETRY_PACKET_SIZE) || 200;
 
@@ -34,6 +35,10 @@ export class TelemetrySyncManager {
     var interval = setInterval(async () => {
       let deviceId = await this.systemSDK.getDeviceId();
       let deviceSpec = await this.systemSDK.getDeviceInfo();
+      let userDeclaredLocation = await this.settingSDK.get('location').catch(err => logger.error('Error while fetching user Location in registerDevice, error:', err.message));
+      if(_.isEmpty(userDeclaredLocation)){
+        return;
+      }
       let body = {
         id: process.env.APP_ID,
         ver: process.env.APP_VERSION,
@@ -44,7 +49,11 @@ export class TelemetrySyncManager {
         request: {
           channel: process.env.CHANNEL,
           producer: process.env.APP_ID,
-          dspec: deviceSpec
+          dspec: deviceSpec,
+          userDeclaredLocation: {
+            state: _.get(userDeclaredLocation, 'state.name'),
+            district: _.get(userDeclaredLocation, 'city.name')
+          }
         }
       };
       HTTPService.post(`${process.env.DEVICE_REGISTRY_URL}/${deviceId}`, body, {
