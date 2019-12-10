@@ -3,7 +3,7 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
 import { DataBaseSDK } from "./DataBaseSDK";
-import { IUser } from "./../interfaces";
+import { IUser, IFramework } from "./../interfaces";
 import uuid from "uuid/v4";
 const DEFAULT_USER_NAME = 'guest';
 const USER_DB = 'users';
@@ -53,6 +53,19 @@ export class UserSDK {
     .then(data => ({_id: data.id}));
   }
 
+  public async update(user: IUserUpdateReq): Promise<{_id: string} | UserSDKError>{
+    if(!_.get(user, '_id')){
+      throw {
+        code: "BAD_REQUEST",
+        status: 400,
+        message: `_id is mandatory to update user`
+      }
+    }
+    user.updatedOn = Date.now();
+    return this.dbSDK.updateDoc(USER_DB, user._id, user)
+    .then(data => ({_id: data.id}))
+    .catch(err => { throw this.dbSDK.handleError(err); });
+  }
   private async findByName(name){
     const query = {
       selector: { name }
@@ -66,5 +79,10 @@ export interface UserSDKError {
   status: number;
   message: string;
 }
-
+export interface IUserUpdateReq {
+  _id: string;
+  formatedName?: string;
+  framework?: IFramework;
+  updatedOn?: number;
+}
 export * from './../interfaces/IUser';
