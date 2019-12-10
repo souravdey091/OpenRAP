@@ -38,6 +38,16 @@ const readError = {
   status: 404,
   message: `User not found with name`
 }
+const updateError = {
+  code: "DOC_NOT_FOUND",
+  status: 404,
+  message: `Document not found with id`
+}
+const updateMandatoryError = {
+  code: "BAD_REQUEST",
+  status: 400,
+  message: `_id is mandatory to update user`
+}
 const mandatoryFrameworkError = {
   code: "BAD_REQUEST",
   status: 400,
@@ -51,5 +61,7 @@ export {
   createError,
   readError,
   DEFAULT_USER,
-  mandatoryFrameworkError
+  mandatoryFrameworkError,
+  updateError,
+  updateMandatoryError
 }

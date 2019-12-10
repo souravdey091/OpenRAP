@@ -76,6 +76,21 @@ let UserSDK = class UserSDK {
                 .then(data => ({ _id: data.id }));
         });
     }
+    update(user) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!_.get(user, '_id')) {
+                throw {
+                    code: "BAD_REQUEST",
+                    status: 400,
+                    message: `_id is mandatory to update user`
+                };
+            }
+            user.updatedOn = Date.now();
+            return this.dbSDK.updateDoc(USER_DB, user._id, user)
+                .then(data => ({ _id: data.id }))
+                .catch(err => { throw this.dbSDK.handleError(err); });
+        });
+    }
     findByName(name) {
         return __awaiter(this, void 0, void 0, function* () {
             const query = {

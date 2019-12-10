@@ -4,7 +4,7 @@ import * as fse from 'fs-extra';
 import * as path from "path";
 import {
   userCreateWithDefaultName, userCreateWithName1, userCreateWithName2,
-  createError, readError, DEFAULT_USER, mandatoryFrameworkError } from './UserSDK.spec.data';
+  createError, readError, DEFAULT_USER, mandatoryFrameworkError, updateError, updateMandatoryError } from './UserSDK.spec.data';
 
 describe('UserSDK', async () => {
   let userSDK;
@@ -72,7 +72,39 @@ describe('UserSDK', async () => {
       expect(error.message).to.be.includes(readError.message);
     });
   });
-
+  it('should update user with passed data if user exist with id', async () => {
+    const timeBefore = Date.now();
+    const readResponse: any = await userSDK.read();
+    readResponse.formatedName = 'Anoop HM'
+    const updateResponse = await userSDK.update(readResponse);
+    const readAfterUpdateResponse = await userSDK.read();
+    expect(updateResponse._id).to.be.equal(readResponse._id);
+    expect(readAfterUpdateResponse._id).to.be.equal(readResponse._id);
+    expect(readAfterUpdateResponse.name).to.be.equal(DEFAULT_USER);
+    expect(readAfterUpdateResponse.formatedName).to.be.equal(readResponse.formatedName);
+    expect(readResponse.framework).to.deep.equal(readAfterUpdateResponse.framework);
+    expect(readResponse.createdOn).to.be.equal(readAfterUpdateResponse.createdOn);
+    expect(readResponse.updatedOn).to.be.gte(timeBefore);
+  });
+  it('should throw error if tried to update record which does not exist', async () => {
+    await userSDK.update({
+      _id: 'anoop',
+      formatedName: 'Anoop HM'
+    }).catch(error => {
+      expect(error.code).to.be.equal(updateError.code);
+      expect(error.status).to.be.equal(updateError.status);
+      expect(error.message).to.be.includes(updateError.message);
+    });
+  });
+  it('should throw error if tried to update record without passing id', async () => {
+    await userSDK.update({
+      formatedName: 'Anoop HM'
+    }).catch(error => {
+      expect(error.code).to.be.equal(updateMandatoryError.code);
+      expect(error.status).to.be.equal(updateMandatoryError.status);
+      expect(error.message).to.be.includes(updateMandatoryError.message);
+    });
+  });
   after(async () => {
     await fse.remove(path.join(__dirname, 'users'))
   })
