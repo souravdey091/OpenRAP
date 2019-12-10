@@ -86,7 +86,7 @@ describe('UserSDK', async () => {
     expect(readResponse.createdOn).to.be.equal(readAfterUpdateResponse.createdOn);
     expect(readResponse.updatedOn).to.be.gte(timeBefore);
   });
-  it('should throw error if tried to update record which dose not exist', async () => {
+  it('should throw error if tried to update record which does not exist', async () => {
     await userSDK.update({
       _id: 'anoop',
       formatedName: 'Anoop HM'
