@@ -15,7 +15,7 @@ jobs:
           command: npm run test
       - run:
           name: install sonar scanner
-          command: npm install -g sonarqube-scanner
+          command: sudo npm install -g sonarqube-scanner
       - run:
          name: run sonar scanner
          command: sonar-scanner    
