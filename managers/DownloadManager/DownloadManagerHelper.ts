@@ -44,8 +44,8 @@ export class DownloadManagerHelper {
     return this.suDScheduler.queueDownload(downloadId, locations, observer);
   };
 
-  pause = (downloadId: string): boolean => {
-    return this.suDScheduler.pauseDownload(downloadId);
+  pause = (downloadId: string, stop = true): boolean => {
+    return this.suDScheduler.pauseDownload(downloadId, stop);
   };
 
   cancel = (downloadId: string): boolean => {

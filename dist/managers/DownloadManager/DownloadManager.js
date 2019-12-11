@@ -273,13 +273,6 @@ class DownloadManager {
         });
         this.pluginId = pluginId;
         this.fileSDK = new FileSDK_1.default(pluginId);
-        // listen to network events to pause and start the downloads
-        EventManager_1.EventManager.subscribe("network:available", () => {
-            this.downloadManagerHelper.resumeDownload();
-        });
-        EventManager_1.EventManager.subscribe("network:disconnected", () => {
-            this.downloadManagerHelper.pauseAll(true);
-        });
     }
     /*
      * Method to pause the download
@@ -384,7 +377,7 @@ class DownloadManager {
                     message: `Download Document not found with id ${downloadId}`
                 };
             }
-            if (doc.status !== STATUS.Canceled) {
+            if (doc.status !== STATUS.Failed) {
                 throw {
                     code: "INVALID_OPERATION",
                     status: "400",

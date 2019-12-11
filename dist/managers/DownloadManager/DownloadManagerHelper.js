@@ -41,8 +41,8 @@ let DownloadManagerHelper = class DownloadManagerHelper {
         this.queueDownload = (downloadId, pluginId, locations, observer) => {
             return this.suDScheduler.queueDownload(downloadId, locations, observer);
         };
-        this.pause = (downloadId) => {
-            return this.suDScheduler.pauseDownload(downloadId);
+        this.pause = (downloadId, stop = true) => {
+            return this.suDScheduler.pauseDownload(downloadId, stop);
         };
         this.cancel = (downloadId) => {
             return this.suDScheduler.killDownload(downloadId);
