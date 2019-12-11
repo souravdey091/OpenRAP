@@ -13,6 +13,12 @@ jobs:
       - run:
           name: Run test cases
           command: npm run test
+      - run:
+          name: install sonar scanner
+          command: sudo npm install -g sonarqube-scanner
+      - run:
+         name: run sonar scanner
+         command: sonar-scanner    
 
 workflows:
   version: 2.1

@@ -5,7 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "rimraf dist && tsc && cpy package.json ./dist && cpy  ./db/ ./dist/db/",
-    "test": "nyc --reporter=html --reporter=text mocha --exit -r ts-node/register **/**/*.spec.ts **/*.spec.ts *.spec.ts"
+    "test": "nyc --reporter=lcov --reporter=html --reporter=text mocha --exit -r ts-node/register **/**/*.spec.ts **/*.spec.ts *.spec.ts"
   },
   "nyc": {
     "extension": [
@@ -18,7 +18,8 @@
       "**/*.spec.ts",
       "**/**/*.spec.ts",
       "*.spec.ts",
-      "interfaces/*.ts"
+      "interfaces/*.ts",
+      "**/ITelemetry.ts"
     ],
     "include": [
       "**/**/*.ts",
