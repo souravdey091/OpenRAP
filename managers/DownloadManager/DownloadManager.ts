@@ -247,7 +247,9 @@ export default class DownloadManager {
     let pausedInQueue = false;
     if (_.isEmpty(doc)) {
       throw {
-        code: "DOC_NOT_FOUND"
+        code: "DOC_NOT_FOUND",
+        status: "400",
+        message: `Download Document not found with id ${downloadId}`
       }
     }
     for (let file of doc.files) {
@@ -267,7 +269,9 @@ export default class DownloadManager {
       return true;
     } else {
       throw {
-        code: "NO_FILES_IN_QUEUE"
+        code: "NO_FILES_IN_QUEUE",
+        status: "400",
+        message: `No files are in queue for id ${downloadId}`
       }
     }  
   };
