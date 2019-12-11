@@ -8,7 +8,9 @@ export declare enum STATUS {
     Completed = "COMPLETED",
     Failed = "FAILED",
     Cancelled = "CANCELLED",
-    EventEmitted = "EVENTEMITTED"
+    EventEmitted = "EVENTEMITTED",
+    Paused = "PAUSED",
+    Canceled = "CANCELED"
 }
 export declare enum STATUS_MESSAGE {
     Submitted = "Request is submitted. It will process soon.",
@@ -26,8 +28,15 @@ export default class DownloadManager {
     constructor(pluginId: string);
     download: (files: DownloadFile | DownloadFile[], location: string) => Promise<string>;
     get: (downloadId: string) => Promise<DownloadObject>;
-    pause: (downloadId: string) => void;
-    cancel: (downloadId: string) => Promise<boolean>;
+    pause(downloadId: string): Promise<boolean | {
+        code: string;
+    }>;
+    cancel(downloadId: string): Promise<boolean | {
+        code: string;
+    }>;
+    retry(downloadId: string): Promise<boolean | {
+        code: string;
+    }>;
     pauseAll: () => void;
     cancelAll: () => Promise<boolean>;
     downloadQueue(): any;
