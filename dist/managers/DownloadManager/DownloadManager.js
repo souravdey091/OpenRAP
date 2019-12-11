@@ -52,6 +52,8 @@ var STATUS;
     STATUS["Failed"] = "FAILED";
     STATUS["Cancelled"] = "CANCELLED";
     STATUS["EventEmitted"] = "EVENTEMITTED";
+    STATUS["Paused"] = "PAUSED";
+    STATUS["Canceled"] = "CANCELED";
 })(STATUS = exports.STATUS || (exports.STATUS = {}));
 var STATUS_MESSAGE;
 (function (STATUS_MESSAGE) {
@@ -75,6 +77,7 @@ class DownloadManager {
                 2. when the it fails to add to the queue
                 **/
             //ensure dest location exists
+            logger_1.logger.info('OpenRap recived download request', files, location);
             yield this.fileSDK.mkdir(location);
             let docId = v4_1.default();
             // insert the download request with data to database
@@ -138,6 +141,7 @@ class DownloadManager {
                     };
                     this.telemetryInstance.audit(telemetryEvent);
                 }
+                logger_1.logger.info('OpenRap download request processed and sent to su-downloader3 to download', doc);
                 yield this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
                 return Promise.resolve(docId);
             }
@@ -209,25 +213,6 @@ class DownloadManager {
             return Promise.resolve(downloadObject);
         });
         /*
-         * Method to pause the download
-         * @param downloadId String
-         */
-        this.pause = (downloadId) => {
-            //TODO: need to implement
-            //return this.downloadManagerHelper.pause(downloadId);
-        };
-        /*
-         * Method to cancel the download
-         * @param downloadId String
-         */
-        this.cancel = (downloadId) => __awaiter(this, void 0, void 0, function* () {
-            //TODO: need to implement
-            //await this.dbSDK.updateDoc(this.dataBaseName, downloadId, { status: STATUS.Cancelled });
-            //return Promise.resolve(this.downloadManagerHelper.cancel(downloadId));
-            this.downloadManagerHelper.cancel(downloadId);
-            return Promise.resolve(true);
-        });
-        /*
          * Method to pause all the downloads for the given plugin
          * @param downloadId String
          */
@@ -288,12 +273,119 @@ class DownloadManager {
         });
         this.pluginId = pluginId;
         this.fileSDK = new FileSDK_1.default(pluginId);
-        // listen to network events to pause and start the downloads
-        EventManager_1.EventManager.subscribe("network:available", () => {
-            this.downloadManagerHelper.resumeDownload();
+    }
+    /*
+     * Method to pause the download
+     * @param downloadId String
+     */
+    pause(downloadId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            logger_1.logger.info('OpenRap pause download request received for:', downloadId);
+            let doc = yield this.dbSDK.getDoc(this.dataBaseName, downloadId)
+                .catch(err => logger_1.logger.error(`while getting the doc to pause doc_id ${downloadId}, err: ${err}`));
+            let pausedInQueue = false;
+            if (_.isEmpty(doc)) {
+                throw {
+                    code: "DOC_NOT_FOUND"
+                };
+            }
+            for (let file of doc.files) {
+                if (file.size > file.downloaded) {
+                    let key = `${doc._id}_${file.id}`;
+                    const pauseRes = this.downloadManagerHelper.pause(key);
+                    if (pauseRes) {
+                        pausedInQueue = true;
+                    }
+                }
+            }
+            if (pausedInQueue) {
+                yield this.dbSDK.updateDoc(this.dataBaseName, doc._id, {
+                    updatedOn: Date.now(),
+                    status: STATUS.Paused
+                });
+                return true;
+            }
+            else {
+                throw {
+                    code: "NO_FILES_IN_QUEUE"
+                };
+            }
         });
-        EventManager_1.EventManager.subscribe("network:disconnected", () => {
-            this.downloadManagerHelper.pauseAll(true);
+    }
+    ;
+    /*
+     * Method to cancel the download
+     * @param downloadId String
+     */
+    cancel(downloadId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            logger_1.logger.info('OpenRap cancel download request received for:', downloadId);
+            let doc = yield this.dbSDK.getDoc(this.dataBaseName, downloadId)
+                .catch(err => logger_1.logger.error(`Error while getting the doc to cancel doc_id ${downloadId}, err: ${err}`));
+            let canceledInQueue = false;
+            if (_.isEmpty(doc)) {
+                throw {
+                    code: "DOC_NOT_FOUND",
+                    status: "400",
+                    message: `Download Document not found with id ${downloadId}`
+                };
+            }
+            const deleteItems = [];
+            for (let file of doc.files) {
+                if (file.size > file.downloaded) {
+                    let key = `${doc._id}_${file.id}`;
+                    const cancelRes = this.downloadManagerHelper.cancel(key);
+                    if (cancelRes) {
+                        canceledInQueue = true;
+                    }
+                }
+                else {
+                    deleteItems.push(path.join(file.path, file.file));
+                }
+            }
+            if (canceledInQueue) {
+                yield this.dbSDK.updateDoc(this.dataBaseName, doc._id, {
+                    updatedOn: Date.now(),
+                    status: STATUS.Canceled
+                });
+                _.forEach(deleteItems, file => this.fileSDK.remove(file));
+                return true;
+            }
+            else {
+                throw {
+                    code: "NO_FILES_IN_QUEUE",
+                    status: "400",
+                    message: `No files are in queue for id ${downloadId}`
+                };
+            }
+        });
+    }
+    ;
+    /*
+     * Method to retry the download which failed
+     * @param downloadId String
+     */
+    retry(downloadId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            logger_1.logger.info('OpenRap retry download request received for:', downloadId);
+            let doc = yield this.dbSDK.getDoc(this.dataBaseName, downloadId)
+                .catch(err => logger_1.logger.error(`Error while getting the doc to cancel doc_id ${downloadId}, err: ${err}`));
+            if (_.isEmpty(doc)) {
+                throw {
+                    code: "DOC_NOT_FOUND",
+                    status: "400",
+                    message: `Download Document not found with id ${downloadId}`
+                };
+            }
+            if (doc.status !== STATUS.Failed) {
+                throw {
+                    code: "INVALID_OPERATION",
+                    status: "400",
+                    message: `Only canceled items can be retried`
+                };
+            }
+            yield this.resume(doc._id);
+            return true;
         });
     }
     // this is for test cases only

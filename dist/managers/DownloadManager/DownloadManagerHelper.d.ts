@@ -5,7 +5,7 @@ export declare class DownloadManagerHelper {
     private suDScheduler;
     constructor();
     queueDownload: (downloadId: string, pluginId: string, locations: object, observer: any) => boolean;
-    pause: (downloadId: string) => boolean;
+    pause: (downloadId: string, stop?: boolean) => boolean;
     cancel: (downloadId: string) => boolean;
     pauseAll: (stop?: boolean) => void;
     cancelAll: () => boolean;
