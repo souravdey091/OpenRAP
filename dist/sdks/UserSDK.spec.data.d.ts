@@ -38,9 +38,19 @@ declare const readError: {
     status: number;
     message: string;
 };
+declare const updateError: {
+    code: string;
+    status: number;
+    message: string;
+};
+declare const updateMandatoryError: {
+    code: string;
+    status: number;
+    message: string;
+};
 declare const mandatoryFrameworkError: {
     code: string;
     status: number;
     message: string;
 };
-export { userCreateWithDefaultName, userCreateWithName1, userCreateWithName2, createError, readError, DEFAULT_USER, mandatoryFrameworkError };
+export { userCreateWithDefaultName, userCreateWithName1, userCreateWithName2, createError, readError, DEFAULT_USER, mandatoryFrameworkError, updateError, updateMandatoryError };

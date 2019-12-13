@@ -46,6 +46,18 @@ const readError = {
     message: `User not found with name`
 };
 exports.readError = readError;
+const updateError = {
+    code: "DOC_NOT_FOUND",
+    status: 404,
+    message: `Document not found with id`
+};
+exports.updateError = updateError;
+const updateMandatoryError = {
+    code: "BAD_REQUEST",
+    status: 400,
+    message: `_id is mandatory to update user`
+};
+exports.updateMandatoryError = updateMandatoryError;
 const mandatoryFrameworkError = {
     code: "BAD_REQUEST",
     status: 400,

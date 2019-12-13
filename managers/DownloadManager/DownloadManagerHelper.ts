@@ -147,6 +147,11 @@ export class DownloadManagerHelper {
             //remove pending items from downloadQueue
 
             const doc = await this.dbSDK.getDoc(this.dataBaseName, docId);
+            for (let file of doc.files) {
+              let key = `${doc._id}_${file.id}`;
+              const cancelRes = this.cancel(key)
+              logger.info('Clearing queued download files of failed download batch', key, cancelRes);
+            }
             let pluginId = doc.pluginId;
             delete doc.pluginId;
             delete doc.statusMsg;
