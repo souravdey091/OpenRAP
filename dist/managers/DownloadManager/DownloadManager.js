@@ -41,6 +41,7 @@ const logger_1 = require("@project-sunbird/ext-framework-server/logger");
 const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
 const Url = __importStar(require("url"));
 const telemetryInstance_1 = require("./../../services/telemetry/telemetryInstance");
+const NetworkSDK_1 = __importDefault(require("./../../sdks/NetworkSDK"));
 /*
  * Below are the status for the download manager with different status
  */
@@ -405,6 +406,18 @@ class DownloadManager {
                 logger_1.logger.error(`while getting the doc to resume doc_id ${downloadId}, err: ${err}`);
             });
             let addedToQueue = false;
+            const networkAvailable = yield this.networkSDK.isInternetAvailable();
+            if (!networkAvailable) {
+                yield this.dbSDK.updateDoc(this.dataBaseName, doc._id, {
+                    updatedOn: Date.now(),
+                    status: STATUS.Failed
+                });
+                throw {
+                    status: 400,
+                    code: 'NETWORK_UNAVAILABLE',
+                    message: 'Network unavailable'
+                };
+            }
             if (_.isEmpty(doc)) {
                 throw {
                     code: "DOC_NOT_FOUND",
@@ -449,6 +462,10 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", telemetryInstance_1.TelemetryInstance)
 ], DownloadManager.prototype, "telemetryInstance", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", NetworkSDK_1.default)
+], DownloadManager.prototype, "networkSDK", void 0);
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", DataBaseSDK_1.DataBaseSDK)

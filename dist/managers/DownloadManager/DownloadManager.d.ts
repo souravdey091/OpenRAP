@@ -22,6 +22,7 @@ export default class DownloadManager {
     private downloadManagerHelper;
     private telemetryInstance;
     pluginId: string;
+    private networkSDK;
     private dbSDK;
     private fileSDK;
     private dataBaseName;

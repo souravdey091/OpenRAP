@@ -14,6 +14,7 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import * as Url from "url";
 import { TelemetryInstance } from "./../../services/telemetry/telemetryInstance";
+import NetworkSDK from "./../../sdks/NetworkSDK"; 
 
 /*
  * Below are the status for the download manager with different status
@@ -44,7 +45,7 @@ export default class DownloadManager {
   private telemetryInstance: TelemetryInstance;
 
   pluginId: string;
-
+  @Inject private networkSDK: NetworkSDK;
   @Inject
   private dbSDK: DataBaseSDK;
 
@@ -422,6 +423,18 @@ export default class DownloadManager {
         );
       });
     let addedToQueue = false;
+    const networkAvailable = await this.networkSDK.isInternetAvailable();
+    if(!networkAvailable){
+      await this.dbSDK.updateDoc(this.dataBaseName, doc._id, {
+        updatedOn: Date.now(),
+        status: STATUS.Failed
+      });
+      throw {
+        status: 400,
+        code: 'NETWORK_UNAVAILABLE',
+        message: 'Network unavailable'
+      }
+    }
     if (_.isEmpty(doc)) {
       throw {
         code: "DOC_NOT_FOUND",
