@@ -111,7 +111,7 @@ export declare class TelemetryHelper {
     /**
      * Logs 'search' telemetry event
      *
-     * @param {ISearchEventInput} searchEventInput
+     * @param {ISearchEventData} searchEventInput
      * @memberof TelemetryService
      */
     search(searchEventInput: ISearchEventData): void;
