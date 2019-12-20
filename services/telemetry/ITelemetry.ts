@@ -36,6 +36,14 @@ export interface IShareEventData {
   dir: string;
   items: Array<{}>;
 }
+export interface ISearchEventData {
+  type: string;
+  query: string;
+  filters?: {};
+  correlationid?: string;
+  size: number;
+  topn: Array<{}>;
+}
 export interface IErrorEventData {
   err: string;
   errtype: string;
