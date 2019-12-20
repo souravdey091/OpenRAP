@@ -11,7 +11,7 @@ export declare class TelemetrySyncManager {
     registerDevice(): void;
     batchJob(): Promise<void>;
     syncJob(): Promise<void>;
-    syncTelemetryPackets(packet: any, apiKey: any, did: any): Promise<import("../../../../../../Users/harishkumargangula/Documents/Workspace/OpenRAP/node_modules/@project-sunbird/ext-framework-server/services/http-service").IHttpResponse>;
+    syncTelemetryPackets(packet: any, apiKey: any, did: any): Promise<import("@project-sunbird/ext-framework-server/services/http-service").IHttpResponse>;
     cleanUpJob(): Promise<void>;
     getAPIToken(deviceId: any): Promise<string>;
 }

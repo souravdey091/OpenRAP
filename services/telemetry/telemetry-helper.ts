@@ -13,7 +13,8 @@ import {
   ITelemetryContext,
   IFeedBackEventInput,
   IAuditEventInput,
-  IInterruptEventInput
+  IInterruptEventInput,
+  ISearchEventData
 } from "./ITelemetry";
 import * as telemetrySDK from "@project-sunbird/telemetry-sdk";
 import SystemSDK from "./../../sdks/SystemSDK";
@@ -204,6 +205,19 @@ export class TelemetryHelper {
     if (this.isInitialized) {
       const eventData: ITelemetryEvent = this.getEventData(interruptEventInput);
       this.telemetryProvider.interrupt(eventData.edata, eventData.options);
+    }
+  }
+
+  /**
+   * Logs 'search' telemetry event
+   *
+   * @param {ISearchEventData} searchEventInput
+   * @memberof TelemetryService
+   */
+  public search(searchEventInput: ISearchEventData) {
+    if (this.isInitialized) {
+      const eventData: ITelemetryEvent = this.getEventData(searchEventInput);
+      this.telemetryProvider.search(eventData.edata, eventData.options);
     }
   }
 

@@ -164,6 +164,18 @@ class TelemetryHelper {
         }
     }
     /**
+     * Logs 'search' telemetry event
+     *
+     * @param {ISearchEventData} searchEventInput
+     * @memberof TelemetryService
+     */
+    search(searchEventInput) {
+        if (this.isInitialized) {
+            const eventData = this.getEventData(searchEventInput);
+            this.telemetryProvider.search(eventData.edata, eventData.options);
+        }
+    }
+    /**
      *
      *
      * @private
