@@ -56,7 +56,13 @@ let TicketSDK = class TicketSDK {
             }
             const deviceId = yield this.systemSDK.getDeviceId();
             const deviceInfo = yield this.systemSDK.getDeviceInfo();
-            deviceInfo.networkInfo = yield this.systemSDK.getNetworkInfo();
+            const networkInfo = yield this.systemSDK.getNetworkInfo();
+            deviceInfo.networkInfo = _.map(networkInfo, item => {
+                delete item.ip4;
+                delete item.ip6;
+                delete item.mac;
+                return item;
+            });
             deviceInfo.cpuLoad = yield this.systemSDK.getCpuLoad();
             const formData = new FormData();
             formData.append('status', 2);
@@ -70,7 +76,7 @@ let TicketSDK = class TicketSDK {
             formData.append('custom_fields[cf_reasonforseverity]', "Offline Desktop App Query");
             formData.append('attachments[]', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json' });
             const headers = Object.assign({ authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}` }, formData.getHeaders());
-            return services_1.HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create `, formData, { headers }).toPromise()
+            return services_1.HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create`, formData, { headers }).toPromise()
                 .then((data) => {
                 logger_1.logger.info('Ticket created successfully', data.data);
                 return {
