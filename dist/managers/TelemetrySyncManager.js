@@ -357,7 +357,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                         syncStatus: true
                     }
                 });
-                for (const batch of batches) {
+                for (const batch of batches.docs) {
                     // create gz file with name as batch id with that batch data an store it to telemetry-archive folder
                     // delete the files which are created 10 days back
                     let { data, _id, _rev } = batch;
