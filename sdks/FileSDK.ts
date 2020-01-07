@@ -171,4 +171,12 @@ export default class FileSDK {
   watch(paths: string[]) {
     return chokidar.watch(paths);
   }
+
+  readdir(dirPath: string) {
+    if(path.isAbsolute(dirPath)) {
+      return fse.readdir(dirPath);
+    } else {
+      return fse.readdir(this.getAbsPath(dirPath));
+    }
+  }
 }

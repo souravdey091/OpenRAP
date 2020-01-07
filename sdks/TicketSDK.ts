@@ -2,8 +2,8 @@ import { Singleton } from "typescript-ioc";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
-import SystemSDK from "./SystemSDK"; 
-import NetworkSDK from "./NetworkSDK"; 
+import SystemSDK from "./SystemSDK";
+import NetworkSDK from "./NetworkSDK";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
 const FormData = require('form-data');
 
@@ -12,10 +12,10 @@ export class TicketSDK {
 
   @Inject private networkSDK: NetworkSDK;
   @Inject private systemSDK: SystemSDK;
-  constructor() {}
+  constructor() { }
 
-  async createTicket(ticketReq: ITicketReq): Promise<{message: string, code: string, status: number}> {
-    if(!ticketReq || !ticketReq.email || !ticketReq.description){
+  async createTicket(ticketReq: ITicketReq): Promise<{ message: string, code: string, status: number }> {
+    if (!ticketReq || !ticketReq.email || !ticketReq.description) {
       throw {
         status: 400,
         code: 'MANDATORY_FIELD_MISSING',
@@ -23,7 +23,7 @@ export class TicketSDK {
       }
     }
     const networkAvailable = await this.networkSDK.isInternetAvailable();
-    if(!networkAvailable){
+    if (!networkAvailable) {
       throw {
         status: 400,
         code: 'NETWORK_UNAVAILABLE',
@@ -32,24 +32,30 @@ export class TicketSDK {
     }
     const deviceId = await this.systemSDK.getDeviceId();
     const deviceInfo: any = await this.systemSDK.getDeviceInfo();
-    deviceInfo.networkInfo = await this.systemSDK.getNetworkInfo();
+    const networkInfo: any = await this.systemSDK.getNetworkInfo();
+    deviceInfo.networkInfo = _.map(networkInfo, item => {
+      delete item.ip4;
+      delete item.ip6;
+      delete item.mac;
+      return item;
+    })
     deviceInfo.cpuLoad = await this.systemSDK.getCpuLoad();
     const formData = new FormData();
     formData.append('status', 2);
     formData.append('priority', 2);
     formData.append('description', ticketReq.description);
-    formData.append('subject',`${process.env.APP_NAME} Desktop App Support request - ${deviceId}`)
+    formData.append('subject', `${process.env.APP_NAME} Desktop App Support request - ${deviceId}`)
     formData.append('email', ticketReq.email);
     formData.append('custom_fields[cf_ticket_current_status]', "FD-L1-Unclassified");
     formData.append('custom_fields[cf_severity]', "S2");
     formData.append('custom_fields[cf_reqeststatus]', "None");
     formData.append('custom_fields[cf_reasonforseverity]', "Offline Desktop App Query");
-    formData.append('attachments[]', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json'});
+    formData.append('attachments[]', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json' });
     const headers = {
       authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`,
       ...formData.getHeaders(),
     }
-    return HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create `, formData, {headers}).toPromise()
+    return HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create`, formData, {headers}).toPromise()
     .then((data: any) => {
       logger.info('Ticket created successfully', data.data);
       return {

@@ -150,5 +150,13 @@ class FileSDK {
     watch(paths) {
         return chokidar.watch(paths);
     }
+    readdir(dirPath) {
+        if (path.isAbsolute(dirPath)) {
+            return fse.readdir(dirPath);
+        }
+        else {
+            return fse.readdir(this.getAbsPath(dirPath));
+        }
+    }
 }
 exports.default = FileSDK;

@@ -46,4 +46,5 @@ export default class FileSDK {
     readJSON(filePath: string): Promise<any>;
     getAbsPath(Path: string): string;
     watch(paths: string[]): chokidar.FSWatcher;
+    readdir(dirPath: string): Promise<string[]>;
 }
