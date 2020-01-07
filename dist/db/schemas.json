@@ -7,21 +7,6 @@
             "name": "settings"
         },
         {
-            "name": "telemetry_packets",
-            "indexes": [
-                {
-                    "index": {
-                        "fields": [
-                            "pluginId",
-                            "status",
-                            "updatedOn"
-                        ]
-                    },
-                    "name": "filterIndex"
-                }
-            ]
-        },
-        {
             "name": "download_queue",
             "indexes": [
                 {

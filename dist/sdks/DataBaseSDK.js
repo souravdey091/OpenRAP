@@ -98,6 +98,15 @@ let DataBaseSDK = class DataBaseSDK {
     find(database, searchObj) {
         return this.getDBInstance(database).find(searchObj);
     }
+    list(database, options = {}) {
+        return this.getDBInstance(database).allDocs(options);
+    }
+    delete(database, Id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let doc = yield this.getDBInstance(database).get(Id);
+            return this.getDBInstance(database).remove(doc);
+        });
+    }
     handleError(error) {
         if (error.status === 404 && error.name === 'not_found') {
             return {

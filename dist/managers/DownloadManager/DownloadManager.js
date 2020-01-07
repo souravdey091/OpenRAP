@@ -42,6 +42,7 @@ const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/E
 const Url = __importStar(require("url"));
 const telemetryInstance_1 = require("./../../services/telemetry/telemetryInstance");
 const NetworkSDK_1 = __importDefault(require("./../../sdks/NetworkSDK"));
+const systemQueue_1 = require("./../../services/queue/systemQueue");
 /*
  * Below are the status for the download manager with different status
  */
@@ -143,7 +144,8 @@ class DownloadManager {
                     this.telemetryInstance.audit(telemetryEvent);
                 }
                 logger_1.logger.info('OpenRap download request processed and sent to su-downloader3 to download', doc);
-                yield this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
+                yield this.systemQueue.download(doc, docId);
+                // await this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
                 return Promise.resolve(docId);
             }
             else {
@@ -458,6 +460,10 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", DownloadManagerHelper_1.DownloadManagerHelper)
 ], DownloadManager.prototype, "downloadManagerHelper", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", systemQueue_1.SystemQueue)
+], DownloadManager.prototype, "systemQueue", void 0);
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", telemetryInstance_1.TelemetryInstance)

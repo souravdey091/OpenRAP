@@ -2,6 +2,7 @@
  * @author Harish Kumar Gangula <harishg@ilimi.in>
  */
 export declare class TelemetrySyncManager {
+    private networkQueue;
     private databaseSdk;
     private systemSDK;
     private telemetryInstance;
@@ -11,7 +12,7 @@ export declare class TelemetrySyncManager {
     registerDevice(): void;
     batchJob(): Promise<void>;
     syncJob(): Promise<void>;
-    syncTelemetryPackets(packet: any, apiKey: any, did: any): Promise<import("@project-sunbird/ext-framework-server/services/http-service").IHttpResponse>;
+    syncTelemetryPackets(headers: any, body: any): Promise<import("@project-sunbird/ext-framework-server/services/http-service").IHttpResponse>;
     cleanUpJob(): Promise<void>;
     getAPIToken(deviceId: any): Promise<string>;
 }
