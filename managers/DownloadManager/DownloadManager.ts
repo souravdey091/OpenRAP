@@ -14,7 +14,7 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import * as Url from "url";
 import { TelemetryInstance } from "./../../services/telemetry/telemetryInstance";
-import NetworkSDK from "./../../sdks/NetworkSDK";
+import NetworkSDK from "./../../sdks/NetworkSDK"; 
 
 /*
  * Below are the status for the download manager with different status
