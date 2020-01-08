@@ -27,12 +27,12 @@ export class NetworkQueue extends Queue {
         return this.enQueue(data);
     }
 
-    public async update(docId: string, query: object) {
-        return await this.updateQueue(docId, query);
+    public update(docId: string, query: object) {
+        return this.updateQueue(docId, query);
     }
 
-    public async get(query: object) {
-        return await this.getByQuery(query);
+    public get(query: object) {
+        return this.getByQuery(query);
     }
 
     async executeQueue() {
@@ -91,12 +91,7 @@ export class NetworkQueue extends Queue {
             edata: {
                 err: "SERVER_ERROR",
                 errtype: "SYSTEM",
-                stacktrace: (
-                    error.stack ||
-                    error.stacktrace ||
-                    error.message ||
-                    ""
-                ).toString()
+                stacktrace: (error.stack || error.message || "").toString()
             }
         };
         this.telemetryInstance.error(errorEvent);

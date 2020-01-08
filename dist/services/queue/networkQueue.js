@@ -33,14 +33,10 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
         return this.enQueue(data);
     }
     update(docId, query) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.updateQueue(docId, query);
-        });
+        return this.updateQueue(docId, query);
     }
     get(query) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.getByQuery(query);
-        });
+        return this.getByQuery(query);
     }
     executeQueue() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -94,10 +90,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
             edata: {
                 err: "SERVER_ERROR",
                 errtype: "SYSTEM",
-                stacktrace: (error.stack ||
-                    error.stacktrace ||
-                    error.message ||
-                    "").toString()
+                stacktrace: (error.stack || error.message || "").toString()
             }
         };
         this.telemetryInstance.error(errorEvent);

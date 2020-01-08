@@ -25,6 +25,7 @@ const _ = __importStar(require("lodash"));
 const DownloadManager_1 = require("./managers/DownloadManager/DownloadManager");
 const NetworkSDK_1 = __importDefault(require("./sdks/NetworkSDK"));
 const TelemetrySyncManager_1 = require("./managers/TelemetrySyncManager");
+const networkQueue_1 = require("./services/queue/networkQueue");
 // Initialize container
 const bootstrap = () => __awaiter(this, void 0, void 0, function* () {
     // initialize the telemetry instance, to get it in other modules
@@ -46,10 +47,12 @@ const bootstrap = () => __awaiter(this, void 0, void 0, function* () {
     }
     yield DownloadManager_1.reconciliation();
     const telemetrySyncManager = new TelemetrySyncManager_1.TelemetrySyncManager();
+    const networkQueue = new networkQueue_1.NetworkQueue();
     telemetrySyncManager.registerDevice();
+    networkQueue.executeQueue();
     let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
     setInterval(() => telemetrySyncManager.batchJob(), interval);
-    setInterval(() => telemetrySyncManager.syncJob(), interval);
+    setInterval(() => networkQueue.executeQueue(), interval);
     setInterval(() => telemetrySyncManager.cleanUpJob(), interval);
     // initialize the network sdk to emit the internet available or disconnected events
     new NetworkSDK_1.default();

@@ -5,6 +5,7 @@ import * as _ from "lodash";
 import { reconciliation as DownloadManagerReconciliation } from "./managers/DownloadManager/DownloadManager";
 import NetworkSDK from "./sdks/NetworkSDK";
 import { TelemetrySyncManager } from "./managers/TelemetrySyncManager";
+import { NetworkQueue } from './services/queue/networkQueue';
 
 // Initialize container
 const bootstrap = async () => {
@@ -31,11 +32,12 @@ const bootstrap = async () => {
   }
   await DownloadManagerReconciliation();
   const telemetrySyncManager = new TelemetrySyncManager();
+  const networkQueue = new NetworkQueue();
   telemetrySyncManager.registerDevice();
-  let interval =
-    parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
+  networkQueue.executeQueue()
+  let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
   setInterval(() => telemetrySyncManager.batchJob(), interval);
-  setInterval(() => telemetrySyncManager.syncJob(), interval);
+  setInterval(() => networkQueue.executeQueue(), interval);
   setInterval(() => telemetrySyncManager.cleanUpJob(), interval);
   // initialize the network sdk to emit the internet available or disconnected events
   new NetworkSDK();
