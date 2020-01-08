@@ -20,7 +20,6 @@ export declare enum STATUS_MESSAGE {
 }
 export default class DownloadManager {
     private downloadManagerHelper;
-    private systemQueue;
     private telemetryInstance;
     pluginId: string;
     private networkSDK;

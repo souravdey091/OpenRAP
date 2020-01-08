@@ -15,7 +15,6 @@ import { EventManager } from "@project-sunbird/ext-framework-server/managers/Eve
 import * as Url from "url";
 import { TelemetryInstance } from "./../../services/telemetry/telemetryInstance";
 import NetworkSDK from "./../../sdks/NetworkSDK";
-import { SystemQueue } from './../../services/queue/systemQueue';
 
 /*
  * Below are the status for the download manager with different status
@@ -41,9 +40,6 @@ export enum STATUS_MESSAGE {
 export default class DownloadManager {
   @Inject
   private downloadManagerHelper: DownloadManagerHelper;
-
-  @Inject
-  private systemQueue: SystemQueue;
 
   @Inject
   private telemetryInstance: TelemetryInstance;
@@ -156,8 +152,7 @@ export default class DownloadManager {
         this.telemetryInstance.audit(telemetryEvent);
       }
       logger.info('OpenRap download request processed and sent to su-downloader3 to download', doc);
-      await this.systemQueue.download(doc, docId);
-      // await this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
+      await this.dbSDK.insertDoc(this.dataBaseName, doc, docId);
 
       return Promise.resolve(docId);
     } else {
