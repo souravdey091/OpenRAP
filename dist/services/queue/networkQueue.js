@@ -28,9 +28,6 @@ const telemetryInstance_1 = require("./../telemetry/telemetryInstance");
 const uuid = require("uuid");
 const NetworkSDK_1 = __importDefault(require("./../../sdks/NetworkSDK"));
 let NetworkQueue = class NetworkQueue extends queue_1.Queue {
-    // constructor(){
-    //     super();
-    // }
     add(doc) {
         let data = Object.assign({}, doc, { _id: uuid.v4(), createdOn: Date.now(), updatedOn: Date.now(), type: 'NETWORK', priority: 1, syncStatus: false });
         return this.enQueue(data);
@@ -48,6 +45,11 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     executeQueue() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                let networkStatus = yield this.networkSDK.isInternetAvailable();
+                if (!networkStatus) {
+                    logger_1.logger.error("Network syncing failed as internet is not available");
+                    return;
+                }
                 let queueData = yield this.get({
                     selector: {
                         syncStatus: false,
@@ -55,13 +57,14 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     },
                     limit: 100
                 });
-                let networkStatus = yield this.networkSDK.isInternetAvailable();
-                if (!queueData || queueData.length === 0 || networkStatus === false) {
+                if (!queueData || queueData.length === 0) {
                     return;
                 }
                 logger_1.logger.info("Syncing network queue of size", queueData.length);
                 for (const doc of queueData) {
-                    yield this.syncToServer(doc.requestBody, doc.requestHeaderObj, doc.pathToApi)
+                    let buffer = Buffer.from(doc.requestBody.data);
+                    let apiRequestBody = JSON.parse(buffer.toString('utf8'));
+                    yield this.syncToServer(apiRequestBody, doc.requestHeaderObj, doc.pathToApi)
                         .then(data => {
                         logger_1.logger.info(`Network Queue synced for id = ${doc._id}`);
                         return this.update(doc._id, { syncStatus: true });

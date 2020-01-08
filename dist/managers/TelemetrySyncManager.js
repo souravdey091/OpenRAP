@@ -142,11 +142,12 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                 const packets = _.chunk(formatedEvents, this.TELEMETRY_PACKET_SIZE).map(data => ({
                     pathToApi: '/api/data/v1/telemetry',
                     requestHeaderObj: headers,
-                    requestBody: { ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" },
+                    requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" })),
                 }));
                 // Inserting to DB
                 _.forEach(packets, (packet) => __awaiter(this, void 0, void 0, function* () {
-                    yield this.networkQueue.add(packet);
+                    let a = yield this.networkQueue.add(packet);
+                    console.log('added=========================================', a);
                 }));
                 logger_1.logger.info(`Adding ${packets.length} packets to queue DB`);
                 const deleteEvents = _.map(telemetryEvents.docs, data => ({

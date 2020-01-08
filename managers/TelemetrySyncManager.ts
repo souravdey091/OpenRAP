@@ -134,13 +134,14 @@ export class TelemetrySyncManager {
         data => ({
           pathToApi: '/api/data/v1/telemetry',
           requestHeaderObj: headers,
-          requestBody: { ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" },
+          requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" })),
         })
       );
 
       // Inserting to DB
       _.forEach(packets, async (packet) => {
-        await this.networkQueue.add(packet);
+        let a = await this.networkQueue.add(packet);
+        console.log('added=========================================', a)
       })
 
       logger.info(`Adding ${packets.length} packets to queue DB`);

@@ -1,4 +1,4 @@
-import { Queue, INetworkQueue } from './queue';
+import { Queue } from './queue';
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { Inject, Singleton } from "typescript-ioc";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
@@ -13,9 +13,6 @@ export class NetworkQueue extends Queue {
     private networkSDK: NetworkSDK;
     @Inject
     private telemetryInstance: TelemetryInstance;
-    // constructor(){
-    //     super();
-    // }
 
     public add(doc: IAdd) {
         let data = {
@@ -40,6 +37,12 @@ export class NetworkQueue extends Queue {
 
     async executeQueue() {
         try {
+            let networkStatus: boolean = await this.networkSDK.isInternetAvailable();
+            if (!networkStatus) {
+                logger.error("Network syncing failed as internet is not available");
+                return;
+            }
+
             let queueData: any = await this.get({
                 selector: {
                     syncStatus: false,
@@ -47,15 +50,16 @@ export class NetworkQueue extends Queue {
                 },
                 limit: 100
             });
-
-            let networkStatus: boolean = await this.networkSDK.isInternetAvailable();
-            if (!queueData || queueData.length === 0 || networkStatus === false) {
+            
+            if (!queueData || queueData.length === 0) {
                 return;
             }
             logger.info("Syncing network queue of size", queueData.length);
 
             for (const doc of queueData) {
-                await this.syncToServer(doc.requestBody, doc.requestHeaderObj, doc.pathToApi)
+                let buffer = Buffer.from( doc.requestBody.data);
+                let apiRequestBody = JSON.parse(buffer.toString('utf8'));
+                await this.syncToServer(apiRequestBody, doc.requestHeaderObj, doc.pathToApi)
                     .then(data => {
                         logger.info( `Network Queue synced for id = ${doc._id}`);
                         return this.update(doc._id, { syncStatus: true });
