@@ -14,20 +14,14 @@ export class Queue {
     constructor() { }
 
     protected enQueue(data: ISystemQueue | INetworkQueue, docId: string = '') {
-          return this.dbSDK.insertDoc(dbName, data, docId)
-          .then(result => result.id)
-          .catch(err => { throw this.dbSDK.handleError(err); });
+        return this.dbSDK.insertDoc(dbName, data, docId)
+            .then(result => result.id)
+            .catch(err => { throw this.dbSDK.handleError(err); });
     }
 
     protected updateQueue(docId: string, query: object) {
         return this.dbSDK.updateDoc(dbName, docId, query);
     }
-
-    // protected enQueueBulk (data) {
-    //     return this.dbSDK.bulkDocs(dbName, data)
-    //       .then(result => result.id)
-    //       .catch(err => { throw this.dbSDK.handleError(err); });
-    // }
 
     protected async deQueue(id: string) {
         try {
@@ -41,8 +35,8 @@ export class Queue {
 
     protected length() {
         return this.dbSDK.list(dbName)
-          .then(result => result.rows.length)
-          .catch(err => { throw this.dbSDK.handleError(err); });
+            .then(result => result.rows.length)
+            .catch(err => { throw this.dbSDK.handleError(err); });
     }
 
     protected getById(id: string) {
@@ -51,21 +45,9 @@ export class Queue {
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
 
-    protected getByType(type: string) {
-        const query = {
-            selector: { type }
-        }
+    protected getByQuery(query: any) {
         return this.dbSDK.find(dbName, query)
             .then(result => result.docs)
-            .catch(err => { throw this.dbSDK.handleError(err); });
-    }
-
-    protected getByQuery(query: any) {
-        // const query = {
-        //     selector: { type }
-        // }
-        return this.dbSDK.find(dbName, query)
-            .then(result => result)
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
 }

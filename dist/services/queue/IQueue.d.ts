@@ -18,8 +18,6 @@ export interface INetworkQueue extends IQueue {
     pathToApi: string;
     requestHeaderObj: {};
     requestBody: {};
-    authHeaderToken: string;
-    BearerToken: string;
 }
 export interface IDownloadDocData {
     pluginId: string;

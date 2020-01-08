@@ -31,11 +31,6 @@ let Queue = class Queue {
     updateQueue(docId, query) {
         return this.dbSDK.updateDoc(dbName, docId, query);
     }
-    // protected enQueueBulk (data) {
-    //     return this.dbSDK.bulkDocs(dbName, data)
-    //       .then(result => result.id)
-    //       .catch(err => { throw this.dbSDK.handleError(err); });
-    // }
     deQueue(id) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -57,20 +52,9 @@ let Queue = class Queue {
             .then(result => result.docs)
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
-    getByType(type) {
-        const query = {
-            selector: { type }
-        };
+    getByQuery(query) {
         return this.dbSDK.find(dbName, query)
             .then(result => result.docs)
-            .catch(err => { throw this.dbSDK.handleError(err); });
-    }
-    getByQuery(query) {
-        // const query = {
-        //     selector: { type }
-        // }
-        return this.dbSDK.find(dbName, query)
-            .then(result => result)
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
 };

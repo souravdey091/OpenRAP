@@ -7,7 +7,6 @@ export declare class Queue {
     protected deQueue(id: string): Promise<string>;
     protected length(): any;
     protected getById(id: string): any;
-    protected getByType(type: string): any;
     protected getByQuery(query: any): any;
 }
 export * from './IQueue';

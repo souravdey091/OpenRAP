@@ -7,6 +7,19 @@
             "name": "settings"
         },
         {
+            "name": "queue",
+            "indexes": [
+                {
+                    "index": {
+                        "fields": [
+                            "type"
+                        ]
+                    },
+                    "name": "filterIndex"
+                }
+            ]
+        },
+        {
             "name": "download_queue",
             "indexes": [
                 {

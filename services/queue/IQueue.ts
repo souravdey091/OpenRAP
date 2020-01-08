@@ -15,13 +15,10 @@ export interface ISystemQueue extends IQueue {
     progress: number;
 }
 export interface INetworkQueue extends IQueue {
-    //baseUrl: string;
     syncStatus: boolean;
     pathToApi: string;
     requestHeaderObj: {};
     requestBody: {};
-    authHeaderToken: string;
-    BearerToken: string;
 }
 
 export interface IDownloadDocData {

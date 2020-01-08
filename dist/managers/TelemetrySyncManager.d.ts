@@ -10,9 +10,8 @@ export declare class TelemetrySyncManager {
     private TELEMETRY_PACKET_SIZE;
     private ARCHIVE_EXPIRY_TIME;
     registerDevice(): void;
+    getApiKey(): Promise<any>;
     batchJob(): Promise<void>;
-    syncJob(): Promise<void>;
-    syncTelemetryPackets(headers: any, body: any): Promise<import("@project-sunbird/ext-framework-server/services/http-service").IHttpResponse>;
     cleanUpJob(): Promise<void>;
     getAPIToken(deviceId: any): Promise<string>;
 }
