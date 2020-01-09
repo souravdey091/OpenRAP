@@ -16,29 +16,7 @@ export interface ISystemQueue extends IQueue {
 export interface INetworkQueue extends IQueue {
     syncStatus: boolean;
     pathToApi: string;
-    requestHeaderObj: {};
-    requestBody: {};
-}
-export interface IDownloadDocData {
-    pluginId: string;
-    status: string;
-    statusMsg: string;
-    createdOn: number;
-    updatedOn: number;
-    stats: IDownloadStats;
-    files: Array<IDownloadFiles>;
-}
-export interface IDownloadStats {
-    totalFiles: number;
-    downloadedFiles: number;
-    totalSize: number;
-    downloadedSize: number;
-}
-export interface IDownloadFiles {
-    id: string;
-    file: string;
-    source: string;
-    path: string;
-    size: number;
-    downloaded: number;
+    requestHeaderObj: object;
+    requestBody: Buffer;
+    subType: string;
 }

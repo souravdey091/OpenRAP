@@ -11,6 +11,7 @@ export declare class TelemetrySyncManager {
     private ARCHIVE_EXPIRY_TIME;
     registerDevice(): void;
     getApiKey(): Promise<any>;
+    migrateTelemetryPacketToQueueDB(): Promise<void>;
     batchJob(): Promise<void>;
     cleanUpJob(): Promise<void>;
     getAPIToken(deviceId: any): Promise<string>;

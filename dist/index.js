@@ -51,6 +51,7 @@ const bootstrap = () => __awaiter(this, void 0, void 0, function* () {
     telemetrySyncManager.registerDevice();
     networkQueue.executeQueue();
     let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
+    setInterval(() => telemetrySyncManager.migrateTelemetryPacketToQueueDB(), interval);
     setInterval(() => telemetrySyncManager.batchJob(), interval);
     setInterval(() => networkQueue.executeQueue(), interval);
     setInterval(() => telemetrySyncManager.cleanUpJob(), interval);

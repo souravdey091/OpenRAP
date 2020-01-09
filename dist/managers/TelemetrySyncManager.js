@@ -105,6 +105,54 @@ let TelemetrySyncManager = class TelemetrySyncManager {
             return apiKey;
         });
     }
+    migrateTelemetryPacketToQueueDB() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                let telemetryPackets = yield this.databaseSdk.find("telemetry_packets", {
+                    selector: {
+                        syncStatus: false
+                    },
+                    limit: 100
+                });
+                if (!telemetryPackets || telemetryPackets.docs.length === 0) {
+                    return;
+                }
+                for (const telemetryPacket of telemetryPackets.docs) {
+                    let apiKey = yield this.getApiKey();
+                    if (!apiKey) {
+                        logger_1.logger.error("Api key not available");
+                        return;
+                    }
+                    let did = yield this.systemSDK.getDeviceId();
+                    let headers = {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                        did: did,
+                        msgid: uuid.v4()
+                    };
+                    const packet = {
+                        pathToApi: '/api/data/v1/telemetry',
+                        requestHeaderObj: headers,
+                        requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" })),
+                        subType: 'TELEMETRY'
+                    };
+                    // Inserting to Queue DB
+                    yield this.networkQueue.add(packet)
+                        .then(data => {
+                        logger_1.logger.info('Adding to Queue db successful from telemetry packet db');
+                        return this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
+                    })
+                        .catch(err => {
+                        logger_1.logger.error("Adding to queue Db failed while migrating from telemetry packet db", err);
+                    });
+                }
+            }
+            catch (error) {
+                logger_1.logger.error(`Got error while migrating telemetry packet db data to queue db ${error}`);
+                this.networkQueue.logTelemetryError(error);
+            }
+        });
+    }
     batchJob() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -143,6 +191,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                     pathToApi: '/api/data/v1/telemetry',
                     requestHeaderObj: headers,
                     requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" })),
+                    subType: 'TELEMETRY'
                 }));
                 // Inserting to DB
                 _.forEach(packets, (packet) => __awaiter(this, void 0, void 0, function* () {
@@ -158,21 +207,8 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                 logger_1.logger.info(`Deleted telemetry events of size ${deleteEvents.length} from telemetry db`);
             }
             catch (error) {
-                const errorEvent = {
-                    context: {
-                        env: "telemetryManager"
-                    },
-                    edata: {
-                        err: "SERVER_ERROR",
-                        errtype: "SYSTEM",
-                        stacktrace: (error.stack ||
-                            error.stacktrace ||
-                            error.message ||
-                            "").toString()
-                    }
-                };
-                this.telemetryInstance.error(errorEvent);
-                logger_1.logger.error(`error while batching the telemetry events`, error);
+                logger_1.logger.error(`Error while batching the telemetry events = ${error}`);
+                this.networkQueue.logTelemetryError(error);
             }
         });
     }
@@ -185,6 +221,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                     selector: {
                         syncStatus: true,
                         type: 'NETWORK',
+                        subType: 'TELEMETRY'
                     }
                 });
                 for (const batch of batches) {

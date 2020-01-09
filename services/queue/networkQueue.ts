@@ -99,7 +99,8 @@ export class NetworkQueue extends Queue {
 }
 
 export interface IAdd {
+    subType: string;
     pathToApi: string;
-    requestHeaderObj: {};
-    requestBody: {};
+    requestHeaderObj: object;
+    requestBody: Buffer;
 }

@@ -10,7 +10,8 @@ export declare class NetworkQueue extends Queue {
     logTelemetryError(error: any): void;
 }
 export interface IAdd {
+    subType: string;
     pathToApi: string;
-    requestHeaderObj: {};
-    requestBody: {};
+    requestHeaderObj: object;
+    requestBody: Buffer;
 }

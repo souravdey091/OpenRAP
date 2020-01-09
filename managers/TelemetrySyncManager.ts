@@ -7,7 +7,6 @@ import { Inject, Singleton } from "typescript-ioc";
 import * as _ from "lodash";
 import SystemSDK from "./../sdks/SystemSDK";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
-import NetworkSDK from "./../sdks/NetworkSDK";
 import * as zlib from "zlib";
 import * as path from "path";
 import * as fs from "fs";
@@ -93,6 +92,57 @@ export class TelemetrySyncManager {
     return apiKey;
   }
 
+  async migrateTelemetryPacketToQueueDB() {
+    try {
+      let telemetryPackets = await this.databaseSdk.find("telemetry_packets", {
+        selector: {
+          syncStatus: false
+        },
+        limit: 100
+      });
+
+      if (!telemetryPackets || telemetryPackets.docs.length === 0) {
+        return;
+      }
+
+      for (const telemetryPacket of telemetryPackets.docs) {
+        let apiKey = await this.getApiKey();
+        if (!apiKey) {
+          logger.error("Api key not available");
+          return;
+        }
+
+        let did = await this.systemSDK.getDeviceId();
+        let headers = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          did: did,
+          msgid: uuid.v4()
+        };
+
+        const packet = {
+          pathToApi: '/api/data/v1/telemetry',
+          requestHeaderObj: headers,
+          requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" })),
+          subType: 'TELEMETRY'
+        };
+
+        // Inserting to Queue DB
+        await this.networkQueue.add(packet)
+          .then(data => {
+            logger.info('Adding to Queue db successful from telemetry packet db');
+            return this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
+          })
+          .catch(err => {
+            logger.error("Adding to queue Db failed while migrating from telemetry packet db", err);
+          });
+      }
+    } catch (error) {
+      logger.error(`Got error while migrating telemetry packet db data to queue db ${error}`);
+      this.networkQueue.logTelemetryError(error);
+    }
+  }
+
   async batchJob() {
     try {
       let did = await this.systemSDK.getDeviceId();
@@ -135,6 +185,7 @@ export class TelemetrySyncManager {
           pathToApi: '/api/data/v1/telemetry',
           requestHeaderObj: headers,
           requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" })),
+          subType: 'TELEMETRY'
         })
       );
 
@@ -157,23 +208,8 @@ export class TelemetrySyncManager {
         `Deleted telemetry events of size ${deleteEvents.length} from telemetry db`
       );
     } catch (error) {
-      const errorEvent = {
-        context: {
-          env: "telemetryManager"
-        },
-        edata: {
-          err: "SERVER_ERROR",
-          errtype: "SYSTEM",
-          stacktrace: (
-            error.stack ||
-            error.stacktrace ||
-            error.message ||
-            ""
-          ).toString()
-        }
-      };
-      this.telemetryInstance.error(errorEvent);
-      logger.error(`error while batching the telemetry events`, error);
+      logger.error(`Error while batching the telemetry events = ${error}`);
+      this.networkQueue.logTelemetryError(error);
     }
   }
 
@@ -185,6 +221,7 @@ export class TelemetrySyncManager {
         selector: {
           syncStatus: true,
           type: 'NETWORK',
+          subType: 'TELEMETRY'
         }
       }
       );
@@ -193,14 +230,14 @@ export class TelemetrySyncManager {
         // create gz file with name as batch id with that batch data an store it to telemetry-archive folder
         // delete the files which are created 10 days back
         let { requestBody, _id } = batch;
-        let buffer = Buffer.from( requestBody.data);
+        let buffer = Buffer.from(requestBody.data);
         let apiRequestBody = JSON.parse(buffer.toString('utf8'));
         let data = _.get(apiRequestBody, 'events');
 
         let fileSDK = new FileSDK("");
         zlib.gzip(JSON.stringify(data), async (error, result) => {
           if (error) {
-            logger.error( `While creating gzip object for telemetry object ${error}` );
+            logger.error(`While creating gzip object for telemetry object ${error}`);
             this.networkQueue.logTelemetryError(error);
           } else {
             await fileSDK.mkdir("telemetry_archived");
@@ -211,10 +248,10 @@ export class TelemetrySyncManager {
             wstream.write(result);
             wstream.end();
             wstream.on("finish", async () => {
-              logger.info( `${data.length} events are wrote to file ${filePath} and  deleting events from telemetry database` );
-                await this.networkQueue.update(_id, { _deleted: true })
+              logger.info(`${data.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
+              await this.networkQueue.update(_id, { _deleted: true })
                 .catch(err => {
-                  logger.error( "While deleting the telemetry batch events  from database after creating zip", err );
+                  logger.error("While deleting the telemetry batch events  from database after creating zip", err);
                 });
             });
           }
@@ -239,7 +276,7 @@ export class TelemetrySyncManager {
       fs.readdir(archiveFolderPath, (error, files) => {
         //filter gz files
         if (error) {
-          logger.error( `While filtering gz files = ${error}` );
+          logger.error(`While filtering gz files = ${error}`);
           this.networkQueue.logTelemetryError(error);
         } else if (files.length !== 0) {
           let now = Date.now();
@@ -249,7 +286,7 @@ export class TelemetrySyncManager {
 
             let createdOn = Number(fileArr[fileArr.length - 2]);
             if ((now - createdOn) / 1000 > expiry) {
-              logger.info( `deleting file ${file} which is created on ${createdOn}`);
+              logger.info(`deleting file ${file} which is created on ${createdOn}`);
               fileSDK.remove(path.join("telemetry_archived", file));
             }
           }
