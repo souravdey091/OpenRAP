@@ -46,14 +46,13 @@ const bootstrap = () => __awaiter(this, void 0, void 0, function* () {
         }
     }
     yield DownloadManager_1.reconciliation();
+    let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
     const telemetrySyncManager = new TelemetrySyncManager_1.TelemetrySyncManager();
     const networkQueue = new networkQueue_1.NetworkQueue();
+    setTimeout(() => { networkQueue.init(interval); }, 3000);
     telemetrySyncManager.registerDevice();
-    networkQueue.executeQueue();
-    let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
     setInterval(() => telemetrySyncManager.migrateTelemetryPacketToQueueDB(), interval);
     setInterval(() => telemetrySyncManager.batchJob(), interval);
-    setInterval(() => networkQueue.executeQueue(), interval);
     setInterval(() => telemetrySyncManager.cleanUpJob(), interval);
     // initialize the network sdk to emit the internet available or disconnected events
     new NetworkSDK_1.default();

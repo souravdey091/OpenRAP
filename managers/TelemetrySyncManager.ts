@@ -15,7 +15,8 @@ import uuid = require("uuid");
 import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
 import SettingSDK from "./../sdks/SettingSDK";
-import { NetworkQueue } from './../services/queue/networkQueue';
+import { NetworkQueue, NETWORK_SUBTYPE } from './../services/queue/networkQueue';
+import { QUEUE_TYPE } from './../services/queue/queue';
 
 @Singleton
 export class TelemetrySyncManager {
@@ -124,7 +125,7 @@ export class TelemetrySyncManager {
           pathToApi: '/api/data/v1/telemetry',
           requestHeaderObj: headers,
           requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" })),
-          subType: 'TELEMETRY'
+          subType: NETWORK_SUBTYPE.Telemetry
         };
 
         // Inserting to Queue DB
@@ -185,7 +186,7 @@ export class TelemetrySyncManager {
           pathToApi: '/api/data/v1/telemetry',
           requestHeaderObj: headers,
           requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" })),
-          subType: 'TELEMETRY'
+          subType: NETWORK_SUBTYPE.Telemetry
         })
       );
 
@@ -220,8 +221,8 @@ export class TelemetrySyncManager {
       let batches: any = await this.networkQueue.get({
         selector: {
           syncStatus: true,
-          type: 'NETWORK',
-          subType: 'TELEMETRY'
+          type: QUEUE_TYPE.Network,
+          subType: NETWORK_SUBTYPE.Telemetry
         }
       }
       );

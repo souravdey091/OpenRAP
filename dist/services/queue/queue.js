@@ -21,6 +21,12 @@ const typescript_ioc_1 = require("typescript-ioc");
 const typescript_ioc_2 = require("typescript-ioc");
 const DataBaseSDK_1 = require("./../../sdks/DataBaseSDK");
 const dbName = 'queue';
+var QUEUE_TYPE;
+(function (QUEUE_TYPE) {
+    QUEUE_TYPE["System"] = "SYSTEM";
+    QUEUE_TYPE["Network"] = "NETWORK";
+})(QUEUE_TYPE = exports.QUEUE_TYPE || (exports.QUEUE_TYPE = {}));
+;
 let Queue = class Queue {
     constructor() { }
     enQueue(data, docId = '') {

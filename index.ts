@@ -31,14 +31,13 @@ const bootstrap = async () => {
     }
   }
   await DownloadManagerReconciliation();
+  let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
   const telemetrySyncManager = new TelemetrySyncManager();
   const networkQueue = new NetworkQueue();
-  telemetrySyncManager.registerDevice();
-  networkQueue.executeQueue()
-  let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
+  setTimeout(() => { networkQueue.init(interval) }, 3000);
+  telemetrySyncManager.registerDevice();  
   setInterval(() => telemetrySyncManager.migrateTelemetryPacketToQueueDB(), interval);
   setInterval(() => telemetrySyncManager.batchJob(), interval);
-  setInterval(() => networkQueue.executeQueue(), interval);
   setInterval(() => telemetrySyncManager.cleanUpJob(), interval);
   // initialize the network sdk to emit the internet available or disconnected events
   new NetworkSDK();

@@ -20,3 +20,11 @@ export interface INetworkQueue extends IQueue {
     requestBody: Buffer;
     subType: string;
 }
+export interface IQuery {
+    selector: {
+        syncStatus?: boolean;
+        type: string;
+        subType?: string;
+    };
+    limit?: number;
+}

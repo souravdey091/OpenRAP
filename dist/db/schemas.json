@@ -12,10 +12,12 @@
                 {
                     "index": {
                         "fields": [
-                            "type"
+                            "type",
+                            "syncStatus",
+                            "subType"
                         ]
                     },
-                    "name": "filterIndex"
+                    "name": "queueIndex"
                 }
             ]
         },

@@ -44,6 +44,7 @@ const telemetryInstance_1 = require("./../services/telemetry/telemetryInstance")
 const services_1 = require("@project-sunbird/ext-framework-server/services");
 const SettingSDK_1 = __importDefault(require("./../sdks/SettingSDK"));
 const networkQueue_1 = require("./../services/queue/networkQueue");
+const queue_1 = require("./../services/queue/queue");
 let TelemetrySyncManager = class TelemetrySyncManager {
     constructor() {
         this.settingSDK = new SettingSDK_1.default('openrap-sunbirded-plugin');
@@ -134,7 +135,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                         pathToApi: '/api/data/v1/telemetry',
                         requestHeaderObj: headers,
                         requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" })),
-                        subType: 'TELEMETRY'
+                        subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry
                     };
                     // Inserting to Queue DB
                     yield this.networkQueue.add(packet)
@@ -191,7 +192,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                     pathToApi: '/api/data/v1/telemetry',
                     requestHeaderObj: headers,
                     requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" })),
-                    subType: 'TELEMETRY'
+                    subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry
                 }));
                 // Inserting to DB
                 _.forEach(packets, (packet) => __awaiter(this, void 0, void 0, function* () {
@@ -220,8 +221,8 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                 let batches = yield this.networkQueue.get({
                     selector: {
                         syncStatus: true,
-                        type: 'NETWORK',
-                        subType: 'TELEMETRY'
+                        type: queue_1.QUEUE_TYPE.Network,
+                        subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry
                     }
                 });
                 for (const batch of batches) {
