@@ -34,9 +34,9 @@ const bootstrap = async () => {
   let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
   const telemetrySyncManager = new TelemetrySyncManager();
   const networkQueue = new NetworkQueue();
-  setTimeout(() => { networkQueue.init(interval) }, 3000);
+  setTimeout(() => { networkQueue.init() }, 60000);
+  setTimeout(() => { telemetrySyncManager.migrateTelemetryPacketToQueueDB() }, 60000);
   telemetrySyncManager.registerDevice();  
-  setInterval(() => telemetrySyncManager.migrateTelemetryPacketToQueueDB(), interval);
   setInterval(() => telemetrySyncManager.batchJob(), interval);
   setInterval(() => telemetrySyncManager.cleanUpJob(), interval);
   // initialize the network sdk to emit the internet available or disconnected events

@@ -20,6 +20,8 @@ import { QUEUE_TYPE } from './../services/queue/queue';
 
 @Singleton
 export class TelemetrySyncManager {
+  // This is to check whether migrating telemetry packets DB data to Queue DB is in progress or not
+  migrationInProgress: boolean = false;
   @Inject
   private networkQueue: NetworkQueue;
   @Inject
@@ -94,7 +96,9 @@ export class TelemetrySyncManager {
   }
 
   async migrateTelemetryPacketToQueueDB() {
+    if (this.migrationInProgress) { return; }
     try {
+      this.migrationInProgress = true;
       let telemetryPackets = await this.databaseSdk.find("telemetry_packets", {
         selector: {
           syncStatus: false
@@ -103,12 +107,14 @@ export class TelemetrySyncManager {
       });
 
       if (!telemetryPackets || telemetryPackets.docs.length === 0) {
+        this.migrationInProgress = false;
         return;
       }
 
       for (const telemetryPacket of telemetryPackets.docs) {
         let apiKey = await this.getApiKey();
         if (!apiKey) {
+          this.migrationInProgress = false;
           logger.error("Api key not available");
           return;
         }
@@ -132,14 +138,21 @@ export class TelemetrySyncManager {
         await this.networkQueue.add(packet)
           .then(data => {
             logger.info('Adding to Queue db successful from telemetry packet db');
-            return this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
+            let resp = this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
+            this.migrationInProgress = false;
+            this.migrateTelemetryPacketToQueueDB();
+            return resp;
           })
           .catch(err => {
+            this.migrationInProgress = false;
+            this.migrateTelemetryPacketToQueueDB();
             logger.error("Adding to queue Db failed while migrating from telemetry packet db", err);
           });
       }
     } catch (error) {
       logger.error(`Got error while migrating telemetry packet db data to queue db ${error}`);
+      this.migrationInProgress = false;
+      this.migrateTelemetryPacketToQueueDB();
       this.networkQueue.logTelemetryError(error);
     }
   }
@@ -218,7 +231,7 @@ export class TelemetrySyncManager {
   async cleanUpJob() {
     try {
       // get the batches from telemetry batch table where sync status is true
-      let batches: any = await this.networkQueue.get({
+      let batches: any = await this.networkQueue.getByQuery({
         selector: {
           syncStatus: true,
           type: QUEUE_TYPE.Network,
@@ -250,7 +263,7 @@ export class TelemetrySyncManager {
             wstream.end();
             wstream.on("finish", async () => {
               logger.info(`${data.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
-              await this.networkQueue.update(_id, { _deleted: true })
+              await this.networkQueue.deQueue(_id)
                 .catch(err => {
                   logger.error("While deleting the telemetry batch events  from database after creating zip", err);
                 });

@@ -30,3 +30,8 @@ export interface IQuery {
     };
     limit?: number;
 }
+
+export interface IUpdateQuery {
+    syncStatus?: boolean;
+    updatedOn: number;
+}

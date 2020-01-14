@@ -2,7 +2,7 @@ import { Singleton } from "typescript-ioc";
 import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
 import { DataBaseSDK } from "./../../sdks/DataBaseSDK";
-import { ISystemQueue, INetworkQueue, IQuery } from './IQueue';
+import { ISystemQueue, INetworkQueue, IQuery, IUpdateQuery } from './IQueue';
 const dbName = 'queue';
 export enum QUEUE_TYPE {
     System = "SYSTEM",
@@ -17,17 +17,17 @@ export class Queue {
 
     constructor() { }
 
-    protected enQueue(data: ISystemQueue | INetworkQueue, docId: string = '') {
+    enQueue(data: ISystemQueue | INetworkQueue, docId: string = '') {
         return this.dbSDK.insertDoc(dbName, data, docId)
             .then(result => result.id)
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
 
-    protected updateQueue(docId: string, query: object) {
+    updateQueue(docId: string, query: IUpdateQuery) {
         return this.dbSDK.updateDoc(dbName, docId, query);
     }
 
-    protected async deQueue(id: string) {
+    async deQueue(id: string) {
         try {
             await this.dbSDK.delete(dbName, id);
             return id;
@@ -37,19 +37,19 @@ export class Queue {
         }
     }
 
-    protected length() {
+    length() {
         return this.dbSDK.list(dbName)
             .then(result => result.rows.length)
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
 
-    protected getById(id: string) {
+    getById(id: string) {
         return this.dbSDK.getDoc(dbName, id)
             .then(result => result.docs)
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
 
-    protected getByQuery(query: IQuery) {
+    getByQuery(query: IQuery) {
         return this.dbSDK.find(dbName, query)
             .then(result => result.docs)
             .catch(err => { throw this.dbSDK.handleError(err); });

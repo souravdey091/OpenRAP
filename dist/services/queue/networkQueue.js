@@ -16,6 +16,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -25,46 +32,54 @@ const logger_1 = require("@project-sunbird/ext-framework-server/logger");
 const typescript_ioc_1 = require("typescript-ioc");
 const services_1 = require("@project-sunbird/ext-framework-server/services");
 const telemetryInstance_1 = require("./../telemetry/telemetryInstance");
+const _ = __importStar(require("lodash"));
 const uuid = require("uuid");
 const NetworkSDK_1 = __importDefault(require("./../../sdks/NetworkSDK"));
+const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
 var NETWORK_SUBTYPE;
 (function (NETWORK_SUBTYPE) {
     NETWORK_SUBTYPE["Telemetry"] = "TELEMETRY";
 })(NETWORK_SUBTYPE = exports.NETWORK_SUBTYPE || (exports.NETWORK_SUBTYPE = {}));
 ;
+var PRIORITY;
+(function (PRIORITY) {
+    PRIORITY[PRIORITY["first"] = 1] = "first";
+})(PRIORITY = exports.PRIORITY || (exports.PRIORITY = {}));
+;
+const maxRunningJobs = 1;
 let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     constructor() {
         super(...arguments);
         this.queueInProgress = false;
+        this.runningJobs = [];
     }
-    init(interval) {
-        setInterval(() => this.executeQueue(), interval);
+    init() {
+        this.execute();
+        EventManager_1.EventManager.subscribe("network:available", () => {
+            this.execute();
+        });
     }
     add(doc, docId) {
-        let data = Object.assign({}, doc, { _id: docId || uuid.v4(), createdOn: Date.now(), updatedOn: Date.now(), type: queue_1.QUEUE_TYPE.Network, priority: 1, syncStatus: false });
-        return this.enQueue(data);
+        let date = Date.now();
+        let data = Object.assign({}, doc, { _id: docId || uuid.v4(), createdOn: date, updatedOn: date, type: queue_1.QUEUE_TYPE.Network, priority: PRIORITY.first, syncStatus: false });
+        let resp = this.enQueue(data);
+        this.execute();
+        return resp;
     }
-    update(docId, query) {
-        return this.updateQueue(docId, query);
-    }
-    get(query) {
-        return this.getByQuery(query);
-    }
-    executeQueue() {
+    execute() {
         return __awaiter(this, void 0, void 0, function* () {
+            // If internet is not available return
+            let networkStatus = yield this.networkSDK.isInternetAvailable();
+            if (!networkStatus) {
+                logger_1.logger.warn("Network syncing failed as internet is not available");
+            }
             // If syncing is in progress return
             if (this.queueInProgress) {
                 return;
             }
-            // If internet is not available return
-            let networkStatus = yield this.networkSDK.isInternetAvailable();
-            if (!networkStatus) {
-                logger_1.logger.error("Network syncing failed as internet is not available");
-                return;
-            }
             try {
                 this.queueInProgress = true;
-                let queueData = yield this.get({
+                let queueData = yield this.getByQuery({
                     selector: {
                         syncStatus: false,
                         type: queue_1.QUEUE_TYPE.Network,
@@ -77,21 +92,30 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     return;
                 }
                 logger_1.logger.info("Syncing network queue of size", queueData.length);
-                for (const doc of queueData) {
-                    let buffer = Buffer.from(doc.requestBody.data);
+                let queuedJobIndex = 0;
+                while (maxRunningJobs > this.runningJobs.length && queueData[queuedJobIndex]) {
+                    logger_1.logger.info("in while loop", queueData[queuedJobIndex], this.runningJobs.length);
+                    const jobRunning = _.find(this.runningJobs, { id: queueData[queuedJobIndex]._id }); // duplicate check
+                    if (!jobRunning) {
+                        this.runningJobs.push({
+                            _id: queueData[queuedJobIndex]._id
+                        });
+                    }
+                    let buffer = Buffer.from(queueData[queuedJobIndex].requestBody.data);
                     let apiRequestBody = JSON.parse(buffer.toString('utf8'));
-                    yield this.syncToServer(apiRequestBody, doc.requestHeaderObj, doc.pathToApi)
+                    yield this.makeHTTPCall(apiRequestBody, queueData[queuedJobIndex].requestHeaderObj, queueData[queuedJobIndex].pathToApi)
                         .then((data) => __awaiter(this, void 0, void 0, function* () {
-                        logger_1.logger.info(`Network Queue synced for id = ${doc._id}`);
-                        yield this.update(doc._id, { syncStatus: true });
+                        logger_1.logger.info(`Network Queue synced for id = ${queueData[queuedJobIndex]._id}`);
+                        yield this.updateQueue(queueData[queuedJobIndex]._id, { syncStatus: true, updatedOn: Date.now() });
                         this.queueInProgress = false;
-                        this.executeQueue();
+                        this.execute();
                     }))
                         .catch(error => {
                         this.queueInProgress = false;
-                        logger_1.logger.error(`Error while syncing to Network Queue for id = ${doc._id}`, error.message);
+                        logger_1.logger.error(`Error while syncing to Network Queue for id = ${queueData[queuedJobIndex]._id}`, error.message);
                         this.logTelemetryError(error);
                     });
+                    queuedJobIndex++;
                 }
             }
             catch (error) {
@@ -101,7 +125,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
             }
         });
     }
-    syncToServer(headers, body, pathToApi) {
+    makeHTTPCall(headers, body, pathToApi) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield services_1.HTTPService.post(process.env.APP_BASE_URL + pathToApi, body, { headers: headers }).toPromise();
         });

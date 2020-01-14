@@ -47,6 +47,8 @@ const networkQueue_1 = require("./../services/queue/networkQueue");
 const queue_1 = require("./../services/queue/queue");
 let TelemetrySyncManager = class TelemetrySyncManager {
     constructor() {
+        // This is to check whether migrating telemetry packets DB data to Queue DB is in progress or not
+        this.migrationInProgress = false;
         this.settingSDK = new SettingSDK_1.default('openrap-sunbirded-plugin');
         this.TELEMETRY_PACKET_SIZE = parseInt(process.env.TELEMETRY_PACKET_SIZE) || 200;
         this.ARCHIVE_EXPIRY_TIME = 10; // in days
@@ -108,7 +110,11 @@ let TelemetrySyncManager = class TelemetrySyncManager {
     }
     migrateTelemetryPacketToQueueDB() {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.migrationInProgress) {
+                return;
+            }
             try {
+                this.migrationInProgress = true;
                 let telemetryPackets = yield this.databaseSdk.find("telemetry_packets", {
                     selector: {
                         syncStatus: false
@@ -116,11 +122,13 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                     limit: 100
                 });
                 if (!telemetryPackets || telemetryPackets.docs.length === 0) {
+                    this.migrationInProgress = false;
                     return;
                 }
                 for (const telemetryPacket of telemetryPackets.docs) {
                     let apiKey = yield this.getApiKey();
                     if (!apiKey) {
+                        this.migrationInProgress = false;
                         logger_1.logger.error("Api key not available");
                         return;
                     }
@@ -141,15 +149,22 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                     yield this.networkQueue.add(packet)
                         .then(data => {
                         logger_1.logger.info('Adding to Queue db successful from telemetry packet db');
-                        return this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
+                        let resp = this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
+                        this.migrationInProgress = false;
+                        this.migrateTelemetryPacketToQueueDB();
+                        return resp;
                     })
                         .catch(err => {
+                        this.migrationInProgress = false;
+                        this.migrateTelemetryPacketToQueueDB();
                         logger_1.logger.error("Adding to queue Db failed while migrating from telemetry packet db", err);
                     });
                 }
             }
             catch (error) {
                 logger_1.logger.error(`Got error while migrating telemetry packet db data to queue db ${error}`);
+                this.migrationInProgress = false;
+                this.migrateTelemetryPacketToQueueDB();
                 this.networkQueue.logTelemetryError(error);
             }
         });
@@ -218,7 +233,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 // get the batches from telemetry batch table where sync status is true
-                let batches = yield this.networkQueue.get({
+                let batches = yield this.networkQueue.getByQuery({
                     selector: {
                         syncStatus: true,
                         type: queue_1.QUEUE_TYPE.Network,
@@ -246,7 +261,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                             wstream.end();
                             wstream.on("finish", () => __awaiter(this, void 0, void 0, function* () {
                                 logger_1.logger.info(`${data.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
-                                yield this.networkQueue.update(_id, { _deleted: true })
+                                yield this.networkQueue.deQueue(_id)
                                     .catch(err => {
                                     logger_1.logger.error("While deleting the telemetry batch events  from database after creating zip", err);
                                 });
