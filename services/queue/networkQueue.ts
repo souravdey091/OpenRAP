@@ -18,7 +18,7 @@ const maxRunningJobs = 1;
 
 @Singleton
 export class NetworkQueue extends Queue {
-    @Inject networkSDK : NetworkSDK;
+    @Inject networkSDK: NetworkSDK;
     @Inject
     private telemetryInstance: TelemetryInstance;
     queueInProgress: boolean = false;
@@ -42,6 +42,7 @@ export class NetworkQueue extends Queue {
             priority: PRIORITY.first,
             syncStatus: false,
         };
+
         let resp = this.enQueue(data);
         this.execute();
         return resp;
@@ -53,8 +54,6 @@ export class NetworkQueue extends Queue {
         if (!networkStatus) {
             logger.warn("Network syncing failed as internet is not available");
         }
-        // If syncing is in progress return
-        if (this.queueInProgress) { return; }
 
         try {
             this.queueInProgress = true;
@@ -68,35 +67,34 @@ export class NetworkQueue extends Queue {
 
             // If no data is available to sync return
             if (!queueData || queueData.length === 0) {
-                this.queueInProgress = false;
                 return;
             }
+
             logger.info("Syncing network queue of size", queueData.length);
             let queuedJobIndex = 0;
             while (maxRunningJobs > this.runningJobs.length && queueData[queuedJobIndex]) {
-              logger.info("in while loop", queueData[queuedJobIndex], this.runningJobs.length);
-              const jobRunning: any = _.find(this.runningJobs, { id: queueData[queuedJobIndex]._id }); // duplicate check
-              if (!jobRunning) {
-                this.runningJobs.push({
-                  _id: queueData[queuedJobIndex]._id
-                });
-              }
-
-              let buffer = Buffer.from(queueData[queuedJobIndex].requestBody.data);
-                let apiRequestBody = JSON.parse(buffer.toString('utf8'));
-                await this.makeHTTPCall(apiRequestBody, queueData[queuedJobIndex].requestHeaderObj, queueData[queuedJobIndex].pathToApi)
-                    .then(async data => {
-                        logger.info(`Network Queue synced for id = ${queueData[queuedJobIndex]._id}`);
-                        await this.updateQueue(queueData[queuedJobIndex]._id, { syncStatus: true, updatedOn: Date.now() });
-                        this.queueInProgress = false;
-                        this.execute();
-                    })
-                    .catch(error => {
-                        this.queueInProgress = false;
-                        logger.error(`Error while syncing to Network Queue for id = ${queueData[queuedJobIndex]._id}`, error.message);
-                        this.logTelemetryError(error);
+                logger.info("Went inside while loop", queueData[queuedJobIndex], this.runningJobs.length);
+                const jobRunning: any = _.find(this.runningJobs, { id: queueData[queuedJobIndex]._id }); // duplicate check
+                if (!jobRunning) {
+                    this.runningJobs.push({
+                        _id: queueData[queuedJobIndex]._id
                     });
-              queuedJobIndex++;
+                    let buffer = Buffer.from(queueData[queuedJobIndex].requestBody.data);
+                    let apiRequestBody = JSON.parse(buffer.toString('utf8'));
+                    await this.makeHTTPCall(apiRequestBody, queueData[queuedJobIndex].requestHeaderObj, queueData[queuedJobIndex].pathToApi)
+                        .then(async data => {
+                            logger.info(`Network Queue synced for id = ${queueData[queuedJobIndex]._id}`);
+                            await this.updateQueue(queueData[queuedJobIndex]._id, { syncStatus: true, updatedOn: Date.now() });
+                            _.remove(this.runningJobs, (job) => job._id === queueData[queuedJobIndex]._id);
+                            this.execute();
+                        })
+                        .catch(error => {
+                            _.remove(this.runningJobs, (job) => job._id === queueData[queuedJobIndex]._id);
+                            logger.error(`Error while syncing to Network Queue for id = ${queueData[queuedJobIndex]._id}`, error.message);
+                            this.logTelemetryError(error);
+                        });
+                }
+                queuedJobIndex++;
             }
         } catch (error) {
             this.queueInProgress = false;
