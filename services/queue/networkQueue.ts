@@ -21,7 +21,6 @@ export class NetworkQueue extends Queue {
     @Inject networkSDK: NetworkSDK;
     @Inject
     private telemetryInstance: TelemetryInstance;
-    queueInProgress: boolean = false;
     private runningJobs = [];
 
     init() {
@@ -56,7 +55,6 @@ export class NetworkQueue extends Queue {
         }
 
         try {
-            this.queueInProgress = true;
             let queueData: any = await this.getByQuery({
                 selector: {
                     syncStatus: false,
@@ -73,7 +71,7 @@ export class NetworkQueue extends Queue {
             logger.info("Syncing network queue of size", queueData.length);
             let queuedJobIndex = 0;
             while (maxRunningJobs > this.runningJobs.length && queueData[queuedJobIndex]) {
-                logger.info("Went inside while loop", queueData[queuedJobIndex], this.runningJobs.length);
+                logger.info("Went inside while loop", queueData[queuedJobIndex].length, this.runningJobs.length);
                 const jobRunning: any = _.find(this.runningJobs, { id: queueData[queuedJobIndex]._id }); // duplicate check
                 if (!jobRunning) {
                     this.runningJobs.push({
@@ -81,7 +79,7 @@ export class NetworkQueue extends Queue {
                     });
                     let buffer = Buffer.from(queueData[queuedJobIndex].requestBody.data);
                     let apiRequestBody = JSON.parse(buffer.toString('utf8'));
-                    await this.makeHTTPCall(apiRequestBody, queueData[queuedJobIndex].requestHeaderObj, queueData[queuedJobIndex].pathToApi)
+                    await this.makeHTTPCall(queueData[queuedJobIndex].requestHeaderObj, apiRequestBody.events, queueData[queuedJobIndex].pathToApi)
                         .then(async data => {
                             logger.info(`Network Queue synced for id = ${queueData[queuedJobIndex]._id}`);
                             await this.updateQueue(queueData[queuedJobIndex]._id, { syncStatus: true, updatedOn: Date.now() });
@@ -97,7 +95,6 @@ export class NetworkQueue extends Queue {
                 queuedJobIndex++;
             }
         } catch (error) {
-            this.queueInProgress = false;
             logger.error(`while running the Network queue sync job`, error);
             this.logTelemetryError(error);
         }

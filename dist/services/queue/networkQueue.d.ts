@@ -9,7 +9,6 @@ export declare enum PRIORITY {
 export declare class NetworkQueue extends Queue {
     networkSDK: NetworkSDK;
     private telemetryInstance;
-    queueInProgress: boolean;
     private runningJobs;
     init(): void;
     add(doc: IAdd, docId?: string): any;
