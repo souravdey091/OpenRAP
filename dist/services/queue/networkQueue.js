@@ -96,11 +96,16 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                         });
                         let requestBody = Buffer.from(currentQueue.requestBody.data);
                         this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi)
-                            .then((data) => __awaiter(this, void 0, void 0, function* () {
-                            logger_1.logger.info(`Network Queue synced for id = ${currentQueue._id}`);
-                            yield this.updateQueue(currentQueue._id, { syncStatus: true, updatedOn: Date.now() });
-                            _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
-                            this.execute();
+                            .then((resp) => __awaiter(this, void 0, void 0, function* () {
+                            if (_.get(resp, 'data.responseCode') === 'SUCCESS') {
+                                logger_1.logger.info(`Network Queue synced for id = ${currentQueue._id}`);
+                                yield this.updateQueue(currentQueue._id, { syncStatus: true, updatedOn: Date.now() });
+                                _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
+                                this.execute();
+                            }
+                            else {
+                                throw Error('Unable to sync network queue data');
+                            }
                         }))
                             .catch(error => {
                             _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
