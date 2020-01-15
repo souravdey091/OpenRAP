@@ -18,8 +18,9 @@ export interface INetworkQueue extends IQueue {
     syncStatus: boolean;
     pathToApi: string;
     requestHeaderObj: object;
-    requestBody: Buffer;
+    requestBody: any;
     subType: string;
+    size?: number;
 }
 
 export interface IQuery {

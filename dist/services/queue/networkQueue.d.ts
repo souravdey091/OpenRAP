@@ -20,5 +20,5 @@ export interface IAdd {
     subType: string;
     pathToApi: string;
     requestHeaderObj: object;
-    requestBody: Buffer;
+    requestBody: any;
 }

@@ -24,7 +24,6 @@ export class NetworkQueue extends Queue {
     private runningJobs = [];
 
     init() {
-        this.execute();
         EventManager.subscribe("network:available", () => {
             this.execute();
         });
@@ -52,6 +51,7 @@ export class NetworkQueue extends Queue {
         let networkStatus: boolean = await this.networkSDK.isInternetAvailable();
         if (!networkStatus) {
             logger.warn("Network syncing failed as internet is not available");
+            return;
         }
 
         try {
@@ -60,7 +60,7 @@ export class NetworkQueue extends Queue {
                     syncStatus: false,
                     type: QUEUE_TYPE.Network,
                 },
-                limit: 100
+                limit: maxRunningJobs
             });
 
             // If no data is available to sync return
@@ -71,24 +71,24 @@ export class NetworkQueue extends Queue {
             logger.info("Syncing network queue of size", queueData.length);
             let queuedJobIndex = 0;
             while (maxRunningJobs > this.runningJobs.length && queueData[queuedJobIndex]) {
-                logger.info("Went inside while loop", queueData[queuedJobIndex].length, this.runningJobs.length);
-                const jobRunning: any = _.find(this.runningJobs, { id: queueData[queuedJobIndex]._id }); // duplicate check
+                logger.info("Went inside while loop");
+                let currentQueue = queueData[queuedJobIndex];
+                const jobRunning: any = _.find(this.runningJobs, { id: currentQueue._id }); // duplicate check
                 if (!jobRunning) {
                     this.runningJobs.push({
-                        _id: queueData[queuedJobIndex]._id
+                        _id: currentQueue._id
                     });
-                    let buffer = Buffer.from(queueData[queuedJobIndex].requestBody.data);
-                    let apiRequestBody = JSON.parse(buffer.toString('utf8'));
-                    await this.makeHTTPCall(queueData[queuedJobIndex].requestHeaderObj, apiRequestBody.events, queueData[queuedJobIndex].pathToApi)
+                    let requestBody = Buffer.from(currentQueue.requestBody.data);
+                    this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi)
                         .then(async data => {
-                            logger.info(`Network Queue synced for id = ${queueData[queuedJobIndex]._id}`);
-                            await this.updateQueue(queueData[queuedJobIndex]._id, { syncStatus: true, updatedOn: Date.now() });
-                            _.remove(this.runningJobs, (job) => job._id === queueData[queuedJobIndex]._id);
+                            logger.info(`Network Queue synced for id = ${currentQueue._id}`);
+                            await this.updateQueue(currentQueue._id, { syncStatus: true, updatedOn: Date.now() });
+                            _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
                             this.execute();
                         })
                         .catch(error => {
-                            _.remove(this.runningJobs, (job) => job._id === queueData[queuedJobIndex]._id);
-                            logger.error(`Error while syncing to Network Queue for id = ${queueData[queuedJobIndex]._id}`, error.message);
+                            _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
+                            logger.error(`Error while syncing to Network Queue for id = ${currentQueue._id}`, error.message);
                             this.logTelemetryError(error);
                         });
                 }
@@ -127,5 +127,5 @@ export interface IAdd {
     subType: string;
     pathToApi: string;
     requestHeaderObj: object;
-    requestBody: Buffer;
+    requestBody: any;
 }

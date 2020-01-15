@@ -53,7 +53,6 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
         this.runningJobs = [];
     }
     init() {
-        this.execute();
         EventManager_1.EventManager.subscribe("network:available", () => {
             this.execute();
         });
@@ -71,6 +70,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
             let networkStatus = yield this.networkSDK.isInternetAvailable();
             if (!networkStatus) {
                 logger_1.logger.warn("Network syncing failed as internet is not available");
+                return;
             }
             try {
                 let queueData = yield this.getByQuery({
@@ -78,7 +78,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                         syncStatus: false,
                         type: queue_1.QUEUE_TYPE.Network,
                     },
-                    limit: 100
+                    limit: maxRunningJobs
                 });
                 // If no data is available to sync return
                 if (!queueData || queueData.length === 0) {
@@ -87,24 +87,24 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                 logger_1.logger.info("Syncing network queue of size", queueData.length);
                 let queuedJobIndex = 0;
                 while (maxRunningJobs > this.runningJobs.length && queueData[queuedJobIndex]) {
-                    logger_1.logger.info("Went inside while loop", queueData[queuedJobIndex].length, this.runningJobs.length);
-                    const jobRunning = _.find(this.runningJobs, { id: queueData[queuedJobIndex]._id }); // duplicate check
+                    logger_1.logger.info("Went inside while loop");
+                    let currentQueue = queueData[queuedJobIndex];
+                    const jobRunning = _.find(this.runningJobs, { id: currentQueue._id }); // duplicate check
                     if (!jobRunning) {
                         this.runningJobs.push({
-                            _id: queueData[queuedJobIndex]._id
+                            _id: currentQueue._id
                         });
-                        let buffer = Buffer.from(queueData[queuedJobIndex].requestBody.data);
-                        let apiRequestBody = JSON.parse(buffer.toString('utf8'));
-                        yield this.makeHTTPCall(queueData[queuedJobIndex].requestHeaderObj, apiRequestBody.events, queueData[queuedJobIndex].pathToApi)
+                        let requestBody = Buffer.from(currentQueue.requestBody.data);
+                        this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi)
                             .then((data) => __awaiter(this, void 0, void 0, function* () {
-                            logger_1.logger.info(`Network Queue synced for id = ${queueData[queuedJobIndex]._id}`);
-                            yield this.updateQueue(queueData[queuedJobIndex]._id, { syncStatus: true, updatedOn: Date.now() });
-                            _.remove(this.runningJobs, (job) => job._id === queueData[queuedJobIndex]._id);
+                            logger_1.logger.info(`Network Queue synced for id = ${currentQueue._id}`);
+                            yield this.updateQueue(currentQueue._id, { syncStatus: true, updatedOn: Date.now() });
+                            _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
                             this.execute();
                         }))
                             .catch(error => {
-                            _.remove(this.runningJobs, (job) => job._id === queueData[queuedJobIndex]._id);
-                            logger_1.logger.error(`Error while syncing to Network Queue for id = ${queueData[queuedJobIndex]._id}`, error.message);
+                            _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
+                            logger_1.logger.error(`Error while syncing to Network Queue for id = ${currentQueue._id}`, error.message);
                             this.logTelemetryError(error);
                         });
                     }

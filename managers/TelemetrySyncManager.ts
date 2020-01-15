@@ -126,28 +126,34 @@ export class TelemetrySyncManager {
           did: did,
           msgid: uuid.v4()
         };
-
-        const packet = {
-          pathToApi: '/api/data/v1/telemetry',
-          requestHeaderObj: headers,
-          requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" })),
-          subType: NETWORK_SUBTYPE.Telemetry
-        };
-
-        // Inserting to Queue DB
-        await this.networkQueue.add(packet)
-          .then(data => {
-            logger.info('Adding to Queue db successful from telemetry packet db');
-            let resp = this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
-            this.migrationInProgress = false;
-            this.migrateTelemetryPacketToQueueDB();
-            return resp;
-          })
-          .catch(err => {
-            this.migrationInProgress = false;
-            this.migrateTelemetryPacketToQueueDB();
-            logger.error("Adding to queue Db failed while migrating from telemetry packet db", err);
-          });
+        const zipData = JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" })
+        zlib.gzip(zipData, async (error, result) => {
+          if (error) {
+            throw Error(JSON.stringify(error));
+          } else {
+            let dbData = {
+              pathToApi: '/api/data/v1/telemetry',
+              requestHeaderObj: headers,
+              requestBody: result,
+              subType: NETWORK_SUBTYPE.Telemetry,
+              size: result.length
+            };
+            // Inserting to Queue DB
+            await this.networkQueue.add(dbData)
+              .then(async data => {
+                logger.info('Adding to Queue db successful from telemetry packet db');
+                let resp = await this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
+                this.migrationInProgress = false;
+                this.migrateTelemetryPacketToQueueDB();
+                return resp;
+              })
+              .catch(err => {
+                this.migrationInProgress = false;
+                this.migrateTelemetryPacketToQueueDB();
+                logger.error("Adding to queue Db failed while migrating from telemetry packet db", err);
+              });
+          }
+        });
       }
     } catch (error) {
       logger.error(`Got error while migrating telemetry packet db data to queue db ${error}`);
@@ -189,38 +195,34 @@ export class TelemetrySyncManager {
 
       let headers = {
         "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
         Authorization: `Bearer ${apiKey}`,
         did: did,
         msgid: uuid.v4()
       };
 
-      const packets = _.chunk(formatedEvents, this.TELEMETRY_PACKET_SIZE).map(
-        data => ({
-          pathToApi: '/api/data/v1/telemetry',
-          requestHeaderObj: headers,
-          requestBody: Buffer.from(JSON.stringify({ ts: Date.now(), events: data, id: "api.telemetry", ver: "1.0" })),
-          subType: NETWORK_SUBTYPE.Telemetry
-        })
-      );
-
-      // Inserting to DB
-      _.forEach(packets, async (packet) => {
-        await this.networkQueue.add(packet);
-      })
-
-      logger.info(`Adding ${packets.length} packets to queue DB`);
-      const deleteEvents = _.map(telemetryEvents.docs, data => ({
-        _id: data._id,
-        _rev: data._rev,
-        _deleted: true
-      }));
-      telemetryEvents = await this.databaseSdk.bulkDocs(
-        "telemetry",
-        deleteEvents
-      );
-      logger.info(
-        `Deleted telemetry events of size ${deleteEvents.length} from telemetry db`
-      );
+      const packets = _.chunk(formatedEvents, this.TELEMETRY_PACKET_SIZE);
+      for (let packet of packets) {
+        const zipData = JSON.stringify({ ts: Date.now(), events: packet, id: "api.telemetry", ver: "1.0" })
+        zlib.gzip(zipData, async (error, result) => {
+          if (error) {
+            throw Error(JSON.stringify(error));
+          } else {
+            let dbData = {
+              pathToApi: '/api/data/v1/telemetry',
+              requestHeaderObj: headers,
+              requestBody: result,
+              subType: NETWORK_SUBTYPE.Telemetry,
+              size: result.length
+            };
+            await this.networkQueue.add(dbData);
+            logger.info(`Adding ${packets.length} packets to queue DB`);
+            const deleteEvents = _.map(telemetryEvents.docs, data => ({ _id: data._id, _rev: data._rev, _deleted: true }));
+            telemetryEvents = await this.databaseSdk.bulkDocs("telemetry", deleteEvents);
+            logger.info(`Deleted telemetry events of size ${deleteEvents.length} from telemetry db`);
+          }
+        });
+      }
     } catch (error) {
       logger.error(`Error while batching the telemetry events = ${error}`);
       this.networkQueue.logTelemetryError(error);
@@ -243,32 +245,22 @@ export class TelemetrySyncManager {
       for (const batch of batches) {
         // create gz file with name as batch id with that batch data an store it to telemetry-archive folder
         // delete the files which are created 10 days back
-        let { requestBody, _id } = batch;
-        let buffer = Buffer.from(requestBody.data);
-        let apiRequestBody = JSON.parse(buffer.toString('utf8'));
-        let data = _.get(apiRequestBody, 'events');
-
+        let { requestBody, _id, size } = batch;
+        let zlibData = Buffer.from(requestBody.data);
         let fileSDK = new FileSDK("");
-        zlib.gzip(JSON.stringify(data), async (error, result) => {
-          if (error) {
-            logger.error(`While creating gzip object for telemetry object ${error}`);
-            this.networkQueue.logTelemetryError(error);
-          } else {
-            await fileSDK.mkdir("telemetry_archived");
-            let filePath = fileSDK.getAbsPath(
-              path.join("telemetry_archived", _id + "." + Date.now() + ".gz")
-            );
-            let wstream = fs.createWriteStream(filePath);
-            wstream.write(result);
-            wstream.end();
-            wstream.on("finish", async () => {
-              logger.info(`${data.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
-              await this.networkQueue.deQueue(_id)
-                .catch(err => {
-                  logger.error("While deleting the telemetry batch events  from database after creating zip", err);
-                });
+        await fileSDK.mkdir("telemetry_archived");
+        let filePath = fileSDK.getAbsPath(
+          path.join("telemetry_archived", _id + "." + Date.now() + ".gz")
+        );
+        let wstream = fs.createWriteStream(filePath);
+        wstream.write(zlibData);
+        wstream.end();
+        wstream.on("finish", async () => {
+          logger.info(`${zlibData.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
+          await this.networkQueue.deQueue(_id)
+            .catch(err => {
+              logger.error("While deleting the telemetry batch events  from database after creating zip", err);
             });
-          }
         });
         const logEvent = {
           context: {
@@ -278,7 +270,7 @@ export class TelemetrySyncManager {
             level: "INFO",
             type: "JOB",
             message: "Archived the telemetry events to file system",
-            params: [{ packet: batch._id }, { size: data.length }]
+            params: [{ packet: batch._id }, { size: size }]
           }
         };
         this.telemetryInstance.log(logEvent);
