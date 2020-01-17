@@ -20,7 +20,7 @@ const successResponseCode = ['success', 'ok'];
 export class NetworkQueue extends Queue {
     @Inject private networkSDK: NetworkSDK;
     @Inject private telemetryInstance: TelemetryInstance;
-    private concurrency: number = 10;
+    private concurrency: number = 6;
     private queueList = [];
     private running: number = 0;
     private retryCount: number = 5;
@@ -81,7 +81,7 @@ export class NetworkQueue extends Queue {
 
     execute() {
         while (this.running < this.concurrency && this.queueList.length) {
-            logger.info("Went inside while loop");
+            logger.info(`While loop in progress - ${this.running}`);
             const currentQueue = this.queueList.shift();
             let requestBody = _.get(currentQueue, 'requestHeaderObj.Content-Encoding') === 'gzip' ? Buffer.from(currentQueue.requestBody.data) : currentQueue.requestBody;
             this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi)
@@ -116,7 +116,7 @@ export class NetworkQueue extends Queue {
                         size: _.get(currentQueue, 'size'),
                     };
                     this.running--;
-                    await this.add(dbData);
+                    await this.add(dbData, currentQueue._id);
                 });
             this.running++;
         }

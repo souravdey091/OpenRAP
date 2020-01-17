@@ -52,7 +52,7 @@ const successResponseCode = ['success', 'ok'];
 let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     constructor() {
         super(...arguments);
-        this.concurrency = 10;
+        this.concurrency = 6;
         this.queueList = [];
         this.running = 0;
         this.retryCount = 5;
@@ -106,7 +106,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     }
     execute() {
         while (this.running < this.concurrency && this.queueList.length) {
-            logger_1.logger.info("Went inside while loop");
+            logger_1.logger.info(`While loop in progress - ${this.running}`);
             const currentQueue = this.queueList.shift();
             let requestBody = _.get(currentQueue, 'requestHeaderObj.Content-Encoding') === 'gzip' ? Buffer.from(currentQueue.requestBody.data) : currentQueue.requestBody;
             this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi)
@@ -142,7 +142,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     size: _.get(currentQueue, 'size'),
                 };
                 this.running--;
-                yield this.add(dbData);
+                yield this.add(dbData, currentQueue._id);
             }));
             this.running++;
         }
