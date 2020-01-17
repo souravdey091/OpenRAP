@@ -15,8 +15,6 @@ export class Queue {
     @Inject
     private dbSDK: DataBaseSDK;
 
-    constructor() { }
-
     enQueue(data: ISystemQueue | INetworkQueue, docId: string = '') {
         return this.dbSDK.insertDoc(dbName, data, docId)
             .then(result => result.id)

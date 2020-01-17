@@ -20,7 +20,6 @@ var QUEUE_TYPE;
 })(QUEUE_TYPE = exports.QUEUE_TYPE || (exports.QUEUE_TYPE = {}));
 ;
 let Queue = class Queue {
-    constructor() { }
     enQueue(data, docId = '') {
         return this.dbSDK.insertDoc(dbName, data, docId)
             .then(result => result.id)
@@ -53,7 +52,6 @@ __decorate([
     __metadata("design:type", DataBaseSDK_1.DataBaseSDK)
 ], Queue.prototype, "dbSDK", void 0);
 Queue = __decorate([
-    typescript_ioc_1.Singleton,
-    __metadata("design:paramtypes", [])
+    typescript_ioc_1.Singleton
 ], Queue);
 exports.Queue = Queue;
