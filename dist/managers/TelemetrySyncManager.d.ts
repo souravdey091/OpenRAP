@@ -14,6 +14,6 @@ export declare class TelemetrySyncManager {
     getApiKey(): Promise<any>;
     migrateTelemetryPacketToQueueDB(): Promise<void>;
     batchJob(): Promise<void>;
-    cleanUpJob(): Promise<void>;
+    createTelemetryArchive(): Promise<void>;
     getAPIToken(deviceId: any): Promise<string>;
 }

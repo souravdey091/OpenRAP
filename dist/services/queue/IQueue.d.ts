@@ -14,7 +14,6 @@ export interface ISystemQueue extends IQueue {
     progress: number;
 }
 export interface INetworkQueue extends IQueue {
-    syncStatus: boolean;
     pathToApi: string;
     requestHeaderObj: object;
     requestBody: any;
@@ -23,13 +22,11 @@ export interface INetworkQueue extends IQueue {
 }
 export interface IQuery {
     selector: {
-        syncStatus?: boolean;
         type: string;
         subType?: string;
     };
     limit?: number;
 }
 export interface IUpdateQuery {
-    syncStatus?: boolean;
     updatedOn: number;
 }

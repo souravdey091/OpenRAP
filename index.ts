@@ -6,41 +6,42 @@ import { reconciliation as DownloadManagerReconciliation } from "./managers/Down
 import NetworkSDK from "./sdks/NetworkSDK";
 import { TelemetrySyncManager } from "./managers/TelemetrySyncManager";
 import { NetworkQueue } from './services/queue/networkQueue';
+import { Inject } from "typescript-ioc";
 
-// Initialize container
-const bootstrap = async () => {
-  // initialize the telemetry instance, to get it in other modules
-
-  // create databases for the container
-  let dataBase = new DataBaseSDK();
-  let schema = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "db", "schemas.json"), {
-      encoding: "utf8"
-    })
-  );
-  let databases = schema.databases;
-  for (const db of databases) {
-    dataBase.createDB(db.name);
-  }
-
-  for (const db of databases) {
-    if (!_.isEmpty(db["indexes"])) {
-      for (const index of db.indexes) {
-        await dataBase.createIndex(db.name, index);
+export class App {
+  @Inject static networkQueue: NetworkQueue;
+  @Inject static telemetrySyncManager: TelemetrySyncManager;
+  public static async  bootstrap(){
+    // initialize the telemetry instance, to get it in other modules
+  
+    // create databases for the container
+    let dataBase = new DataBaseSDK();
+    let schema = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "db", "schemas.json"), {
+        encoding: "utf8"
+      })
+    );
+    let databases = schema.databases;
+    for (const db of databases) {
+      dataBase.createDB(db.name);
+    }
+  
+    for (const db of databases) {
+      if (!_.isEmpty(db["indexes"])) {
+        for (const index of db.indexes) {
+          await dataBase.createIndex(db.name, index);
+        }
       }
     }
-  }
-  await DownloadManagerReconciliation();
-  let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
-  const telemetrySyncManager = new TelemetrySyncManager();
-  const networkQueue = new NetworkQueue();
-  setTimeout(() => { networkQueue.init() }, 60000);
-  setTimeout(() => { telemetrySyncManager.migrateTelemetryPacketToQueueDB() }, 60000);
-  telemetrySyncManager.registerDevice();  
-  setInterval(() => telemetrySyncManager.batchJob(), interval);
-  setInterval(() => telemetrySyncManager.cleanUpJob(), interval);
-  // initialize the network sdk to emit the internet available or disconnected events
-  new NetworkSDK();
-};
+    await DownloadManagerReconciliation();
+    let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
+    this.telemetrySyncManager.registerDevice();
+    setTimeout(() => { this.telemetrySyncManager.migrateTelemetryPacketToQueueDB() }, interval);
+    setTimeout(() => { this.telemetrySyncManager.createTelemetryArchive() }, interval);
+    setInterval(() => this.telemetrySyncManager.batchJob(), interval);
+    setInterval(() => this.networkQueue.read(), interval);
+    // initialize the network sdk to emit the internet available or disconnected events
+    new NetworkSDK();
+  };
+}
 
-export { bootstrap };

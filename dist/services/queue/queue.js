@@ -8,14 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const typescript_ioc_1 = require("typescript-ioc");
 const typescript_ioc_2 = require("typescript-ioc");
@@ -38,15 +30,7 @@ let Queue = class Queue {
         return this.dbSDK.updateDoc(dbName, docId, query);
     }
     deQueue(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                yield this.dbSDK.delete(dbName, id);
-                return id;
-            }
-            catch (err) {
-                throw this.dbSDK.handleError(err);
-            }
-        });
+        return this.dbSDK.delete(dbName, id);
     }
     length() {
         return this.dbSDK.list(dbName)

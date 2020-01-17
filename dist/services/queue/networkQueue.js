@@ -36,6 +36,8 @@ const _ = __importStar(require("lodash"));
 const uuid = require("uuid");
 const NetworkSDK_1 = __importDefault(require("./../../sdks/NetworkSDK"));
 const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
+const operators_1 = require("rxjs/operators");
+const rxjs_1 = require("rxjs");
 var NETWORK_SUBTYPE;
 (function (NETWORK_SUBTYPE) {
     NETWORK_SUBTYPE["Telemetry"] = "TELEMETRY";
@@ -46,95 +48,125 @@ var PRIORITY;
     PRIORITY[PRIORITY["first"] = 1] = "first";
 })(PRIORITY = exports.PRIORITY || (exports.PRIORITY = {}));
 ;
-const maxRunningJobs = 1;
+const successResponseCode = ['success', 'ok'];
 let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     constructor() {
         super(...arguments);
-        this.runningJobs = [];
-    }
-    init() {
-        EventManager_1.EventManager.subscribe("network:available", () => {
-            this.execute();
-        });
+        this.concurrency = 10;
+        this.queueList = [];
+        this.running = 0;
+        this.retryCount = 5;
+        this.queueInProgress = false;
     }
     add(doc, docId) {
         let date = Date.now();
-        let data = Object.assign({}, doc, { _id: docId || uuid.v4(), createdOn: date, updatedOn: date, type: queue_1.QUEUE_TYPE.Network, priority: PRIORITY.first, syncStatus: false });
+        let data = Object.assign({}, doc, { _id: docId || uuid.v4(), createdOn: date, updatedOn: date, type: queue_1.QUEUE_TYPE.Network, priority: PRIORITY.first });
+        this.read();
         let resp = this.enQueue(data);
-        this.execute();
         return resp;
     }
-    execute() {
+    read() {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.running !== 0 || this.queueInProgress) {
+                logger_1.logger.warn("Job is in progress");
+                return;
+            }
+            this.queueInProgress = true;
             // If internet is not available return
             let networkStatus = yield this.networkSDK.isInternetAvailable();
             if (!networkStatus) {
+                this.queueInProgress = false;
                 logger_1.logger.warn("Network syncing failed as internet is not available");
                 return;
             }
             try {
-                let queueData = yield this.getByQuery({
+                this.queueList = yield this.getByQuery({
                     selector: {
-                        syncStatus: false,
                         type: queue_1.QUEUE_TYPE.Network,
                     },
-                    limit: maxRunningJobs
+                    limit: this.concurrency
                 });
                 // If no data is available to sync return
-                if (!queueData || queueData.length === 0) {
+                if (!this.queueList || this.queueList.length === 0) {
+                    this.queueInProgress = false;
+                    logger_1.logger.warn("No network queue available to sync");
                     return;
                 }
-                logger_1.logger.info("Syncing network queue of size", queueData.length);
-                let queuedJobIndex = 0;
-                while (maxRunningJobs > this.runningJobs.length && queueData[queuedJobIndex]) {
-                    logger_1.logger.info("Went inside while loop");
-                    let currentQueue = queueData[queuedJobIndex];
-                    const jobRunning = _.find(this.runningJobs, { id: currentQueue._id }); // duplicate check
-                    if (!jobRunning) {
-                        this.runningJobs.push({
-                            _id: currentQueue._id
-                        });
-                        let requestBody = Buffer.from(currentQueue.requestBody.data);
-                        this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi)
-                            .then((resp) => __awaiter(this, void 0, void 0, function* () {
-                            if (_.get(resp, 'data.responseCode') === 'SUCCESS') {
-                                logger_1.logger.info(`Network Queue synced for id = ${currentQueue._id}`);
-                                yield this.updateQueue(currentQueue._id, { syncStatus: true, updatedOn: Date.now() });
-                                _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
-                                this.execute();
-                            }
-                            else {
-                                throw Error('Unable to sync network queue data');
-                            }
-                        }))
-                            .catch(error => {
-                            _.remove(this.runningJobs, (job) => job._id === currentQueue._id);
-                            logger_1.logger.error(`Error while syncing to Network Queue for id = ${currentQueue._id}`, error.message);
-                            this.logTelemetryError(error);
-                        });
-                    }
-                    queuedJobIndex++;
-                }
+                logger_1.logger.info(`Calling execute method to sync network queue of size = ${this.queueList.length}`);
+                this.execute();
+                this.queueInProgress = false;
             }
             catch (error) {
-                logger_1.logger.error(`while running the Network queue sync job`, error);
-                this.logTelemetryError(error);
+                logger_1.logger.error(`DB error while fetching network queue data = ${error}`);
+                this.logTelemetryError(error, "DB_ERROR");
             }
         });
+    }
+    execute() {
+        while (this.running < this.concurrency && this.queueList.length) {
+            logger_1.logger.info("Went inside while loop");
+            const currentQueue = this.queueList.shift();
+            let requestBody = _.get(currentQueue, 'requestHeaderObj.Content-Encoding') === 'gzip' ? Buffer.from(currentQueue.requestBody.data) : currentQueue.requestBody;
+            this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi)
+                .then((resp) => __awaiter(this, void 0, void 0, function* () {
+                // For new API if success comes with new responseCode, add responseCode to successResponseCode
+                if (_.includes(successResponseCode, _.toLower(_.get(resp, 'data.responseCode')))) {
+                    logger_1.logger.info(`Network Queue synced for id = ${currentQueue._id}`);
+                    yield this.deQueue(currentQueue._id).catch(error => {
+                        logger_1.logger.info(`Received error deleting id = ${currentQueue._id}`);
+                    });
+                    EventManager_1.EventManager.emit(`${currentQueue.type}_${currentQueue.subType}:processed`, currentQueue);
+                    this.running--;
+                }
+                else {
+                    logger_1.logger.warn(`Unable to sync network queue with id = ${currentQueue._id}`);
+                    yield this.deQueue(currentQueue._id).catch(error => {
+                        logger_1.logger.info(`Received error deleting id = ${currentQueue._id}`);
+                    });
+                    this.running--;
+                }
+            }))
+                .catch((error) => __awaiter(this, void 0, void 0, function* () {
+                logger_1.logger.error(`Error while syncing to Network Queue for id = ${currentQueue._id}`, error.message);
+                this.logTelemetryError(error);
+                yield this.deQueue(currentQueue._id).catch(error => {
+                    logger_1.logger.info(`Received error in catch for deleting id = ${currentQueue._id}`);
+                });
+                let dbData = {
+                    pathToApi: _.get(currentQueue, 'pathToApi'),
+                    requestHeaderObj: _.get(currentQueue, 'requestHeaderObj'),
+                    requestBody: _.get(currentQueue, 'requestBody'),
+                    subType: _.get(currentQueue, 'subType'),
+                    size: _.get(currentQueue, 'size'),
+                };
+                this.running--;
+                yield this.add(dbData);
+            }));
+            this.running++;
+        }
     }
     makeHTTPCall(headers, body, pathToApi) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield services_1.HTTPService.post(process.env.APP_BASE_URL + pathToApi, body, { headers: headers }).toPromise();
+            return yield services_1.HTTPService.post(process.env.APP_BASE_URL + pathToApi, body, { headers: headers }).pipe(operators_1.mergeMap((data) => {
+                return rxjs_1.of(data);
+            }), operators_1.catchError((error) => {
+                if (_.get(error, 'response.status') >= 500 && _.get(error, 'response.status') < 599) {
+                    return rxjs_1.throwError(error);
+                }
+                else {
+                    return rxjs_1.of(error);
+                }
+            }), operators_1.retry(this.retryCount)).toPromise();
         });
     }
-    logTelemetryError(error) {
+    logTelemetryError(error, errType = "SERVER_ERROR") {
         const errorEvent = {
             context: {
                 env: "networkQueue"
             },
             edata: {
-                err: "SERVER_ERROR",
-                errtype: "SYSTEM",
+                err: errType === "DB_ERROR" ? "DB_ERROR" : "SERVER_ERROR",
+                errtype: errType === "DB_ERROR" ? "DATABASE" : "SYSTEM",
                 stacktrace: (error.stack || error.message || "").toString()
             }
         };

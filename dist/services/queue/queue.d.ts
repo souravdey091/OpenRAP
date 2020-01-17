@@ -8,7 +8,7 @@ export declare class Queue {
     constructor();
     enQueue(data: ISystemQueue | INetworkQueue, docId?: string): any;
     updateQueue(docId: string, query: IUpdateQuery): Promise<any>;
-    deQueue(id: string): Promise<string>;
+    deQueue(id: string): Promise<any>;
     length(): any;
     getById(id: string): any;
     getByQuery(query: IQuery): any;

@@ -17,6 +17,7 @@ import { HTTPService } from "@project-sunbird/ext-framework-server/services";
 import SettingSDK from "./../sdks/SettingSDK";
 import { NetworkQueue, NETWORK_SUBTYPE } from './../services/queue/networkQueue';
 import { QUEUE_TYPE } from './../services/queue/queue';
+import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 
 @Singleton
 export class TelemetrySyncManager {
@@ -124,7 +125,7 @@ export class TelemetrySyncManager {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
           did: did,
-          msgid: uuid.v4()
+          msgid: _.get(telemetryPacket, '_id')
         };
         const zipData = JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" })
         zlib.gzip(zipData, async (error, result) => {
@@ -139,7 +140,7 @@ export class TelemetrySyncManager {
               size: result.length
             };
             // Inserting to Queue DB
-            await this.networkQueue.add(dbData)
+            await this.networkQueue.add(dbData, _.get(telemetryPacket, '_id'))
               .then(async data => {
                 logger.info('Adding to Queue db successful from telemetry packet db');
                 let resp = await this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
@@ -193,12 +194,14 @@ export class TelemetrySyncManager {
         return;
       }
 
+      let id = uuid.v4();
+
       let headers = {
         "Content-Type": "application/json",
         "Content-Encoding": "gzip",
         Authorization: `Bearer ${apiKey}`,
         did: did,
-        msgid: uuid.v4()
+        msgid: id
       };
 
       const packets = _.chunk(formatedEvents, this.TELEMETRY_PACKET_SIZE);
@@ -215,8 +218,8 @@ export class TelemetrySyncManager {
               subType: NETWORK_SUBTYPE.Telemetry,
               size: result.length
             };
-            await this.networkQueue.add(dbData);
-            logger.info(`Adding ${packets.length} packets to queue DB`);
+            await this.networkQueue.add(dbData, id);
+            logger.info(`Added telemetry packets to queue DB of size ${packets.length}`);
             const deleteEvents = _.map(telemetryEvents.docs, data => ({ _id: data._id, _rev: data._rev, _deleted: true }));
             telemetryEvents = await this.databaseSdk.bulkDocs("telemetry", deleteEvents);
             logger.info(`Deleted telemetry events of size ${deleteEvents.length} from telemetry db`);
@@ -229,55 +232,36 @@ export class TelemetrySyncManager {
     }
   }
 
-  // Clean up job implementation
-  async cleanUpJob() {
-    try {
-      // get the batches from telemetry batch table where sync status is true
-      let batches: any = await this.networkQueue.getByQuery({
-        selector: {
-          syncStatus: true,
-          type: QUEUE_TYPE.Network,
-          subType: NETWORK_SUBTYPE.Telemetry
-        }
-      }
+  async createTelemetryArchive() {
+    EventManager.subscribe("NETWORK_TELEMETRY:processed", async (data) => {
+      let { requestBody, _id, size } = data;
+      logger.info(`Archiving telemetry started with id = ${_id}`);
+      let bufferData = Buffer.from(requestBody.data);
+      let fileSDK = new FileSDK("");
+      await fileSDK.mkdir("telemetry_archived");
+      let filePath = fileSDK.getAbsPath(
+        path.join("telemetry_archived", _id + "." + Date.now() + ".gz")
       );
-
-      for (const batch of batches) {
-        // create gz file with name as batch id with that batch data an store it to telemetry-archive folder
-        // delete the files which are created 10 days back
-        let { requestBody, _id, size } = batch;
-        let zlibData = Buffer.from(requestBody.data);
-        let fileSDK = new FileSDK("");
-        await fileSDK.mkdir("telemetry_archived");
-        let filePath = fileSDK.getAbsPath(
-          path.join("telemetry_archived", _id + "." + Date.now() + ".gz")
-        );
-        let wstream = fs.createWriteStream(filePath);
-        wstream.write(zlibData);
-        wstream.end();
-        wstream.on("finish", async () => {
-          logger.info(`${zlibData.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
-          await this.networkQueue.deQueue(_id)
-            .catch(err => {
-              logger.error("While deleting the telemetry batch events  from database after creating zip", err);
-            });
-        });
-        const logEvent = {
-          context: {
-            env: "telemetryManager"
-          },
-          edata: {
-            level: "INFO",
-            type: "JOB",
-            message: "Archived the telemetry events to file system",
-            params: [{ packet: batch._id }, { size: size }]
-          }
-        };
-        this.telemetryInstance.log(logEvent);
-      }
+      let wstream = fs.createWriteStream(filePath);
+      wstream.write(bufferData);
+      wstream.end();
+      wstream.on("finish", () => {
+        logger.info(`${bufferData.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
+      });
+      const logEvent = {
+        context: {
+          env: "telemetryManager"
+        },
+        edata: {
+          level: "INFO",
+          type: "JOB",
+          message: "Archived the telemetry events to file system",
+          params: [{ packet: _id }, { size: size }]
+        }
+      };
+      this.telemetryInstance.log(logEvent);
 
       //delete if the file is archived file is older than 10 days
-      let fileSDK = new FileSDK("");
       let archiveFolderPath = fileSDK.getAbsPath("telemetry_archived");
       fs.readdir(archiveFolderPath, (error, files) => {
         //filter gz files
@@ -298,11 +282,9 @@ export class TelemetrySyncManager {
           }
         }
       });
-    } catch (error) {
-      logger.error(`while running the telemetry cleanup job ${error}`);
-      this.networkQueue.logTelemetryError(error);
-    }
+    });
   }
+
   async getAPIToken(deviceId) {
     //const apiKey =;
     //let token = Buffer.from(apiKey, 'base64').toString('ascii');

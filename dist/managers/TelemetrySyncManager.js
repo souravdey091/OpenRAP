@@ -44,7 +44,7 @@ const telemetryInstance_1 = require("./../services/telemetry/telemetryInstance")
 const services_1 = require("@project-sunbird/ext-framework-server/services");
 const SettingSDK_1 = __importDefault(require("./../sdks/SettingSDK"));
 const networkQueue_1 = require("./../services/queue/networkQueue");
-const queue_1 = require("./../services/queue/queue");
+const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
 let TelemetrySyncManager = class TelemetrySyncManager {
     constructor() {
         // This is to check whether migrating telemetry packets DB data to Queue DB is in progress or not
@@ -137,7 +137,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${apiKey}`,
                         did: did,
-                        msgid: uuid.v4()
+                        msgid: _.get(telemetryPacket, '_id')
                     };
                     const zipData = JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" });
                     zlib.gzip(zipData, (error, result) => __awaiter(this, void 0, void 0, function* () {
@@ -153,7 +153,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                                 size: result.length
                             };
                             // Inserting to Queue DB
-                            yield this.networkQueue.add(dbData)
+                            yield this.networkQueue.add(dbData, _.get(telemetryPacket, '_id'))
                                 .then((data) => __awaiter(this, void 0, void 0, function* () {
                                 logger_1.logger.info('Adding to Queue db successful from telemetry packet db');
                                 let resp = yield this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
@@ -206,12 +206,13 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                     logger_1.logger.error("Api key not available");
                     return;
                 }
+                let id = uuid.v4();
                 let headers = {
                     "Content-Type": "application/json",
                     "Content-Encoding": "gzip",
                     Authorization: `Bearer ${apiKey}`,
                     did: did,
-                    msgid: uuid.v4()
+                    msgid: id
                 };
                 const packets = _.chunk(formatedEvents, this.TELEMETRY_PACKET_SIZE);
                 for (let packet of packets) {
@@ -228,8 +229,8 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                                 subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry,
                                 size: result.length
                             };
-                            yield this.networkQueue.add(dbData);
-                            logger_1.logger.info(`Adding ${packets.length} packets to queue DB`);
+                            yield this.networkQueue.add(dbData, id);
+                            logger_1.logger.info(`Added telemetry packets to queue DB of size ${packets.length}`);
                             const deleteEvents = _.map(telemetryEvents.docs, data => ({ _id: data._id, _rev: data._rev, _deleted: true }));
                             telemetryEvents = yield this.databaseSdk.bulkDocs("telemetry", deleteEvents);
                             logger_1.logger.info(`Deleted telemetry events of size ${deleteEvents.length} from telemetry db`);
@@ -243,51 +244,34 @@ let TelemetrySyncManager = class TelemetrySyncManager {
             }
         });
     }
-    // Clean up job implementation
-    cleanUpJob() {
+    createTelemetryArchive() {
         return __awaiter(this, void 0, void 0, function* () {
-            try {
-                // get the batches from telemetry batch table where sync status is true
-                let batches = yield this.networkQueue.getByQuery({
-                    selector: {
-                        syncStatus: true,
-                        type: queue_1.QUEUE_TYPE.Network,
-                        subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry
-                    }
-                });
-                for (const batch of batches) {
-                    // create gz file with name as batch id with that batch data an store it to telemetry-archive folder
-                    // delete the files which are created 10 days back
-                    let { requestBody, _id, size } = batch;
-                    let zlibData = Buffer.from(requestBody.data);
-                    let fileSDK = new FileSDK_1.default("");
-                    yield fileSDK.mkdir("telemetry_archived");
-                    let filePath = fileSDK.getAbsPath(path.join("telemetry_archived", _id + "." + Date.now() + ".gz"));
-                    let wstream = fs.createWriteStream(filePath);
-                    wstream.write(zlibData);
-                    wstream.end();
-                    wstream.on("finish", () => __awaiter(this, void 0, void 0, function* () {
-                        logger_1.logger.info(`${zlibData.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
-                        yield this.networkQueue.deQueue(_id)
-                            .catch(err => {
-                            logger_1.logger.error("While deleting the telemetry batch events  from database after creating zip", err);
-                        });
-                    }));
-                    const logEvent = {
-                        context: {
-                            env: "telemetryManager"
-                        },
-                        edata: {
-                            level: "INFO",
-                            type: "JOB",
-                            message: "Archived the telemetry events to file system",
-                            params: [{ packet: batch._id }, { size: size }]
-                        }
-                    };
-                    this.telemetryInstance.log(logEvent);
-                }
-                //delete if the file is archived file is older than 10 days
+            EventManager_1.EventManager.subscribe("NETWORK_TELEMETRY:processed", (data) => __awaiter(this, void 0, void 0, function* () {
+                let { requestBody, _id, size } = data;
+                logger_1.logger.info(`Archiving telemetry started with id = ${_id}`);
+                let bufferData = Buffer.from(requestBody.data);
                 let fileSDK = new FileSDK_1.default("");
+                yield fileSDK.mkdir("telemetry_archived");
+                let filePath = fileSDK.getAbsPath(path.join("telemetry_archived", _id + "." + Date.now() + ".gz"));
+                let wstream = fs.createWriteStream(filePath);
+                wstream.write(bufferData);
+                wstream.end();
+                wstream.on("finish", () => {
+                    logger_1.logger.info(`${bufferData.length} events are wrote to file ${filePath} and  deleting events from telemetry database`);
+                });
+                const logEvent = {
+                    context: {
+                        env: "telemetryManager"
+                    },
+                    edata: {
+                        level: "INFO",
+                        type: "JOB",
+                        message: "Archived the telemetry events to file system",
+                        params: [{ packet: _id }, { size: size }]
+                    }
+                };
+                this.telemetryInstance.log(logEvent);
+                //delete if the file is archived file is older than 10 days
                 let archiveFolderPath = fileSDK.getAbsPath("telemetry_archived");
                 fs.readdir(archiveFolderPath, (error, files) => {
                     //filter gz files
@@ -308,11 +292,7 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                         }
                     }
                 });
-            }
-            catch (error) {
-                logger_1.logger.error(`while running the telemetry cleanup job ${error}`);
-                this.networkQueue.logTelemetryError(error);
-            }
+            }));
         });
     }
     getAPIToken(deviceId) {

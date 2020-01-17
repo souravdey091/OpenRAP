@@ -13,7 +13,6 @@
                     "index": {
                         "fields": [
                             "type",
-                            "syncStatus",
                             "subType"
                         ]
                     },

@@ -27,14 +27,8 @@ export class Queue {
         return this.dbSDK.updateDoc(dbName, docId, query);
     }
 
-    async deQueue(id: string) {
-        try {
-            await this.dbSDK.delete(dbName, id);
-            return id;
-        }
-        catch (err) {
-            throw this.dbSDK.handleError(err);
-        }
+    deQueue(id: string) {
+        return this.dbSDK.delete(dbName, id);
     }
 
     length() {
