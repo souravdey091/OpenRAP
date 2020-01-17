@@ -26,7 +26,7 @@ export class NetworkQueue extends Queue {
     private retryCount: number = 5;
     private queueInProgress = false;
 
-    add(doc: IAdd, docId?: string) {
+    async add(doc: IAdd, docId?: string) {
         let date = Date.now();
         let data = {
             ...doc,
@@ -36,8 +36,8 @@ export class NetworkQueue extends Queue {
             type: QUEUE_TYPE.Network,
             priority: PRIORITY.first,
         };
+        let resp = await this.enQueue(data);
         this.read();
-        let resp = this.enQueue(data);
         return resp;
     }
 

@@ -59,11 +59,13 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
         this.queueInProgress = false;
     }
     add(doc, docId) {
-        let date = Date.now();
-        let data = Object.assign({}, doc, { _id: docId || uuid.v4(), createdOn: date, updatedOn: date, type: queue_1.QUEUE_TYPE.Network, priority: PRIORITY.first });
-        this.read();
-        let resp = this.enQueue(data);
-        return resp;
+        return __awaiter(this, void 0, void 0, function* () {
+            let date = Date.now();
+            let data = Object.assign({}, doc, { _id: docId || uuid.v4(), createdOn: date, updatedOn: date, type: queue_1.QUEUE_TYPE.Network, priority: PRIORITY.first });
+            let resp = yield this.enQueue(data);
+            this.read();
+            return resp;
+        });
     }
     read() {
         return __awaiter(this, void 0, void 0, function* () {

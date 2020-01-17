@@ -13,7 +13,7 @@ export declare class NetworkQueue extends Queue {
     private running;
     private retryCount;
     private queueInProgress;
-    add(doc: IAdd, docId?: string): any;
+    add(doc: IAdd, docId?: string): Promise<any>;
     read(): Promise<void>;
     execute(): void;
     makeHTTPCall(headers: object, body: object, pathToApi: string): Promise<any>;
