@@ -5,7 +5,7 @@ const spy = chai.spy.sandbox();
 const expect = chai.expect;
 import {queueListData, errorEvent} from './networkQueue.spec.data';
 
-describe('NetworkQueue', async () => {
+describe.only('NetworkQueue', async () => {
   let networkQueue;
   before(async () => {
     networkQueue = new NetworkQueue();
@@ -34,14 +34,15 @@ describe('NetworkQueue', async () => {
     await networkQueue.read();
     expect(execute).to.not.have.been.called();
   });
-  // it('call read method and get queue list data with length 3', async () => {
-  //   spy.on(networkQueue, 'getByQuery', data => Promise.resolve(queueListData));
-  //   spy.on(networkQueue.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
-  //   let makeHTTPCall = spy.on(networkQueue, 'makeHTTPCall', data => Promise.reject({data:{responseCode: 'success'}}));
-  //   await networkQueue.read();
-  //   expect(networkQueue.running).to.be.equal(3);
-  //   expect(makeHTTPCall).to.have.been.called.exactly(3);
-  // });
+  it('call read method and get queue list data with length 3', async () => {
+    networkQueue.running = 0;
+    networkQueue.concurrency = 5;
+    spy.on(networkQueue, 'getByQuery', data => Promise.resolve(queueListData));
+    spy.on(networkQueue.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
+    let makeHTTPCall = spy.on(networkQueue, 'makeHTTPCall', data => Promise.resolve({data:{responseCode: 'success'}}));
+    await networkQueue.read();
+    expect(makeHTTPCall).to.have.been.called.exactly(3);
+  });
   it('when queue is in progress, execute method should not get called', async () => {
     networkQueue.queueInProgress = true;
     spy.on(networkQueue.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
@@ -57,15 +58,6 @@ describe('NetworkQueue', async () => {
     let execute = spy.on(networkQueue, 'execute');
     await networkQueue.read();
     expect(execute).to.not.have.been.called();
-  });
-  it('call execute method', async () => {
-    networkQueue.running = 1;
-    networkQueue.concurrency = 2;
-    networkQueue.queueList = queueListData;
-    let makeHTTPCall = spy.on(networkQueue, 'makeHTTPCall', data => Promise.resolve({data:{responseCode: 'success'}}));
-    await networkQueue.execute();
-    expect(networkQueue.running).to.be.equal(2);
-    expect(makeHTTPCall).to.have.been.called();
   });
   it('call execute logTelemetryError', async () => {
     const telemetryInstance = spy.on(networkQueue.telemetryInstance, 'error', data => Promise.resolve({}));
