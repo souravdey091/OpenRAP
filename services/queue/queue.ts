@@ -31,7 +31,7 @@ export class Queue {
 
     length() {
         return this.dbSDK.list(dbName)
-            .then(result => result.rows.length)
+            .then(result => _.get(result, 'rows.length'))
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
 
