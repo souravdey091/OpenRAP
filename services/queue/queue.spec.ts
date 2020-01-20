@@ -3,7 +3,6 @@ const chai = require('chai'), spies = require('chai-spies');
 chai.use(spies);
 const spy = chai.spy.sandbox();
 const expect = chai.expect;
-import {queueListData, errorEvent} from './networkQueue.spec.data';
 
 describe('Queue', async () => {
   let queue;
