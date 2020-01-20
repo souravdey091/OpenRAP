@@ -5,7 +5,7 @@ const spy = chai.spy.sandbox();
 const expect = chai.expect;
 import {queueListData, errorEvent} from './networkQueue.spec.data';
 
-describe.only('NetworkQueue', async () => {
+describe('NetworkQueue', async () => {
   let networkQueue;
   before(async () => {
     networkQueue = new NetworkQueue();
