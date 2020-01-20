@@ -1,5 +1,4 @@
 import { Queue, QUEUE_TYPE } from './queue';
-import { IQuery } from './IQueue';
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { Inject, Singleton } from "typescript-ioc";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
