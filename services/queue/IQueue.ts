@@ -18,6 +18,7 @@ export interface INetworkQueue extends IQueue {
     pathToApi: string;
     requestHeaderObj: object;
     requestBody: any;
+    bearerToken: boolean;
     subType: string;
     size?: number;
     count?: number;

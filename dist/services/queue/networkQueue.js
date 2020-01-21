@@ -38,6 +38,8 @@ const NetworkSDK_1 = __importDefault(require("./../../sdks/NetworkSDK"));
 const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
 const operators_1 = require("rxjs/operators");
 const rxjs_1 = require("rxjs");
+const SystemSDK_1 = __importDefault(require("../../sdks/SystemSDK"));
+const DataBaseSDK_1 = require("../../sdks/DataBaseSDK");
 var NETWORK_SUBTYPE;
 (function (NETWORK_SUBTYPE) {
     NETWORK_SUBTYPE["Telemetry"] = "TELEMETRY";
@@ -63,12 +65,13 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
             let date = Date.now();
             let data = Object.assign({}, doc, { _id: docId || uuid.v4(), createdOn: date, updatedOn: date, type: queue_1.QUEUE_TYPE.Network, priority: PRIORITY.first });
             let resp = yield this.enQueue(data);
-            this.read();
+            this.start();
             return resp;
         });
     }
-    read() {
+    start() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.apiKey = this.apiKey || (yield this.getApiKey());
             if (this.running !== 0 || this.queueInProgress) {
                 logger_1.logger.warn("Job is in progress");
                 return;
@@ -108,6 +111,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
         while (this.running < this.concurrency && this.queueList.length) {
             logger_1.logger.info(`While loop in progress - ${this.running}`);
             const currentQueue = this.queueList.shift();
+            currentQueue.requestHeaderObj['Authorization'] = currentQueue.bearerToken ? `Bearer ${this.apiKey}` : '';
             let requestBody = _.get(currentQueue, 'requestHeaderObj.Content-Encoding') === 'gzip' ? Buffer.from(currentQueue.requestBody.data) : currentQueue.requestBody;
             this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi)
                 .then((resp) => __awaiter(this, void 0, void 0, function* () {
@@ -140,6 +144,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     requestBody: _.get(currentQueue, 'requestBody'),
                     subType: _.get(currentQueue, 'subType'),
                     size: _.get(currentQueue, 'size'),
+                    bearerToken: _.get(currentQueue, 'bearerToken'),
                 };
                 this.running--;
                 yield this.add(dbData, currentQueue._id);
@@ -149,7 +154,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     }
     makeHTTPCall(headers, body, pathToApi) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield services_1.HTTPService.post(process.env.APP_BASE_URL + pathToApi, body, { headers: headers }).pipe(operators_1.mergeMap((data) => {
+            return yield services_1.HTTPService.post(pathToApi, body, { headers: headers }).pipe(operators_1.mergeMap((data) => {
                 return rxjs_1.of(data);
             }), operators_1.catchError((error) => {
                 if (_.get(error, 'response.status') >= 500 && _.get(error, 'response.status') < 599) {
@@ -159,6 +164,67 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     return rxjs_1.of(error);
                 }
             }), operators_1.retry(this.retryCount)).toPromise();
+        });
+    }
+    getApiKey() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let did = yield this.systemSDK.getDeviceId();
+            let apiKey;
+            try {
+                let { api_key } = yield this.databaseSdk.getDoc("settings", "device_token");
+                apiKey = api_key;
+            }
+            catch (error) {
+                logger_1.logger.warn("device token is not set getting it from api", error);
+                apiKey = yield this.getAPIToken(did).catch(err => logger_1.logger.error(`while getting the token ${err}`));
+            }
+            return apiKey;
+        });
+    }
+    getAPIToken(deviceId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            //const apiKey =;
+            //let token = Buffer.from(apiKey, 'base64').toString('ascii');
+            // if (process.env.APP_BASE_URL_TOKEN && deviceId) {
+            //   let headers = {
+            //     "Content-Type": "application/json",
+            //     Authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`
+            //   };
+            //   let body = {
+            //     id: "api.device.register",
+            //     ver: "1.0",
+            //     ts: Date.now(),
+            //     request: {
+            //       key: deviceId
+            //     }
+            //   };
+            //   let response = await axios
+            //     .post(
+            //       process.env.APP_BASE_URL +
+            //         "/api/api-manager/v1/consumer/mobile_device/credential/register",
+            //       body,
+            //       { headers: headers }
+            //     )
+            //     .catch(err => {
+            //       logger.error(
+            //         `Error while registering the device status ${
+            //           err.response.status
+            //         } data ${err.response.data}`
+            //       );
+            //       throw Error(err);
+            //     });
+            //   let key = _.get(response, "data.result.key");
+            //   let secret = _.get(response, "data.result.secret");
+            //   let apiKey = jwt.sign({ iss: key }, secret, { algorithm: "HS256" });
+            //   await this.databaseSdk
+            //     .upsertDoc("settings", "device_token", { api_key: apiKey })
+            //     .catch(err => {
+            //       logger.error("while inserting the api key to the  database", err);
+            //     });
+            return Promise.resolve(process.env.APP_BASE_URL_TOKEN);
+            // } else {
+            //   throw Error(`token or deviceID missing to register device ${deviceId}`);
+            // }
         });
     }
     logTelemetryError(error, errType = "SERVER_ERROR") {
@@ -183,6 +249,14 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", telemetryInstance_1.TelemetryInstance)
 ], NetworkQueue.prototype, "telemetryInstance", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", SystemSDK_1.default)
+], NetworkQueue.prototype, "systemSDK", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", DataBaseSDK_1.DataBaseSDK)
+], NetworkQueue.prototype, "databaseSdk", void 0);
 NetworkQueue = __decorate([
     typescript_ioc_1.Singleton
 ], NetworkQueue);

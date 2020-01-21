@@ -47,8 +47,6 @@ const networkQueue_1 = require("../services/queue/networkQueue");
 const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
 let TelemetryManager = class TelemetryManager {
     constructor() {
-        // This is to check whether migrating telemetry packets DB data to Queue DB is in progress or not
-        this.migrationInProgress = false;
         this.settingSDK = new SettingSDK_1.default('openrap-sunbirded-plugin');
         this.TELEMETRY_PACKET_SIZE = parseInt(process.env.TELEMETRY_PACKET_SIZE) || 200;
         this.ARCHIVE_EXPIRY_TIME = 10; // in days
@@ -93,78 +91,45 @@ let TelemetryManager = class TelemetryManager {
             });
         }), 30000);
     }
-    getApiKey() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let did = yield this.systemSDK.getDeviceId();
-            let apiKey;
-            try {
-                let { api_key } = yield this.databaseSdk.getDoc("settings", "device_token");
-                apiKey = api_key;
-            }
-            catch (error) {
-                logger_1.logger.warn("device token is not set getting it from api", error);
-                apiKey = yield this.getAPIToken(did).catch(err => logger_1.logger.error(`while getting the token ${err}`));
-            }
-            return apiKey;
-        });
-    }
     migrateTelemetryPacketToQueueDB() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this.migrationInProgress) {
-                return;
-            }
             try {
-                this.migrationInProgress = true;
-                let telemetryPackets = yield this.databaseSdk.find("telemetry_packets", {
-                    selector: {
-                        syncStatus: false
-                    },
-                    limit: 100
-                });
-                if (!telemetryPackets || telemetryPackets.docs.length === 0) {
-                    this.migrationInProgress = false;
+                let telemetryPackets = yield this.databaseSdk.list("telemetry_packets", { include_docs: true });
+                telemetryPackets = _.filter(telemetryPackets.rows, (o) => { return !o.doc.syncStatus; });
+                if (!telemetryPackets || telemetryPackets.length === 0) {
                     return;
                 }
-                for (const telemetryPacket of telemetryPackets.docs) {
-                    let apiKey = yield this.getApiKey();
-                    if (!apiKey) {
-                        this.migrationInProgress = false;
-                        logger_1.logger.error("Api key not available");
-                        return;
-                    }
+                for (const telemetryPacket of telemetryPackets) {
+                    const packet = telemetryPacket.doc;
                     let did = yield this.systemSDK.getDeviceId();
                     let headers = {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${apiKey}`,
                         did: did,
-                        msgid: _.get(telemetryPacket, '_id')
+                        msgid: _.get(packet, '_id')
                     };
-                    const zipData = JSON.stringify({ ts: Date.now(), events: _.get(telemetryPacket, 'events'), id: "api.telemetry", ver: "1.0" });
+                    const zipData = JSON.stringify({ ts: Date.now(), events: _.get(packet, 'events'), id: "api.telemetry", ver: "1.0" });
                     zlib.gzip(zipData, (error, result) => __awaiter(this, void 0, void 0, function* () {
                         if (error) {
                             throw Error(JSON.stringify(error));
                         }
                         else {
                             let dbData = {
-                                pathToApi: '/api/data/v1/telemetry',
+                                pathToApi: `${process.env.APP_BASE_URL}/api/data/v1/telemetry`,
                                 requestHeaderObj: headers,
                                 requestBody: result,
                                 subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry,
                                 size: result.length,
-                                count: telemetryPacket.length
+                                count: packet.length,
+                                bearerToken: true
                             };
                             // Inserting to Queue DB
-                            yield this.networkQueue.add(dbData, _.get(telemetryPacket, '_id'))
+                            yield this.networkQueue.add(dbData, _.get(packet, '_id'))
                                 .then((data) => __awaiter(this, void 0, void 0, function* () {
                                 logger_1.logger.info('Adding to Queue db successful from telemetry packet db');
-                                let resp = yield this.databaseSdk.updateDoc("telemetry_packets", telemetryPacket._id, { syncStatus: true, _deleted: true });
-                                this.migrationInProgress = false;
-                                this.migrateTelemetryPacketToQueueDB();
+                                let resp = yield this.databaseSdk.updateDoc("telemetry_packets", packet._id, { syncStatus: true, _deleted: true });
                                 return resp;
                             }))
                                 .catch(err => {
-                                this.migrationInProgress = false;
-                                this.migrateTelemetryPacketToQueueDB();
                                 logger_1.logger.error("Adding to queue Db failed while migrating from telemetry packet db", err);
                             });
                         }
@@ -173,8 +138,6 @@ let TelemetryManager = class TelemetryManager {
             }
             catch (error) {
                 logger_1.logger.error(`Got error while migrating telemetry packet db data to queue db ${error}`);
-                this.migrationInProgress = false;
-                this.migrateTelemetryPacketToQueueDB();
                 this.networkQueue.logTelemetryError(error);
             }
         });
@@ -201,17 +164,10 @@ let TelemetryManager = class TelemetryManager {
                     }
                     return omittedDoc;
                 });
-                // create request data for add method in network queue
-                let apiKey = yield this.getApiKey();
-                if (!apiKey) {
-                    logger_1.logger.error("Api key not available");
-                    return;
-                }
                 let id = uuid.v4();
                 let headers = {
                     "Content-Type": "application/json",
                     "Content-Encoding": "gzip",
-                    Authorization: `Bearer ${apiKey}`,
                     did: did,
                     msgid: id
                 };
@@ -224,12 +180,13 @@ let TelemetryManager = class TelemetryManager {
                         }
                         else {
                             let dbData = {
-                                pathToApi: '/api/data/v1/telemetry',
+                                pathToApi: `${process.env.APP_BASE_URL}/api/data/v1/telemetry`,
                                 requestHeaderObj: headers,
                                 requestBody: result,
                                 subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry,
                                 size: result.length,
-                                count: packet.length
+                                count: packet.length,
+                                bearerToken: true
                             };
                             yield this.networkQueue.add(dbData, id);
                             logger_1.logger.info(`Added telemetry packets to queue DB of size ${packets.length}`);
@@ -246,7 +203,7 @@ let TelemetryManager = class TelemetryManager {
             }
         });
     }
-    createTelemetryArchive() {
+    archive() {
         return __awaiter(this, void 0, void 0, function* () {
             EventManager_1.EventManager.subscribe("NETWORK_TELEMETRY:processed", (data) => __awaiter(this, void 0, void 0, function* () {
                 let { requestBody, _id, size } = data;
@@ -295,52 +252,6 @@ let TelemetryManager = class TelemetryManager {
                     }
                 });
             }));
-        });
-    }
-    getAPIToken(deviceId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            //const apiKey =;
-            //let token = Buffer.from(apiKey, 'base64').toString('ascii');
-            // if (process.env.APP_BASE_URL_TOKEN && deviceId) {
-            //   let headers = {
-            //     "Content-Type": "application/json",
-            //     Authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`
-            //   };
-            //   let body = {
-            //     id: "api.device.register",
-            //     ver: "1.0",
-            //     ts: Date.now(),
-            //     request: {
-            //       key: deviceId
-            //     }
-            //   };
-            //   let response = await axios
-            //     .post(
-            //       process.env.APP_BASE_URL +
-            //         "/api/api-manager/v1/consumer/mobile_device/credential/register",
-            //       body,
-            //       { headers: headers }
-            //     )
-            //     .catch(err => {
-            //       logger.error(
-            //         `Error while registering the device status ${
-            //           err.response.status
-            //         } data ${err.response.data}`
-            //       );
-            //       throw Error(err);
-            //     });
-            //   let key = _.get(response, "data.result.key");
-            //   let secret = _.get(response, "data.result.secret");
-            //   let apiKey = jwt.sign({ iss: key }, secret, { algorithm: "HS256" });
-            //   await this.databaseSdk
-            //     .upsertDoc("settings", "device_token", { api_key: apiKey })
-            //     .catch(err => {
-            //       logger.error("while inserting the api key to the  database", err);
-            //     });
-            return Promise.resolve(process.env.APP_BASE_URL_TOKEN);
-            // } else {
-            //   throw Error(`token or deviceID missing to register device ${deviceId}`);
-            // }
         });
     }
 };

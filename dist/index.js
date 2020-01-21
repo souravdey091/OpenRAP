@@ -59,10 +59,11 @@ class App {
             yield DownloadManager_1.reconciliation();
             let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
             this.telemetryManager.registerDevice();
+            // TODO - Need to remove migrateTelemetryPacketToQueueDB in next release - 2.9.0
             setTimeout(() => { this.telemetryManager.migrateTelemetryPacketToQueueDB(); }, interval);
-            setTimeout(() => { this.telemetryManager.createTelemetryArchive(); }, interval);
-            setInterval(() => this.telemetryManager.batchJob(), interval);
-            setInterval(() => this.networkQueue.read(), interval);
+            setTimeout(() => { this.telemetryManager.archive(); }, interval);
+            setInterval(() => this.telemetryManager.batchJob(), 120000);
+            setInterval(() => this.networkQueue.start(), 60000);
             // initialize the network sdk to emit the internet available or disconnected events
             new NetworkSDK_1.default();
         });
