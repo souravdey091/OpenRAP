@@ -2,25 +2,24 @@
  * @author Harish Kumar Gangula <harishg@ilimi.in>
  */
 
-import { DataBaseSDK } from "./../sdks/DataBaseSDK";
+import { DataBaseSDK } from "../sdks/DataBaseSDK";
 import { Inject, Singleton } from "typescript-ioc";
 import * as _ from "lodash";
-import SystemSDK from "./../sdks/SystemSDK";
+import SystemSDK from "../sdks/SystemSDK";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import * as zlib from "zlib";
 import * as path from "path";
 import * as fs from "fs";
-import FileSDK from "./../sdks/FileSDK";
+import FileSDK from "../sdks/FileSDK";
 import uuid = require("uuid");
-import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
+import { TelemetryInstance } from "../services/telemetry/telemetryInstance";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
-import SettingSDK from "./../sdks/SettingSDK";
-import { NetworkQueue, NETWORK_SUBTYPE } from './../services/queue/networkQueue';
-import { QUEUE_TYPE } from './../services/queue/queue';
+import SettingSDK from "../sdks/SettingSDK";
+import { NetworkQueue, NETWORK_SUBTYPE } from '../services/queue/networkQueue';
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 
 @Singleton
-export class TelemetrySyncManager {
+export class TelemetryManager {
   // This is to check whether migrating telemetry packets DB data to Queue DB is in progress or not
   migrationInProgress: boolean = false;
   @Inject
@@ -137,7 +136,8 @@ export class TelemetrySyncManager {
               requestHeaderObj: headers,
               requestBody: result,
               subType: NETWORK_SUBTYPE.Telemetry,
-              size: result.length
+              size: result.length,
+              count: telemetryPacket.length
             };
             // Inserting to Queue DB
             await this.networkQueue.add(dbData, _.get(telemetryPacket, '_id'))
@@ -216,7 +216,8 @@ export class TelemetrySyncManager {
               requestHeaderObj: headers,
               requestBody: result,
               subType: NETWORK_SUBTYPE.Telemetry,
-              size: result.length
+              size: result.length,
+              count: packet.length
             };
             await this.networkQueue.add(dbData, id);
             logger.info(`Added telemetry packets to queue DB of size ${packets.length}`);

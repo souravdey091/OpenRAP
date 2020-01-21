@@ -1,7 +1,7 @@
 /**
  * @author Harish Kumar Gangula <harishg@ilimi.in>
  */
-export declare class TelemetrySyncManager {
+export declare class TelemetryManager {
     migrationInProgress: boolean;
     private networkQueue;
     private databaseSdk;

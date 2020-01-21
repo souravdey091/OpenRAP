@@ -20,6 +20,7 @@ export interface INetworkQueue extends IQueue {
     requestBody: any;
     subType: string;
     size?: number;
+    count?: number;
 }
 
 export interface IQuery {

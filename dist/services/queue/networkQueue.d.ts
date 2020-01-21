@@ -15,8 +15,8 @@ export declare class NetworkQueue extends Queue {
     private queueInProgress;
     add(doc: IAdd, docId?: string): Promise<any>;
     read(): Promise<void>;
-    execute(): void;
-    makeHTTPCall(headers: object, body: object, pathToApi: string): Promise<any>;
+    private execute;
+    private makeHTTPCall;
     logTelemetryError(error: any, errType?: string): void;
 }
 export interface IAdd {
@@ -24,4 +24,5 @@ export interface IAdd {
     pathToApi: string;
     requestHeaderObj: object;
     requestBody: any;
+    count?: number;
 }

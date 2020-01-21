@@ -30,22 +30,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const DataBaseSDK_1 = require("./../sdks/DataBaseSDK");
+const DataBaseSDK_1 = require("../sdks/DataBaseSDK");
 const typescript_ioc_1 = require("typescript-ioc");
 const _ = __importStar(require("lodash"));
-const SystemSDK_1 = __importDefault(require("./../sdks/SystemSDK"));
+const SystemSDK_1 = __importDefault(require("../sdks/SystemSDK"));
 const logger_1 = require("@project-sunbird/ext-framework-server/logger");
 const zlib = __importStar(require("zlib"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
-const FileSDK_1 = __importDefault(require("./../sdks/FileSDK"));
+const FileSDK_1 = __importDefault(require("../sdks/FileSDK"));
 const uuid = require("uuid");
-const telemetryInstance_1 = require("./../services/telemetry/telemetryInstance");
+const telemetryInstance_1 = require("../services/telemetry/telemetryInstance");
 const services_1 = require("@project-sunbird/ext-framework-server/services");
-const SettingSDK_1 = __importDefault(require("./../sdks/SettingSDK"));
-const networkQueue_1 = require("./../services/queue/networkQueue");
+const SettingSDK_1 = __importDefault(require("../sdks/SettingSDK"));
+const networkQueue_1 = require("../services/queue/networkQueue");
 const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
-let TelemetrySyncManager = class TelemetrySyncManager {
+let TelemetryManager = class TelemetryManager {
     constructor() {
         // This is to check whether migrating telemetry packets DB data to Queue DB is in progress or not
         this.migrationInProgress = false;
@@ -150,7 +150,8 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                                 requestHeaderObj: headers,
                                 requestBody: result,
                                 subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry,
-                                size: result.length
+                                size: result.length,
+                                count: telemetryPacket.length
                             };
                             // Inserting to Queue DB
                             yield this.networkQueue.add(dbData, _.get(telemetryPacket, '_id'))
@@ -227,7 +228,8 @@ let TelemetrySyncManager = class TelemetrySyncManager {
                                 requestHeaderObj: headers,
                                 requestBody: result,
                                 subType: networkQueue_1.NETWORK_SUBTYPE.Telemetry,
-                                size: result.length
+                                size: result.length,
+                                count: packet.length
                             };
                             yield this.networkQueue.add(dbData, id);
                             logger_1.logger.info(`Added telemetry packets to queue DB of size ${packets.length}`);
@@ -345,20 +347,20 @@ let TelemetrySyncManager = class TelemetrySyncManager {
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", networkQueue_1.NetworkQueue)
-], TelemetrySyncManager.prototype, "networkQueue", void 0);
+], TelemetryManager.prototype, "networkQueue", void 0);
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", DataBaseSDK_1.DataBaseSDK)
-], TelemetrySyncManager.prototype, "databaseSdk", void 0);
+], TelemetryManager.prototype, "databaseSdk", void 0);
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", SystemSDK_1.default)
-], TelemetrySyncManager.prototype, "systemSDK", void 0);
+], TelemetryManager.prototype, "systemSDK", void 0);
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", telemetryInstance_1.TelemetryInstance)
-], TelemetrySyncManager.prototype, "telemetryInstance", void 0);
-TelemetrySyncManager = __decorate([
+], TelemetryManager.prototype, "telemetryInstance", void 0);
+TelemetryManager = __decorate([
     typescript_ioc_1.Singleton
-], TelemetrySyncManager);
-exports.TelemetrySyncManager = TelemetrySyncManager;
+], TelemetryManager);
+exports.TelemetryManager = TelemetryManager;

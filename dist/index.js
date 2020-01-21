@@ -33,7 +33,7 @@ const path = __importStar(require("path"));
 const _ = __importStar(require("lodash"));
 const DownloadManager_1 = require("./managers/DownloadManager/DownloadManager");
 const NetworkSDK_1 = __importDefault(require("./sdks/NetworkSDK"));
-const TelemetrySyncManager_1 = require("./managers/TelemetrySyncManager");
+const TelemetryManager_1 = require("./managers/TelemetryManager");
 const networkQueue_1 = require("./services/queue/networkQueue");
 const typescript_ioc_1 = require("typescript-ioc");
 class App {
@@ -58,10 +58,10 @@ class App {
             }
             yield DownloadManager_1.reconciliation();
             let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
-            this.telemetrySyncManager.registerDevice();
-            setTimeout(() => { this.telemetrySyncManager.migrateTelemetryPacketToQueueDB(); }, interval);
-            setTimeout(() => { this.telemetrySyncManager.createTelemetryArchive(); }, interval);
-            setInterval(() => this.telemetrySyncManager.batchJob(), interval);
+            this.telemetryManager.registerDevice();
+            setTimeout(() => { this.telemetryManager.migrateTelemetryPacketToQueueDB(); }, interval);
+            setTimeout(() => { this.telemetryManager.createTelemetryArchive(); }, interval);
+            setInterval(() => this.telemetryManager.batchJob(), interval);
             setInterval(() => this.networkQueue.read(), interval);
             // initialize the network sdk to emit the internet available or disconnected events
             new NetworkSDK_1.default();
@@ -75,6 +75,6 @@ __decorate([
 ], App, "networkQueue", void 0);
 __decorate([
     typescript_ioc_1.Inject,
-    __metadata("design:type", TelemetrySyncManager_1.TelemetrySyncManager)
-], App, "telemetrySyncManager", void 0);
+    __metadata("design:type", TelemetryManager_1.TelemetryManager)
+], App, "telemetryManager", void 0);
 exports.App = App;

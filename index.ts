@@ -4,13 +4,13 @@ import * as path from "path";
 import * as _ from "lodash";
 import { reconciliation as DownloadManagerReconciliation } from "./managers/DownloadManager/DownloadManager";
 import NetworkSDK from "./sdks/NetworkSDK";
-import { TelemetrySyncManager } from "./managers/TelemetrySyncManager";
+import { TelemetryManager } from "./managers/TelemetryManager";
 import { NetworkQueue } from './services/queue/networkQueue';
 import { Inject } from "typescript-ioc";
 
 export class App {
   @Inject static networkQueue: NetworkQueue;
-  @Inject static telemetrySyncManager: TelemetrySyncManager;
+  @Inject static telemetryManager: TelemetryManager;
   public static async  bootstrap(){
     // initialize the telemetry instance, to get it in other modules
   
@@ -35,10 +35,10 @@ export class App {
     }
     await DownloadManagerReconciliation();
     let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
-    this.telemetrySyncManager.registerDevice();
-    setTimeout(() => { this.telemetrySyncManager.migrateTelemetryPacketToQueueDB() }, interval);
-    setTimeout(() => { this.telemetrySyncManager.createTelemetryArchive() }, interval);
-    setInterval(() => this.telemetrySyncManager.batchJob(), interval);
+    this.telemetryManager.registerDevice();
+    setTimeout(() => { this.telemetryManager.migrateTelemetryPacketToQueueDB() }, interval);
+    setTimeout(() => { this.telemetryManager.createTelemetryArchive() }, interval);
+    setInterval(() => this.telemetryManager.batchJob(), interval);
     setInterval(() => this.networkQueue.read(), interval);
     // initialize the network sdk to emit the internet available or disconnected events
     new NetworkSDK();

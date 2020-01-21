@@ -78,7 +78,7 @@ export class NetworkQueue extends Queue {
         }
     }
 
-    execute() {
+    private execute() {
         while (this.running < this.concurrency && this.queueList.length) {
             logger.info(`While loop in progress - ${this.running}`);
             const currentQueue = this.queueList.shift();
@@ -121,7 +121,7 @@ export class NetworkQueue extends Queue {
         }
     }
 
-    async makeHTTPCall(headers: object, body: object, pathToApi: string) {
+    private async makeHTTPCall(headers: object, body: object, pathToApi: string) {
         return await HTTPService.post(
             process.env.APP_BASE_URL + pathToApi,
             body,
@@ -157,4 +157,5 @@ export interface IAdd {
     pathToApi: string;
     requestHeaderObj: object;
     requestBody: any;
+    count?: number;
 }
