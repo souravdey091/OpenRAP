@@ -205,7 +205,7 @@ let TelemetryManager = class TelemetryManager {
     }
     archive() {
         return __awaiter(this, void 0, void 0, function* () {
-            EventManager_1.EventManager.subscribe("NETWORK_TELEMETRY:processed", (data) => __awaiter(this, void 0, void 0, function* () {
+            EventManager_1.EventManager.subscribe("telemetry-synced", (data) => __awaiter(this, void 0, void 0, function* () {
                 let { requestBody, _id, size } = data;
                 logger_1.logger.info(`Archiving telemetry started with id = ${_id}`);
                 let bufferData = Buffer.from(requestBody.data);

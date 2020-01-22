@@ -186,7 +186,7 @@ export class TelemetryManager {
   }
 
   async archive() {
-    EventManager.subscribe("NETWORK_TELEMETRY:processed", async (data) => {
+    EventManager.subscribe("telemetry-synced", async (data) => {
       let { requestBody, _id, size } = data;
       logger.info(`Archiving telemetry started with id = ${_id}`);
       let bufferData = Buffer.from(requestBody.data);

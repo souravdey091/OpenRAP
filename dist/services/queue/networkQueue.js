@@ -121,7 +121,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     yield this.deQueue(currentQueue._id).catch(error => {
                         logger_1.logger.info(`Received error deleting id = ${currentQueue._id}`);
                     });
-                    EventManager_1.EventManager.emit(`${currentQueue.type}_${currentQueue.subType}:processed`, currentQueue);
+                    EventManager_1.EventManager.emit(`${_.toLower(currentQueue.subType)}-synced`, currentQueue);
                     this.running--;
                 }
                 else {
