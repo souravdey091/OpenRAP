@@ -11,6 +11,8 @@ export declare class DataBaseSDK {
     updateDoc(database: string, Id: string, document: any): Promise<any>;
     bulkDocs(database: string, documents: Object[]): any;
     find(database: string, searchObj: Object): any;
+    list(database: string, options?: Object): any;
+    delete(database: string, Id: string): Promise<any>;
     handleError(error: PouchDBErrorRes): DBError;
 }
 export interface PouchDBErrorRes {

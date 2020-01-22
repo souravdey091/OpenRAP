@@ -3,7 +3,7 @@
  */
 
 import { Singleton, Inject } from "typescript-ioc";
-import { bootstrap } from "./../index";
+import { App } from "./../index";
 import { PluginConfig } from "./../interfaces";
 import { register } from "./../sdks/GlobalSDK";
 import SettingSDK from "./../sdks/SettingSDK";
@@ -17,12 +17,11 @@ import { TicketSDK } from "./../sdks/TicketSDK";
 
 @Singleton
 class ContainerAPI {
-
   @Inject userSDK : UserSDK;
   @Inject ticketSDK : TicketSDK;
 
   public async bootstrap() {
-    await bootstrap();
+    await App.bootstrap();
   }
 
   public async register(pluginId: string, pluginInfo: PluginConfig) {

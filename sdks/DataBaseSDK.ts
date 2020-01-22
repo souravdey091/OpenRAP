@@ -79,6 +79,15 @@ export class DataBaseSDK {
     find(database: string, searchObj: Object) {
         return this.getDBInstance(database).find(searchObj);
     }
+
+    list(database: string, options: Object = {}) {
+        return this.getDBInstance(database).allDocs(options);
+    }
+
+    async delete(database: string, Id: string) {
+        let doc = await this.getDBInstance(database).get(Id);
+        return this.getDBInstance(database).remove(doc);
+    }
     
     handleError(error: PouchDBErrorRes): DBError{
         if(error.status === 404 && error.name === 'not_found'){

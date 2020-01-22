@@ -37,7 +37,7 @@ const TicketSDK_1 = require("./../sdks/TicketSDK");
 let ContainerAPI = class ContainerAPI {
     bootstrap() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield index_1.bootstrap();
+            yield index_1.App.bootstrap();
         });
     }
     register(pluginId, pluginInfo) {

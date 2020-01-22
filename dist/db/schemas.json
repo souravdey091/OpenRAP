@@ -7,17 +7,16 @@
             "name": "settings"
         },
         {
-            "name": "telemetry_packets",
+            "name": "queue",
             "indexes": [
                 {
                     "index": {
                         "fields": [
-                            "pluginId",
-                            "status",
-                            "updatedOn"
+                            "type",
+                            "subType"
                         ]
                     },
-                    "name": "filterIndex"
+                    "name": "queueIndex"
                 }
             ]
         },
