@@ -34,6 +34,7 @@ const SystemSDK_1 = __importDefault(require("./../sdks/SystemSDK"));
 const TelemetrySDK_1 = __importDefault(require("./../sdks/TelemetrySDK"));
 const UserSDK_1 = require("./../sdks/UserSDK");
 const TicketSDK_1 = require("./../sdks/TicketSDK");
+const queue_1 = require("./../services/queue/");
 let ContainerAPI = class ContainerAPI {
     bootstrap() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -77,6 +78,27 @@ let ContainerAPI = class ContainerAPI {
     getTicketSdkInstance() {
         return this.ticketSDK;
     }
+    getSystemQueueInstance(pluginId) {
+        const register = (type, taskExecuter) => {
+            this.systemQueue.register(pluginId, type, taskExecuter);
+        };
+        const add = (tasks) => {
+            this.systemQueue.add(pluginId, tasks);
+        };
+        const query = (query, sort) => {
+            this.systemQueue.query(pluginId, query, sort);
+        };
+        const pause = (_id) => {
+            this.systemQueue.pause(pluginId, _id);
+        };
+        const resume = (_id) => {
+            this.systemQueue.resume(pluginId, _id);
+        };
+        const cancel = (_id) => {
+            this.systemQueue.cancel(pluginId, _id);
+        };
+        return { register, add, query, pause, resume, cancel };
+    }
 };
 __decorate([
     typescript_ioc_1.Inject,
@@ -86,6 +108,10 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", TicketSDK_1.TicketSDK)
 ], ContainerAPI.prototype, "ticketSDK", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", queue_1.SystemQueue)
+], ContainerAPI.prototype, "systemQueue", void 0);
 ContainerAPI = __decorate([
     typescript_ioc_1.Singleton
 ], ContainerAPI);

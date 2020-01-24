@@ -14,11 +14,14 @@ import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
+import { SystemQueue, TaskExecuter, QueueReq, SystemQueueQuery } from './../services/queue/';
+export { ITaskExecuter, SystemQueueQuery, ISystemQueue } from "./../services/queue";
 
 @Singleton
 class ContainerAPI {
   @Inject userSDK : UserSDK;
   @Inject ticketSDK : TicketSDK;
+  @Inject systemQueue: SystemQueue
 
   public async bootstrap() {
     await App.bootstrap();
@@ -67,6 +70,37 @@ class ContainerAPI {
   public getTicketSdkInstance(){
     return this.ticketSDK;
   }
+
+  public getSystemQueueInstance(pluginId: string): ISystemQueueInstance{
+    const register = (type: string, taskExecuter: TaskExecuter) => {
+      this.systemQueue.register(pluginId, type, taskExecuter);
+    }
+    const add = (tasks: QueueReq[] | QueueReq) => {
+      this.systemQueue.add(pluginId, tasks);
+    }
+    const query = (query: SystemQueueQuery, sort: any) => {
+      this.systemQueue.query(pluginId, query, sort);
+    }
+    const pause = (_id: string) => {
+      this.systemQueue.pause(pluginId, _id);
+    }
+    const resume = (_id: string) => {
+      this.systemQueue.resume(pluginId, _id);
+    }
+    const cancel = (_id: string) => {
+      this.systemQueue.cancel(pluginId, _id);
+    }
+    return { register, add, query, pause, resume, cancel }
+  }
 }
 
 export const containerAPI = new ContainerAPI();
+
+export interface ISystemQueueInstance {
+  register(type: string, taskExecuter: TaskExecuter); 
+  add(tasks: QueueReq[] | QueueReq);
+  query(query: SystemQueueQuery, sort: any);
+  pause(_id: string); 
+  resume(_id: string);
+  cancel(_id: string);
+}

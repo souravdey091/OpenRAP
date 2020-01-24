@@ -7,11 +7,17 @@ export interface IQueue {
     data?: any;
 }
 export interface ISystemQueue extends IQueue {
-    size: number;
-    artifactUrl?: string;
-    fileName?: string;
-    status: string;
+    name?: string;
+    _rev?: string;
     progress: number;
+    group: string;
+    plugin: string;
+    status: string;
+    failedCode?: string;
+    isActive: boolean;
+    failedReason?: string;
+    indexField: string;
+    runTime: number;
 }
 export interface INetworkQueue extends IQueue {
     pathToApi: string;
@@ -24,8 +30,9 @@ export interface INetworkQueue extends IQueue {
 }
 export interface IQuery {
     selector: {
-        type: string;
+        type?: string;
         subType?: string;
+        status?: string;
     };
     limit?: number;
 }
