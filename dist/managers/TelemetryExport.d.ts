@@ -7,8 +7,16 @@ export declare class TelemetryExport {
     constructor(destFolder: any);
     getStream(id: any): Readable;
     private archiveAppend;
-    private getRootManifestBuffer;
-    private getTelemetryManifestBuffer;
+    private getManifestBuffer;
     private streamZip;
     export(cb: any): Promise<void>;
+}
+export interface IItems {
+    objectType: string;
+    file: string;
+    contentEncoding: string;
+    size: number;
+    explodedSize: number;
+    mid: string;
+    eventsCount: number;
 }

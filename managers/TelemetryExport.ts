@@ -55,53 +55,19 @@ export class TelemetryExport {
         }
     }
 
-    private getRootManifestBuffer() {
+    private getManifestBuffer(count: number, items: IItems[]) {
         const manifestData = {
             id: "sunbird.data.archive",
-            ver: "1.0",
+            ver: "1.0", // Need to confirm
             ts: new Date(),
-            source: {
-                id: 'deviceid', // add device id
-                type: 'desktop'
+            producer: {
+                id: 'did', //Device id - need to confirm
+                pid: '',// Need to confirm,
+                ver: '',// Need to confirm
             },
             archive: {
-                count: '', //add count of items
-                items: [
-                    {
-                        objectType: 'telemetry',
-                        file: '', // relative path to file name
-                        contentEncoding: 'gzip',
-                        size: 123, // size in bytes
-                        compressionRatio: 123 // compression factor of size
-                    }
-                ]
-            },
-        };
-        return Buffer.from(JSON.stringify(manifestData));
-    }
-
-    private getTelemetryManifestBuffer() {
-        const manifestData = {
-            id: "sunbird.data.archive.telemetry",
-            ver: "1.0",
-            ts: new Date(),
-            source: {
-                id: 'deviceid', // add device id
-                type: 'desktop'
-            },
-            archive: {
-                count: '', //add count of items
-                items: [
-                    {
-                        objectType: 'telemetry',
-                        file: '', // relative path to file name
-                        contentEncoding: 'gzip',
-                        size: 123, // size in bytes
-                        compressionRatio: 123, // compression factor of size
-                        mid: '', // messageID of the batch
-                        eventsCount: ''
-                    }
-                ]
+                count: count,
+                items: items
             },
         };
         return Buffer.from(JSON.stringify(manifestData));
@@ -116,7 +82,7 @@ export class TelemetryExport {
 
             output.on('finish', () => {
                 console.log('====================finish')
-              });
+            });
 
             output.on("error", () => {
                 console.log('====================error')
@@ -125,10 +91,10 @@ export class TelemetryExport {
             this.telemetryArchive.on("end", () => {
                 console.log('done+++++++++++++++++++++++++++++++++++++')
             });
-            this.telemetryArchive.on("error", ()=> {
+            this.telemetryArchive.on("error", () => {
                 console.log('error+++++++++++++++++++++++++++++++++++++')
             });
-            this.telemetryArchive.on("finish", ()=> {
+            this.telemetryArchive.on("finish", () => {
                 console.log('finish+++++++++++++++++++++++++++++++++++++')
             });
             this.telemetryArchive.finalize();
@@ -144,20 +110,31 @@ export class TelemetryExport {
                 selector: {
                     subType: 'TELEMETRY',
                 },
-                fields: ['_id', 'size']
+                fields: ['_id', 'size', 'requestHeaderObj', 'count']
             });
 
             if (!dbData.docs.length) {
-                throw Error('No telemtry data to export');
+                throw Error('No telemetry data to export');
             }
 
             this.telemetryArchive = fileSDK.archiver();
-            this.archiveAppend("buffer", this.getRootManifestBuffer(), "manifest.json");
-            this.archiveAppend("createDir", null, 'telemetry');
-            this.archiveAppend("buffer", this.getTelemetryManifestBuffer(), 'telemetry/manifest.json');
+
+            let items: IItems[] = [];
             _.forEach(dbData.docs, (data) => {
-                this.archiveAppend("stream", this.getStream(data._id), `telemetry/${data._id}.gz`);
+                items.push({
+                    objectType: 'telemetry',
+                    file: `${data._id}.gz`, // relative path to file name - need to confirm
+                    contentEncoding: 'gzip',
+                    size: data.size,
+                    explodedSize: 1,  // need to confirm
+                    mid: _.get(data, 'requestHeaderObj.msgid'),
+                    eventsCount: data.count
+                });
+                this.archiveAppend("stream", this.getStream(data._id), `${data._id}.gz`);
             })
+
+            this.archiveAppend("buffer", this.getManifestBuffer(dbData.docs.length, items), "manifest.json");
+
             const data = await this.streamZip();
             console.log('====================completed', data)
             this.cb(null, data);
@@ -166,3 +143,13 @@ export class TelemetryExport {
         }
     }
 }
+
+export interface IItems {
+    objectType: string;
+    file: string;
+    contentEncoding: string;
+    size: number;
+    explodedSize: number;
+    mid: string;
+    eventsCount: number;
+  }

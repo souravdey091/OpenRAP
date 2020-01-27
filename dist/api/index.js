@@ -34,6 +34,7 @@ const SystemSDK_1 = __importDefault(require("./../sdks/SystemSDK"));
 const TelemetrySDK_1 = __importDefault(require("./../sdks/TelemetrySDK"));
 const UserSDK_1 = require("./../sdks/UserSDK");
 const TicketSDK_1 = require("./../sdks/TicketSDK");
+const TelemetryExport_1 = require("./../managers/TelemetryExport");
 let ContainerAPI = class ContainerAPI {
     bootstrap() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -76,6 +77,9 @@ let ContainerAPI = class ContainerAPI {
     }
     getTicketSdkInstance() {
         return this.ticketSDK;
+    }
+    getTelemetryExportInstance(destPath) {
+        return new TelemetryExport_1.TelemetryExport(destPath);
     }
 };
 __decorate([
