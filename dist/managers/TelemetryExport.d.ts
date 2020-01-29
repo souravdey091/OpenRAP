@@ -1,15 +1,16 @@
-import { Readable } from 'stream';
 export declare class TelemetryExport {
-    private destFolder;
+    private destFolder?;
     private databaseSdk;
+    private settingSDK;
     private telemetryArchive;
     private cb;
-    constructor(destFolder: any);
-    getStream(id: any): Readable;
+    constructor(destFolder?: string);
+    export(cb: any): Promise<void>;
+    private getStream;
     private archiveAppend;
     private getManifestBuffer;
     private streamZip;
-    export(cb: any): Promise<void>;
+    info(cb: any): Promise<void>;
 }
 export interface IItems {
     objectType: string;

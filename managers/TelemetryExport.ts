@@ -5,18 +5,60 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 import { DataBaseSDK } from "../sdks/DataBaseSDK";
 import { Inject, Singleton } from "typescript-ioc";
 import FileSDK from "../sdks/FileSDK";
-import * as uuid from "uuid";
 import { Readable } from 'stream';
+import SettingSDK from '../sdks/SettingSDK'
 
 @Singleton
 export class TelemetryExport {
     @Inject private databaseSdk: DataBaseSDK;
+    @Inject private settingSDK: SettingSDK;
     private telemetryArchive;
     private cb;
-    constructor(private destFolder) { }
+    constructor(private destFolder?: string) { }
 
-    getStream(id) {
-        let getData = (id) => {
+    public async export(cb) {
+        this.cb = cb;
+        try {
+            if (!this.destFolder) {
+                throw Error('Destination folder not provided for export');
+            }
+            let fileSDK = new FileSDK("");
+            let dbData = await this.databaseSdk.find("queue", {
+                selector: {
+                    subType: 'TELEMETRY',
+                },
+                fields: ['_id', 'size', 'requestHeaderObj', 'count']
+            });
+
+            if (!dbData.docs.length) {
+                throw Error('No telemetry data to export');
+            }
+
+            this.telemetryArchive = fileSDK.archiver();
+            let items: IItems[] = [];
+            _.forEach(dbData.docs, (data) => {
+                items.push({
+                    objectType: 'telemetry',
+                    file: `${data._id}.gz`,
+                    contentEncoding: 'gzip',
+                    size: data.size,
+                    explodedSize: data.size,
+                    mid: _.get(data, 'requestHeaderObj.msgid'),
+                    eventsCount: data.count
+                });
+                this.archiveAppend("stream", this.getStream(data._id), `${data._id}.gz`);
+            })
+
+            this.archiveAppend("buffer", this.getManifestBuffer(dbData.docs.length, items), "manifest.json");
+            await this.streamZip();
+            this.cb(null, 'success');
+        } catch (error) {
+            this.cb(error, null);
+        }
+    }
+
+    private getStream(id: string) {
+        let getData = (id: string) => {
             return new Promise((resolve, reject) => {
                 this.databaseSdk.getDoc('queue', id).then((dbData) => {
                     resolve(Buffer.from(dbData.requestBody.data));
@@ -31,16 +73,15 @@ export class TelemetryExport {
                     this.push(data)
                     this.push(null)
                 }).catch((err) => {
-                    this.destroy(err)
+                    this.push(err)
+                    this.push(null)
                 })
-
             }
         });
         return inStream;
     }
 
     private archiveAppend(type, src, dest) {
-        logger.info(`Adding ${src} of type ${type} to dest folder ${dest}`);
         if (type === "path") {
             this.telemetryArchive.append(fs.createReadStream(src), { name: dest });
         } else if (type === "directory") {
@@ -58,12 +99,12 @@ export class TelemetryExport {
     private getManifestBuffer(count: number, items: IItems[]) {
         const manifestData = {
             id: "sunbird.data.archive",
-            ver: "1.0", // Need to confirm
+            ver: process.env.APP_VERSION,
             ts: new Date(),
             producer: {
-                id: 'did', //Device id - need to confirm
-                pid: '',// Need to confirm,
-                ver: '',// Need to confirm
+                id: process.env.APP_ID,
+                ver: process.env.APP_VERSION,
+                pid: "desktop.app"
             },
             archive: {
                 count: count,
@@ -75,69 +116,41 @@ export class TelemetryExport {
 
     private async streamZip() {
         return new Promise((resolve, reject) => {
-            const ecarFilePath = path.join(this.destFolder, 'telemetry.zip');
-            const output = fs.createWriteStream(ecarFilePath);
-            output.on("close", () => resolve({
-            }));
-
-            output.on('finish', () => {
-                console.log('====================finish')
-            });
-
-            output.on("error", () => {
-                console.log('====================error')
-
-            });
+            const filePath = path.join(this.destFolder, 'telemetry.zip');
+            const output = fs.createWriteStream(filePath);
+            output.on("close", () => resolve({}));
             this.telemetryArchive.on("end", () => {
-                console.log('done+++++++++++++++++++++++++++++++++++++')
+                logger.log("Data has been zipped");
+                this.settingSDK.put('telemetryExport', { lastExportedDate: Date.now() });
             });
-            this.telemetryArchive.on("error", () => {
-                console.log('error+++++++++++++++++++++++++++++++++++++')
-            });
-            this.telemetryArchive.on("finish", () => {
-                console.log('finish+++++++++++++++++++++++++++++++++++++')
-            });
+            this.telemetryArchive.on("error", reject);
             this.telemetryArchive.finalize();
             this.telemetryArchive.pipe(output);
         });
     }
 
-    public async export(cb) {
+    public async info(cb) {
         this.cb = cb;
         try {
-            let fileSDK = new FileSDK("");
             let dbData = await this.databaseSdk.find("queue", {
-                selector: {
-                    subType: 'TELEMETRY',
-                },
-                fields: ['_id', 'size', 'requestHeaderObj', 'count']
+                selector: { subType: 'TELEMETRY' },
+                fields: ['size']
             });
 
-            if (!dbData.docs.length) {
-                throw Error('No telemetry data to export');
+            let totalSize: number = 0;
+            if (dbData.docs.length) {
+                _.forEach(dbData.docs, (data) => {
+                    totalSize += data.size;
+                })
             }
 
-            this.telemetryArchive = fileSDK.archiver();
-
-            let items: IItems[] = [];
-            _.forEach(dbData.docs, (data) => {
-                items.push({
-                    objectType: 'telemetry',
-                    file: `${data._id}.gz`, // relative path to file name - need to confirm
-                    contentEncoding: 'gzip',
-                    size: data.size,
-                    explodedSize: 1,  // need to confirm
-                    mid: _.get(data, 'requestHeaderObj.msgid'),
-                    eventsCount: data.count
-                });
-                this.archiveAppend("stream", this.getStream(data._id), `${data._id}.gz`);
-            })
-
-            this.archiveAppend("buffer", this.getManifestBuffer(dbData.docs.length, items), "manifest.json");
-
-            const data = await this.streamZip();
-            console.log('====================completed', data)
-            this.cb(null, data);
+            let exportedDate;
+            try {
+                exportedDate = await this.settingSDK.get('telemetryExport');
+            } catch (error) {
+                exportedDate = { lastExportedDate: 0 };
+            }
+            this.cb(null, { totalSize: totalSize, exportedDate: exportedDate.lastExportedDate });
         } catch (error) {
             this.cb(error, null);
         }
@@ -152,4 +165,4 @@ export interface IItems {
     explodedSize: number;
     mid: string;
     eventsCount: number;
-  }
+}
