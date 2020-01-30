@@ -68,7 +68,7 @@ class ContainerAPI {
   public getTicketSdkInstance(){
     return this.ticketSDK;
   }
-  public getTelemetryExportInstance(destPath: string){
+  public getTelemetryExportInstance(destPath?: string){
     return new TelemetryExport(destPath);
   }
 }

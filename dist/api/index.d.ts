@@ -23,7 +23,7 @@ declare class ContainerAPI {
     getTelemetrySDKInstance(): TelemetrySDK;
     getUserSdkInstance(): UserSDK;
     getTicketSdkInstance(): TicketSDK;
-    getTelemetryExportInstance(destPath: string): TelemetryExport;
+    getTelemetryExportInstance(destPath?: string): TelemetryExport;
 }
 export declare const containerAPI: ContainerAPI;
 export {};
