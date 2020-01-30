@@ -14,6 +14,14 @@ export default class TelemetrySDK {
     return this.telemetryInstance.send(events);
   }
 
+  export(destPath: string, cb) {
+    return this.getExportInstance(destPath).export(cb);
+  }
+
+  info(cb) {
+    return this.getExportInstance().info(cb);
+  }
+
   getExportInstance(destPath?: string) {
     return new TelemetryExport(destPath);
   }
