@@ -101,6 +101,7 @@ export class NetworkQueue extends Queue {
                             logger.info(`Received error deleting id = ${currentQueue._id}`);
                         });
                         EventManager.emit(`${_.toLower(currentQueue.subType)}-synced`, currentQueue);
+                        this.start();
                         this.running--;
                     } else {
                         logger.warn(`Unable to sync network queue with id = ${currentQueue._id}`);
