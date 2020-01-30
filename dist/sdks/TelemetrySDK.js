@@ -20,13 +20,10 @@ class TelemetrySDK {
         return this.telemetryInstance.send(events);
     }
     export(destPath, cb) {
-        return this.getExportInstance(destPath).export(cb);
+        return new TelemetryExport_1.TelemetryExport(destPath).export(cb);
     }
     info(cb) {
-        return this.getExportInstance().info(cb);
-    }
-    getExportInstance(destPath) {
-        return new TelemetryExport_1.TelemetryExport(destPath);
+        return new TelemetryExport_1.TelemetryExport().info(cb);
     }
 }
 __decorate([
