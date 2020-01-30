@@ -3,8 +3,8 @@ import { TelemetryExport } from './../services/telemetry/TelemetryExport';
 import { Inject } from "typescript-ioc";
 
 export default class TelemetrySDK {
-  @Inject
-  private telemetryInstance: TelemetryInstance;
+  @Inject private telemetryInstance: TelemetryInstance;
+  @Inject private telemetryExport: TelemetryExport;
 
   getInstance() {
     return this.telemetryInstance;
@@ -15,10 +15,10 @@ export default class TelemetrySDK {
   }
 
   export(destPath: string, cb) {
-    return new TelemetryExport(destPath).export(cb);
+    return this.telemetryExport.export(destPath, cb);
   }
 
   info(cb) {
-    return new TelemetryExport().info(cb);
+    return this.telemetryExport.info(cb)
   }
 }

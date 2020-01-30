@@ -14,9 +14,10 @@ export class TelemetryExport {
     @Inject private settingSDK: SettingSDK;
     private telemetryArchive;
     private cb;
-    constructor(private destFolder?: string) { }
+    private destFolder: string;
 
-    public async export(cb) {
+    public async export(destFolder: string, cb) {
+        this.destFolder = destFolder;
         this.cb = cb;
         try {
             if (!this.destFolder) {

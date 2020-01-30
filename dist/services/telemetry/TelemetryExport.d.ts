@@ -1,11 +1,10 @@
 export declare class TelemetryExport {
-    private destFolder?;
     private databaseSdk;
     private settingSDK;
     private telemetryArchive;
     private cb;
-    constructor(destFolder?: string);
-    export(cb: any): Promise<void>;
+    private destFolder;
+    export(destFolder: string, cb: any): Promise<void>;
     private getStream;
     private archiveAppend;
     private getManifestBuffer;

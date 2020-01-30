@@ -37,11 +37,9 @@ const FileSDK_1 = __importDefault(require("../../sdks/FileSDK"));
 const stream_1 = require("stream");
 const SettingSDK_1 = __importDefault(require("../../sdks/SettingSDK"));
 let TelemetryExport = class TelemetryExport {
-    constructor(destFolder) {
-        this.destFolder = destFolder;
-    }
-    export(cb) {
+    export(destFolder, cb) {
         return __awaiter(this, void 0, void 0, function* () {
+            this.destFolder = destFolder;
             this.cb = cb;
             try {
                 if (!this.destFolder) {
@@ -189,7 +187,6 @@ __decorate([
     __metadata("design:type", SettingSDK_1.default)
 ], TelemetryExport.prototype, "settingSDK", void 0);
 TelemetryExport = __decorate([
-    typescript_ioc_1.Singleton,
-    __metadata("design:paramtypes", [String])
+    typescript_ioc_1.Singleton
 ], TelemetryExport);
 exports.TelemetryExport = TelemetryExport;

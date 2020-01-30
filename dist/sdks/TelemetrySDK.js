@@ -20,14 +20,18 @@ class TelemetrySDK {
         return this.telemetryInstance.send(events);
     }
     export(destPath, cb) {
-        return new TelemetryExport_1.TelemetryExport(destPath).export(cb);
+        return this.telemetryExport.export(destPath, cb);
     }
     info(cb) {
-        return new TelemetryExport_1.TelemetryExport().info(cb);
+        return this.telemetryExport.info(cb);
     }
 }
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", telemetryInstance_1.TelemetryInstance)
 ], TelemetrySDK.prototype, "telemetryInstance", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", TelemetryExport_1.TelemetryExport)
+], TelemetrySDK.prototype, "telemetryExport", void 0);
 exports.default = TelemetrySDK;
