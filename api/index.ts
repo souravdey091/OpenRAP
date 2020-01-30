@@ -14,7 +14,6 @@ import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
-import { TelemetryExport } from './../managers/TelemetryExport';
 
 @Singleton
 class ContainerAPI {
@@ -67,9 +66,6 @@ class ContainerAPI {
   }
   public getTicketSdkInstance(){
     return this.ticketSDK;
-  }
-  public getTelemetryExportInstance(destPath?: string){
-    return new TelemetryExport(destPath);
   }
 }
 

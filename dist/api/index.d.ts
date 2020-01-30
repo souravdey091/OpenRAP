@@ -9,7 +9,6 @@ import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
-import { TelemetryExport } from './../managers/TelemetryExport';
 declare class ContainerAPI {
     userSDK: UserSDK;
     ticketSDK: TicketSDK;
@@ -23,7 +22,6 @@ declare class ContainerAPI {
     getTelemetrySDKInstance(): TelemetrySDK;
     getUserSdkInstance(): UserSDK;
     getTicketSdkInstance(): TicketSDK;
-    getTelemetryExportInstance(destPath?: string): TelemetryExport;
 }
 export declare const containerAPI: ContainerAPI;
 export {};

@@ -2,11 +2,11 @@ import * as  _ from "lodash";
 import * as fs from "fs";
 import * as path from "path";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
-import { DataBaseSDK } from "../sdks/DataBaseSDK";
+import { DataBaseSDK } from "../../sdks/DataBaseSDK";
 import { Inject, Singleton } from "typescript-ioc";
-import FileSDK from "../sdks/FileSDK";
+import FileSDK from "../../sdks/FileSDK";
 import { Readable } from 'stream';
-import SettingSDK from '../sdks/SettingSDK'
+import SettingSDK from '../../sdks/SettingSDK'
 
 @Singleton
 export class TelemetryExport {
@@ -84,8 +84,6 @@ export class TelemetryExport {
     private archiveAppend(type, src, dest) {
         if (type === "path") {
             this.telemetryArchive.append(fs.createReadStream(src), { name: dest });
-        } else if (type === "directory") {
-            this.telemetryArchive.directory(src, dest);
         } else if (type === "stream") {
             this.telemetryArchive.append(src, { name: dest });
         } else if (type === "createDir") {
@@ -121,7 +119,7 @@ export class TelemetryExport {
             output.on("close", () => resolve({}));
             this.telemetryArchive.on("end", () => {
                 logger.log("Data has been zipped");
-                this.settingSDK.put('telemetryExport', { lastExportedDate: Date.now() });
+                this.settingSDK.put('telemetryExportedInfo', { lastExportedOn: Date.now() });
             });
             this.telemetryArchive.on("error", reject);
             this.telemetryArchive.finalize();
@@ -146,11 +144,11 @@ export class TelemetryExport {
 
             let exportedDate;
             try {
-                exportedDate = await this.settingSDK.get('telemetryExport');
+                exportedDate = await this.settingSDK.get('telemetryExportedInfo');
             } catch (error) {
-                exportedDate = { lastExportedDate: 0 };
+                exportedDate = { lastExportedOn: null };
             }
-            this.cb(null, { totalSize: totalSize, exportedDate: exportedDate.lastExportedDate });
+            this.cb(null, { totalSize: totalSize, lastExportedOn: exportedDate.lastExportedOn });
         } catch (error) {
             this.cb(error, null);
         }

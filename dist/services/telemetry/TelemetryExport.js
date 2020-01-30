@@ -31,11 +31,11 @@ const _ = __importStar(require("lodash"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const logger_1 = require("@project-sunbird/ext-framework-server/logger");
-const DataBaseSDK_1 = require("../sdks/DataBaseSDK");
+const DataBaseSDK_1 = require("../../sdks/DataBaseSDK");
 const typescript_ioc_1 = require("typescript-ioc");
-const FileSDK_1 = __importDefault(require("../sdks/FileSDK"));
+const FileSDK_1 = __importDefault(require("../../sdks/FileSDK"));
 const stream_1 = require("stream");
-const SettingSDK_1 = __importDefault(require("../sdks/SettingSDK"));
+const SettingSDK_1 = __importDefault(require("../../sdks/SettingSDK"));
 let TelemetryExport = class TelemetryExport {
     constructor(destFolder) {
         this.destFolder = destFolder;
@@ -107,9 +107,6 @@ let TelemetryExport = class TelemetryExport {
         if (type === "path") {
             this.telemetryArchive.append(fs.createReadStream(src), { name: dest });
         }
-        else if (type === "directory") {
-            this.telemetryArchive.directory(src, dest);
-        }
         else if (type === "stream") {
             this.telemetryArchive.append(src, { name: dest });
         }
@@ -146,7 +143,7 @@ let TelemetryExport = class TelemetryExport {
                 output.on("close", () => resolve({}));
                 this.telemetryArchive.on("end", () => {
                     logger_1.logger.log("Data has been zipped");
-                    this.settingSDK.put('telemetryExport', { lastExportedDate: Date.now() });
+                    this.settingSDK.put('telemetryExportedInfo', { lastExportedOn: Date.now() });
                 });
                 this.telemetryArchive.on("error", reject);
                 this.telemetryArchive.finalize();
@@ -170,12 +167,12 @@ let TelemetryExport = class TelemetryExport {
                 }
                 let exportedDate;
                 try {
-                    exportedDate = yield this.settingSDK.get('telemetryExport');
+                    exportedDate = yield this.settingSDK.get('telemetryExportedInfo');
                 }
                 catch (error) {
-                    exportedDate = { lastExportedDate: 0 };
+                    exportedDate = { lastExportedOn: null };
                 }
-                this.cb(null, { totalSize: totalSize, exportedDate: exportedDate.lastExportedDate });
+                this.cb(null, { totalSize: totalSize, lastExportedOn: exportedDate.lastExportedOn });
             }
             catch (error) {
                 this.cb(error, null);

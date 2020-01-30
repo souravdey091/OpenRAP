@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const telemetryInstance_1 = require("./../services/telemetry/telemetryInstance");
+const TelemetryExport_1 = require("./../services/telemetry/TelemetryExport");
 const typescript_ioc_1 = require("typescript-ioc");
 class TelemetrySDK {
     getInstance() {
@@ -17,6 +18,9 @@ class TelemetrySDK {
     }
     send(events) {
         return this.telemetryInstance.send(events);
+    }
+    getExportInstance(destPath) {
+        return new TelemetryExport_1.TelemetryExport(destPath);
     }
 }
 __decorate([
