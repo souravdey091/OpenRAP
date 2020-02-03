@@ -7,21 +7,37 @@ import { Inject, Singleton } from "typescript-ioc";
 import FileSDK from "../../sdks/FileSDK";
 import { Readable } from 'stream';
 import SettingSDK from '../../sdks/SettingSDK'
+import SystemSDK from "../../sdks/SystemSDK";
+import { TelemetryHelper } from './telemetry-helper';
 
 @Singleton
 export class TelemetryExport {
     @Inject private databaseSdk: DataBaseSDK;
     @Inject private settingSDK: SettingSDK;
+    @Inject private systemSDK: SystemSDK;
+    @Inject private telemetryHelper: TelemetryHelper;
     private telemetryArchive;
     private cb;
     private destFolder: string;
+    private telemetryShareItems: IShareItems[] = [];
+    private deviceId: string;
+
+    constructor() { this.setDeviceID() }
+
+    private async setDeviceID() {
+        this.deviceId = await this.systemSDK.getDeviceId();
+    }
 
     public async export(destFolder: string, cb) {
         this.destFolder = destFolder;
         this.cb = cb;
         try {
             if (!this.destFolder) {
-                throw Error('Destination folder not provided for export');
+                throw {
+                    code: "BAD_REQUEST",
+                    status: 400,
+                    message:'Destination path is missing'
+                }
             }
             let fileSDK = new FileSDK("");
             let dbData = await this.databaseSdk.find("queue", {
@@ -32,11 +48,17 @@ export class TelemetryExport {
             });
 
             if (!dbData.docs.length) {
-                throw Error('No telemetry data to export');
+                throw {
+                    code: "DATA_NOT_FOUND",
+                    status: 404,
+                    message: 'No data to export'
+                }
             }
 
             this.telemetryArchive = fileSDK.archiver();
             let items: IItems[] = [];
+            this.telemetryShareItems = [];
+
             _.forEach(dbData.docs, (data) => {
                 items.push({
                     objectType: 'telemetry',
@@ -46,6 +68,18 @@ export class TelemetryExport {
                     explodedSize: data.size,
                     mid: _.get(data, 'requestHeaderObj.msgid'),
                     eventsCount: data.count
+                });
+                this.telemetryShareItems.push({
+                    id: _.get(data, "_id"),
+                    type: "Telemetry",
+                    params: [
+                        { count: _.toString(_.get(data, "count")) },
+                        { size: _.toString(_.get(data, "size")) },
+                    ],
+                    origin: {
+                        id: this.deviceId,
+                        type: "Device",
+                    },
                 });
                 this.archiveAppend("stream", this.getStream(data._id), `${data._id}.gz`);
             })
@@ -74,7 +108,8 @@ export class TelemetryExport {
                     this.push(data)
                     this.push(null)
                 }).catch((err) => {
-                    this.push(err)
+                    logger.log(`Received error while getting stream: ${err}`);
+                    this.push('No Data found')
                     this.push(null)
                 })
             }
@@ -115,12 +150,13 @@ export class TelemetryExport {
 
     private async streamZip() {
         return new Promise((resolve, reject) => {
-            const filePath = path.join(this.destFolder, 'telemetry.zip');
+            const filePath = path.join(this.destFolder, `telemetry_${this.deviceId}_${Date.now()}.zip`);
             const output = fs.createWriteStream(filePath);
             output.on("close", () => resolve({}));
             this.telemetryArchive.on("end", () => {
                 logger.log("Data has been zipped");
                 this.settingSDK.put('telemetryExportedInfo', { lastExportedOn: Date.now() });
+                this.generateShareEvent(this.telemetryShareItems);
             });
             this.telemetryArchive.on("error", reject);
             this.telemetryArchive.finalize();
@@ -154,6 +190,20 @@ export class TelemetryExport {
             this.cb(error, null);
         }
     }
+
+    private generateShareEvent(shareItems: IShareItems[]) {
+        const telemetryEvent: any = {
+            context: {
+                env: "Telemetry",
+            },
+            edata: {
+                dir: "Out",
+                type: "File",
+                items: shareItems,
+            },
+        };
+        this.telemetryHelper.share(telemetryEvent);
+    }
 }
 
 export interface IItems {
@@ -164,4 +214,17 @@ export interface IItems {
     explodedSize: number;
     mid: string;
     eventsCount: number;
+}
+
+export interface IShareItems {
+    id: string;
+    type: string;
+    params: [
+        { count: string },
+        { size: string }
+    ];
+    origin: {
+        id: string;
+        type: string;
+    };
 }
