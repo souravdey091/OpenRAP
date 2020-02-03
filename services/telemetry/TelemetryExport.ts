@@ -33,7 +33,11 @@ export class TelemetryExport {
         this.cb = cb;
         try {
             if (!this.destFolder) {
-                throw Error('Destination folder not provided for export');
+                throw {
+                    code: "BAD_REQUEST",
+                    status: 400,
+                    message:'Destination path is missing'
+                }
             }
             let fileSDK = new FileSDK("");
             let dbData = await this.databaseSdk.find("queue", {
@@ -44,7 +48,11 @@ export class TelemetryExport {
             });
 
             if (!dbData.docs.length) {
-                throw Error('No telemetry data to export');
+                throw {
+                    code: "DATA_NOT_FOUND",
+                    status: 404,
+                    message: 'No data to export'
+                }
             }
 
             this.telemetryArchive = fileSDK.archiver();
@@ -100,6 +108,7 @@ export class TelemetryExport {
                     this.push(data)
                     this.push(null)
                 }).catch((err) => {
+                    logger.log(`Received error while getting stream: ${err}`);
                     this.push('No Data found')
                     this.push(null)
                 })
