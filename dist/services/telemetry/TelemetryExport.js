@@ -36,7 +36,18 @@ const typescript_ioc_1 = require("typescript-ioc");
 const FileSDK_1 = __importDefault(require("../../sdks/FileSDK"));
 const stream_1 = require("stream");
 const SettingSDK_1 = __importDefault(require("../../sdks/SettingSDK"));
+const SystemSDK_1 = __importDefault(require("../../sdks/SystemSDK"));
+const telemetry_helper_1 = require("./telemetry-helper");
 let TelemetryExport = class TelemetryExport {
+    constructor() {
+        this.telemetryShareItems = [];
+        this.setDeviceID();
+    }
+    setDeviceID() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.deviceId = yield this.systemSDK.getDeviceId();
+        });
+    }
     export(destFolder, cb) {
         return __awaiter(this, void 0, void 0, function* () {
             this.destFolder = destFolder;
@@ -57,6 +68,7 @@ let TelemetryExport = class TelemetryExport {
                 }
                 this.telemetryArchive = fileSDK.archiver();
                 let items = [];
+                this.telemetryShareItems = [];
                 _.forEach(dbData.docs, (data) => {
                     items.push({
                         objectType: 'telemetry',
@@ -66,6 +78,18 @@ let TelemetryExport = class TelemetryExport {
                         explodedSize: data.size,
                         mid: _.get(data, 'requestHeaderObj.msgid'),
                         eventsCount: data.count
+                    });
+                    this.telemetryShareItems.push({
+                        id: _.get(data, "_id"),
+                        type: "Telemetry",
+                        params: [
+                            { count: _.toString(_.get(data, "count")) },
+                            { size: _.toString(_.get(data, "size")) },
+                        ],
+                        origin: {
+                            id: this.deviceId,
+                            type: "Device",
+                        },
                     });
                     this.archiveAppend("stream", this.getStream(data._id), `${data._id}.gz`);
                 });
@@ -94,7 +118,7 @@ let TelemetryExport = class TelemetryExport {
                     this.push(data);
                     this.push(null);
                 }).catch((err) => {
-                    this.push(err);
+                    this.push('No Data found');
                     this.push(null);
                 });
             }
@@ -136,12 +160,13 @@ let TelemetryExport = class TelemetryExport {
     streamZip() {
         return __awaiter(this, void 0, void 0, function* () {
             return new Promise((resolve, reject) => {
-                const filePath = path.join(this.destFolder, 'telemetry.zip');
+                const filePath = path.join(this.destFolder, `telemetry_${this.deviceId}.zip`);
                 const output = fs.createWriteStream(filePath);
                 output.on("close", () => resolve({}));
                 this.telemetryArchive.on("end", () => {
                     logger_1.logger.log("Data has been zipped");
                     this.settingSDK.put('telemetryExportedInfo', { lastExportedOn: Date.now() });
+                    this.generateShareEvent(this.telemetryShareItems);
                 });
                 this.telemetryArchive.on("error", reject);
                 this.telemetryArchive.finalize();
@@ -177,6 +202,19 @@ let TelemetryExport = class TelemetryExport {
             }
         });
     }
+    generateShareEvent(shareItems) {
+        const telemetryEvent = {
+            context: {
+                env: "Telemetry",
+            },
+            edata: {
+                dir: "Out",
+                type: "File",
+                items: shareItems,
+            },
+        };
+        this.telemetryHelper.share(telemetryEvent);
+    }
 };
 __decorate([
     typescript_ioc_1.Inject,
@@ -186,7 +224,16 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", SettingSDK_1.default)
 ], TelemetryExport.prototype, "settingSDK", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", SystemSDK_1.default)
+], TelemetryExport.prototype, "systemSDK", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", telemetry_helper_1.TelemetryHelper)
+], TelemetryExport.prototype, "telemetryHelper", void 0);
 TelemetryExport = __decorate([
-    typescript_ioc_1.Singleton
+    typescript_ioc_1.Singleton,
+    __metadata("design:paramtypes", [])
 ], TelemetryExport);
 exports.TelemetryExport = TelemetryExport;
