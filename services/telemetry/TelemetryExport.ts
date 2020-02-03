@@ -150,7 +150,7 @@ export class TelemetryExport {
 
     private async streamZip() {
         return new Promise((resolve, reject) => {
-            const filePath = path.join(this.destFolder, `telemetry_${this.deviceId}.zip`);
+            const filePath = path.join(this.destFolder, `telemetry_${this.deviceId}_${Date.now()}.zip`);
             const output = fs.createWriteStream(filePath);
             output.on("close", () => resolve({}));
             this.telemetryArchive.on("end", () => {
