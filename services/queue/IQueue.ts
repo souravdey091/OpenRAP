@@ -4,15 +4,20 @@ export interface IQueue {
     priority: number;
     createdOn: number;
     updatedOn: number;
-    data?: any;
 }
 
 export interface ISystemQueue extends IQueue {
-    size: number;
-    artifactUrl?: string;
-    fileName?: string;
-    status: string;
-    progress: number;
+  _rev?: string;
+  group: string;
+  plugin: string;
+  status: SystemQueueStatus;
+  failedCode?: string;
+  isActive: boolean;
+  failedReason?: string;
+  name: string;
+  runTime: number;
+  progress: number;
+  metaData: any;
 }
 export interface INetworkQueue extends IQueue {
     pathToApi: string;
@@ -22,6 +27,7 @@ export interface INetworkQueue extends IQueue {
     subType: string;
     size?: number;
     count?: number;
+    data?: any;
 }
 
 export interface IQuery {
@@ -31,7 +37,18 @@ export interface IQuery {
     };
     limit?: number;
 }
-
+export enum SystemQueueStatus {
+  reconcile = "reconcile",
+  resume = "resume",
+  inQueue = "inQueue",
+  inProgress = "inProgress",
+  pausing = "pausing",
+  paused = "paused",
+  canceling = "canceling",
+  canceled = "canceled",
+  completed = "completed",
+  failed = "failed",
+}
 export interface IUpdateQuery {
     updatedOn: number;
 }
