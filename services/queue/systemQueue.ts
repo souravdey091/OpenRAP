@@ -190,15 +190,15 @@ export class SystemQueue {
     const updateDbObservable = (data) => {
       return new Observable(subscriber => {
         data._id = taskData._id;
-        data._rev = taskData._rev;
+        delete data._rev;
         this.dbSDK.updateDoc(this.dbName, taskData._id, data)
         .then(data => {
-          subscriber.next(data);
+          taskData._rev = data.rev;
           subscriber.complete();
           return taskData._rev = data.rev
         })
         .catch(err => {
-          // subscriber.error(err);
+          subscriber.complete();
           logger.error("Error while update doc for task", taskData._id, err.message);
         });
       })
@@ -244,7 +244,6 @@ export class SystemQueue {
   }
   public query(plugin: string, query: SystemQueueQuery, sort?: any){
     const selector = { ...query, plugin};
-    logger.debug("SystemQuery method called with", selector);
     return this.dbSDK.find(this.dbName, { selector: selector })
   }
   public async pause(plugin: string, _id: string){
