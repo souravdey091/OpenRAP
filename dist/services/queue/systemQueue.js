@@ -48,7 +48,6 @@ let SystemQueue = class SystemQueue {
         this.config = {
             concurrency: DEFAULT_CONCURRENCY
         };
-        //TODO: support custom actions
     }
     /**
      * method to initializes system queue.
@@ -353,6 +352,23 @@ let SystemQueue = class SystemQueue {
             yield this.dbSDK.updateDoc(this.dbName, _id, dbResults)
                 .catch((err) => logger_1.logger.error("retry error while updating job details for ", _id));
             this.executeNextTask();
+        });
+    }
+    //TODO: support custom actions
+    // TODO: Need to remove this in next release 
+    migrate(queueData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (_.isEmpty(queueData)) {
+                throw {
+                    code: "TASK_DATA_MISSING",
+                    status: 400,
+                    message: "Task data is missing or empty"
+                };
+            }
+            yield this.dbSDK.bulkDocs(this.dbName, queueData)
+                .catch((err) => logger_1.logger.error("SystemQueue migration, Error while adding task in db", err.message));
+            this.executeNextTask();
+            return queueData.map(({ _id }) => _id);
         });
     }
 };

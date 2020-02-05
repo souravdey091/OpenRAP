@@ -324,6 +324,21 @@ export class SystemQueue {
     this.executeNextTask();
   }
   //TODO: support custom actions
+
+  // TODO: Need to remove this in next release 
+  public async migrate(queueData: ISystemQueue[]) {
+    if (_.isEmpty(queueData)) {
+      throw {
+        code: "TASK_DATA_MISSING",
+        status: 400,
+        message: "Task data is missing or empty"
+      }
+    }
+    await this.dbSDK.bulkDocs(this.dbName, queueData)
+      .catch((err) => logger.error("SystemQueue migration, Error while adding task in db", err.message));
+    this.executeNextTask();
+   return queueData.map(({ _id }) => _id);
+  }
 }
 
 interface IRunningTasks {

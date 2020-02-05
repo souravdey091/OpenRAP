@@ -9,7 +9,7 @@ import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
-import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery } from './../services/queue';
+import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue } from './../services/queue';
 export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus } from "./../services/queue";
 declare class ContainerAPI {
     userSDK: UserSDK;
@@ -36,5 +36,6 @@ export interface ISystemQueueInstance {
     resume(_id: string): any;
     cancel(_id: string): any;
     retry(_id: string): any;
+    migrate(tasks: ISystemQueue[]): any;
 }
 export declare const containerAPI: ContainerAPI;
