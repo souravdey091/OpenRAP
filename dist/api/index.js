@@ -80,6 +80,9 @@ let ContainerAPI = class ContainerAPI {
     getTicketSdkInstance() {
         return this.ticketSDK;
     }
+    initializeSystemQueue() {
+        this.systemQueue.initialize();
+    }
     getSystemQueueInstance(pluginId) {
         const register = (type, taskExecuter) => {
             return this.systemQueue.register(pluginId, type, taskExecuter);

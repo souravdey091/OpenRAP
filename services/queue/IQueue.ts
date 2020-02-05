@@ -8,7 +8,7 @@ export interface IQueue {
 
 export interface ISystemQueue extends IQueue {
   _rev?: string;
-  group: string;
+  group?: string;
   plugin: string;
   status: SystemQueueStatus;
   failedCode?: string;

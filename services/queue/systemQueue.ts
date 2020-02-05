@@ -8,7 +8,12 @@ const uuid = require("uuid");
 import { Subject, Observer, asyncScheduler, Observable } from "rxjs";
 import { throttleTime, mergeMap } from "rxjs/operators";
 export { ISystemQueue } from './IQueue';
-
+const DEFAULT_CONCURRENCY = {
+  "openrap-sunbirded-plugin_IMPORT": 1,
+  "openrap-sunbirded-plugin_DOWNLOAD": 2,
+  "openrap-sunbirded-plugin_DELETE": 1,
+  default: 1
+}
 @Singleton 
 export class SystemQueue {
   @Inject private dbSDK: DataBaseSDK;
@@ -16,16 +21,15 @@ export class SystemQueue {
   private registeredTasks: { [task: string]: RegisteredTasks } = {};
   private runningTasks: IRunningTasks[] =  [];
   private lockTaskExecuter = false;
-  private config = { // setting default config
-    concurrency: 1,
-    concurrencyLevel: ConcurrencyLevel.task // runs one task at a time for each type of task per plugin
+  private config = {
+    concurrency: DEFAULT_CONCURRENCY
   };
   /**
    * method to initializes system queue.
    * This method should be called after all plugin and app are initialized
    * @param config 
    */
-  public async initialize(config: Config) {
+  public async initialize(config?: any) {
     // this.config = config; TODO: support configurable concurrency
     const { docs } = await this.dbSDK.find(this.dbName, { selector: { status: SystemQueueStatus.inProgress} })
     .catch((err) => {
@@ -89,11 +93,11 @@ export class SystemQueue {
       }
     }
     tasks = _.isArray(tasks) ? tasks : [tasks]
-    const queueData: ISystemQueue[] = tasks.map(task => ({
+    const queueData: ISystemQueue[] = tasks.map((task, index) => ({
       ...task,
       _id: uuid(),
-      createdOn: Date.now(),
-      updatedOn: Date.now(),
+      createdOn: Date.now() + index, 
+      updatedOn: Date.now() + index,
       status: SystemQueueStatus.inQueue,
       progress: 0,
       plugin,
@@ -118,7 +122,8 @@ export class SystemQueue {
       const fetchQuery: { plugin: string, type: string }[] = [];
       let groupedRunningTask: { [task: string]: IRunningTasks[] } = _.groupBy(this.runningTasks, (task) => `${task.plugin}_${task.type}`)
       _.forIn(this.registeredTasks, (value, key) => {
-        if((_.get(groupedRunningTask[key], 'length') || 0) < this.config.concurrency){
+        const concurrency = this.config.concurrency[key] || this.config.concurrency.default;
+        if((_.get(groupedRunningTask[key], 'length') || 0) < concurrency){
           fetchQuery.push({plugin: value.plugin, type: value.type});
         }
       });
@@ -148,7 +153,8 @@ export class SystemQueue {
         const task: ISystemQueue = docs[queuedTaskIndex];
         const taskExecuter: TaskExecuter = _.get(this.registeredTasks[`${task.plugin}_${task.type}`], 'taskExecuter');
         const runningTaskCount = (_.get(groupedRunningTask[`${task.plugin}_${task.type}`], 'length') || 0);
-        if(taskExecuter && (runningTaskCount < this.config.concurrency)){
+        const concurrency = this.config.concurrency[`${task.plugin}_${task.type}`] || this.config.concurrency.default;
+        if(taskExecuter && (runningTaskCount < concurrency)){
           const taskExecuterRef = new taskExecuter();
           const syncFunc = this.getTaskSyncFun(task);
           const observer = this.getTaskObserver(task, syncFunc);
@@ -345,7 +351,7 @@ export interface TaskExecuter {
 
 export interface SystemQueueReq {
   type: ISystemQueue['type'];
-  group: ISystemQueue['group']; // ex: content_manager, telemetry etc
+  group?: ISystemQueue['group']; // ex: content_manager, telemetry etc
   metaData: ISystemQueue['metaData']; // any data required for 
   name: ISystemQueue['name']; // ex: ecar path for import, content identifier for download/delete
 }
@@ -366,15 +372,6 @@ export interface SystemQueueQuery {
   updatedOn?: ISystemQueue['updatedOn'] | {$gt: ISystemQueue['updatedOn']}
 }
 
-export enum ConcurrencyLevel {
-  app = "app",
-  plugin = "plugin",
-  task = "task"
-}
-export interface Config {
-  concurrency: number;
-  concurrencyLevel: ConcurrencyLevel
-}
 export interface RegisteredTasks {
   plugin: string;
   type: string;

@@ -25,6 +25,7 @@ declare class ContainerAPI {
     getTelemetrySDKInstance(): TelemetrySDK;
     getUserSdkInstance(): UserSDK;
     getTicketSdkInstance(): TicketSDK;
+    initializeSystemQueue(): void;
     getSystemQueueInstance(pluginId: string): ISystemQueueInstance;
 }
 export interface ISystemQueueInstance {
