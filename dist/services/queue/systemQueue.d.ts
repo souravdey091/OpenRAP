@@ -43,6 +43,7 @@ export declare class SystemQueue {
     resume(plugin: string, _id: string): Promise<void>;
     cancel(plugin: string, _id: string): Promise<void>;
     retry(plugin: string, _id: string): Promise<void>;
+    migrate(queueData: ISystemQueue[]): Promise<string[]>;
 }
 export interface ITaskExecuter {
     start(ISystemQueue: ISystemQueue, observer: Observer<ISystemQueue>): Promise<boolean | SystemQueueError>;

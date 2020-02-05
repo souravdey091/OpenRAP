@@ -14,7 +14,7 @@ import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
-import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery } from './../services/queue';
+import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue } from './../services/queue';
 export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus } from "./../services/queue";
 @Singleton
 class ContainerAPI {
@@ -93,7 +93,10 @@ class ContainerAPI {
     const retry = (_id: string) => {
       return this.systemQueue.retry(pluginId, _id);
     }
-    return { register, add, query, pause, resume, cancel, retry }
+    const migrate = (tasks: ISystemQueue[]) => {
+      return this.systemQueue.migrate(tasks);
+    }
+    return { register, add, query, pause, resume, cancel, retry, migrate }
   }
 }
 export interface ISystemQueueInstance {
@@ -104,5 +107,6 @@ export interface ISystemQueueInstance {
   resume(_id: string);
   cancel(_id: string);
   retry(_id: string);
+  migrate(tasks: ISystemQueue[]);
 }
 export const containerAPI = new ContainerAPI();

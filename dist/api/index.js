@@ -105,7 +105,10 @@ let ContainerAPI = class ContainerAPI {
         const retry = (_id) => {
             return this.systemQueue.retry(pluginId, _id);
         };
-        return { register, add, query, pause, resume, cancel, retry };
+        const migrate = (tasks) => {
+            return this.systemQueue.migrate(tasks);
+        };
+        return { register, add, query, pause, resume, cancel, retry, migrate };
     }
 };
 __decorate([
