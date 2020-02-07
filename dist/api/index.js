@@ -34,6 +34,7 @@ const SystemSDK_1 = __importDefault(require("./../sdks/SystemSDK"));
 const TelemetrySDK_1 = __importDefault(require("./../sdks/TelemetrySDK"));
 const UserSDK_1 = require("./../sdks/UserSDK");
 const TicketSDK_1 = require("./../sdks/TicketSDK");
+const DownloadSDK_1 = require("./../sdks/DownloadSDK");
 const queue_1 = require("./../services/queue");
 var queue_2 = require("./../services/queue");
 exports.SystemQueueStatus = queue_2.SystemQueueStatus;
@@ -55,6 +56,9 @@ let ContainerAPI = class ContainerAPI {
     // get file SDK by plugin
     getFileSDKInstance(pluginId) {
         return new FileSDK_1.default(pluginId);
+    }
+    getDownloadSdkInstance() {
+        return this.downloadSDK;
     }
     // get the Network SDK
     getNetworkStatus(url) {
@@ -123,6 +127,10 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", queue_1.SystemQueue)
 ], ContainerAPI.prototype, "systemQueue", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", DownloadSDK_1.DownloadSDK)
+], ContainerAPI.prototype, "downloadSDK", void 0);
 ContainerAPI = __decorate([
     typescript_ioc_1.Singleton
 ], ContainerAPI);
