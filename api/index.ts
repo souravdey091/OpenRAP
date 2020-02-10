@@ -14,6 +14,7 @@ import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
+import { DownloadSDK } from "./../sdks/DownloadSDK";
 import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue } from './../services/queue';
 export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus } from "./../services/queue";
 @Singleton
@@ -21,6 +22,7 @@ class ContainerAPI {
   @Inject userSDK : UserSDK;
   @Inject ticketSDK : TicketSDK;
   @Inject systemQueue: SystemQueue
+  @Inject downloadSDK: DownloadSDK
   public async bootstrap() {
     await App.bootstrap();
   }
@@ -40,7 +42,9 @@ class ContainerAPI {
   public getFileSDKInstance(pluginId: string): FileSDK {
     return new FileSDK(pluginId);
   }
-
+  public getDownloadSdkInstance(){
+    return this.downloadSDK;
+  }
   // get the Network SDK
 
   public async getNetworkStatus(url?: string): Promise<boolean> {

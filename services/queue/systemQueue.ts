@@ -10,7 +10,7 @@ import { throttleTime, mergeMap } from "rxjs/operators";
 export { ISystemQueue } from './IQueue';
 const DEFAULT_CONCURRENCY = {
   "openrap-sunbirded-plugin_IMPORT": 1,
-  "openrap-sunbirded-plugin_DOWNLOAD": 2,
+  "openrap-sunbirded-plugin_DOWNLOAD": 1,
   "openrap-sunbirded-plugin_DELETE": 1,
   default: 1
 }
@@ -256,8 +256,8 @@ export class SystemQueue {
     const inProgressJob: IRunningTasks = _.find(this.runningTasks, { _id });
     if(inProgressJob){
       const res = await inProgressJob.taskExecuterRef.pause();
-      if(!res){
-        throw "INVALID_OPERATION";
+      if(res !== true){
+        throw res || "INVALID_OPERATION";
       }
       const queueData = inProgressJob.taskExecuterRef.status();
       queueData.status = SystemQueueStatus.paused;
@@ -291,8 +291,8 @@ export class SystemQueue {
     const inProgressJob: IRunningTasks = _.find(this.runningTasks, { _id });
     if(inProgressJob){
       const res = await inProgressJob.taskExecuterRef.cancel();
-      if(!res){
-        throw "INVALID_OPERATION";
+      if(res !== true){
+        throw res || "INVALID_OPERATION";
       }
       const queueData = inProgressJob.taskExecuterRef.status();
       queueData.status = SystemQueueStatus.canceled;
@@ -356,9 +356,9 @@ export interface ITaskExecuter {
   start(ISystemQueue: ISystemQueue, observer: Observer<ISystemQueue>): Promise<boolean | SystemQueueError>;
   status(): ISystemQueue;
   pause?(): Promise<boolean | SystemQueueError>;
-  resume?(ISystemQueue): Promise<boolean | SystemQueueError>;
+  resume?(ISystemQueue: ISystemQueue, observer: Observer<ISystemQueue>): Promise<boolean | SystemQueueError>;
   cancel?(): Promise<boolean | SystemQueueError>;
-  retry?(ISystemQueue): Promise<boolean | SystemQueueError>;
+  retry?(ISystemQueue: ISystemQueue, observer: Observer<ISystemQueue>): Promise<boolean | SystemQueueError>;
 }
 export interface TaskExecuter {
   new(): ITaskExecuter;

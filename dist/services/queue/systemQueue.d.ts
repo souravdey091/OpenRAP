@@ -49,9 +49,9 @@ export interface ITaskExecuter {
     start(ISystemQueue: ISystemQueue, observer: Observer<ISystemQueue>): Promise<boolean | SystemQueueError>;
     status(): ISystemQueue;
     pause?(): Promise<boolean | SystemQueueError>;
-    resume?(ISystemQueue: any): Promise<boolean | SystemQueueError>;
+    resume?(ISystemQueue: ISystemQueue, observer: Observer<ISystemQueue>): Promise<boolean | SystemQueueError>;
     cancel?(): Promise<boolean | SystemQueueError>;
-    retry?(ISystemQueue: any): Promise<boolean | SystemQueueError>;
+    retry?(ISystemQueue: ISystemQueue, observer: Observer<ISystemQueue>): Promise<boolean | SystemQueueError>;
 }
 export interface TaskExecuter {
     new (): ITaskExecuter;

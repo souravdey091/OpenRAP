@@ -35,7 +35,7 @@ const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const DEFAULT_CONCURRENCY = {
     "openrap-sunbirded-plugin_IMPORT": 1,
-    "openrap-sunbirded-plugin_DOWNLOAD": 2,
+    "openrap-sunbirded-plugin_DOWNLOAD": 1,
     "openrap-sunbirded-plugin_DELETE": 1,
     default: 1
 };
@@ -278,8 +278,8 @@ let SystemQueue = class SystemQueue {
             const inProgressJob = _.find(this.runningTasks, { _id });
             if (inProgressJob) {
                 const res = yield inProgressJob.taskExecuterRef.pause();
-                if (!res) {
-                    throw "INVALID_OPERATION";
+                if (res !== true) {
+                    throw res || "INVALID_OPERATION";
                 }
                 const queueData = inProgressJob.taskExecuterRef.status();
                 queueData.status = IQueue_1.SystemQueueStatus.paused;
@@ -318,8 +318,8 @@ let SystemQueue = class SystemQueue {
             const inProgressJob = _.find(this.runningTasks, { _id });
             if (inProgressJob) {
                 const res = yield inProgressJob.taskExecuterRef.cancel();
-                if (!res) {
-                    throw "INVALID_OPERATION";
+                if (res !== true) {
+                    throw res || "INVALID_OPERATION";
                 }
                 const queueData = inProgressJob.taskExecuterRef.status();
                 queueData.status = IQueue_1.SystemQueueStatus.canceled;
