@@ -29,7 +29,6 @@ const GlobalSDK_1 = require("./../sdks/GlobalSDK");
 const SettingSDK_1 = __importDefault(require("./../sdks/SettingSDK"));
 const FileSDK_1 = __importDefault(require("./../sdks/FileSDK"));
 const NetworkSDK_1 = __importDefault(require("./../sdks/NetworkSDK"));
-const DownloadManager_1 = __importDefault(require("./../managers/DownloadManager/DownloadManager"));
 const SystemSDK_1 = __importDefault(require("./../sdks/SystemSDK"));
 const TelemetrySDK_1 = __importDefault(require("./../sdks/TelemetrySDK"));
 const UserSDK_1 = require("./../sdks/UserSDK");
@@ -67,10 +66,6 @@ let ContainerAPI = class ContainerAPI {
             let status = yield networkSDK.isInternetAvailable(url);
             return status;
         });
-    }
-    // get the downloadManager Instance
-    getDownloadManagerInstance(pluginId) {
-        return new DownloadManager_1.default(pluginId);
     }
     getSystemSDKInstance(pluginId) {
         return new SystemSDK_1.default(pluginId);

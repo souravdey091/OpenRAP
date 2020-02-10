@@ -4,7 +4,6 @@
 import { PluginConfig } from "./../interfaces";
 import SettingSDK from "./../sdks/SettingSDK";
 import FileSDK from "./../sdks/FileSDK";
-import DownloadManager from "./../managers/DownloadManager/DownloadManager";
 import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
@@ -23,7 +22,6 @@ declare class ContainerAPI {
     getFileSDKInstance(pluginId: string): FileSDK;
     getDownloadSdkInstance(): DownloadSDK;
     getNetworkStatus(url?: string): Promise<boolean>;
-    getDownloadManagerInstance(pluginId: string): DownloadManager;
     getSystemSDKInstance(pluginId: string): SystemSDK;
     getTelemetrySDKInstance(): TelemetrySDK;
     getUserSdkInstance(): UserSDK;

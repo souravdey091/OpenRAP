@@ -21,21 +21,6 @@
             ]
         },
         {
-            "name": "download_queue",
-            "indexes": [
-                {
-                    "index": {
-                        "fields": [
-                            "pluginId",
-                            "status",
-                            "updatedOn"
-                        ]
-                    },
-                    "name": "filterIndex"
-                }
-            ]
-        },
-        {
             "name": "telemetry",
             "indexes": [
                 {

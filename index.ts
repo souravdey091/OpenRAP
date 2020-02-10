@@ -2,7 +2,6 @@ import { DataBaseSDK } from "./sdks/DataBaseSDK";
 import * as fs from "fs";
 import * as path from "path";
 import * as _ from "lodash";
-import { reconciliation as DownloadManagerReconciliation } from "./managers/DownloadManager/DownloadManager";
 import NetworkSDK from "./sdks/NetworkSDK";
 import { TelemetryManager } from "./managers/TelemetryManager";
 import { NetworkQueue } from './services/queue/networkQueue';
@@ -33,7 +32,6 @@ export class App {
         }
       }
     }
-    await DownloadManagerReconciliation();
     let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
     this.telemetryManager.registerDevice();
     // TODO - Need to remove migrateTelemetryPacketToQueueDB in next release - 2.9.0

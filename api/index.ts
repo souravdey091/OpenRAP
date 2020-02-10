@@ -9,7 +9,6 @@ import { register } from "./../sdks/GlobalSDK";
 import SettingSDK from "./../sdks/SettingSDK";
 import FileSDK from "./../sdks/FileSDK";
 import NetworkSDK from "./../sdks/NetworkSDK";
-import DownloadManager from "./../managers/DownloadManager/DownloadManager";
 import SystemSDK from "./../sdks/SystemSDK";
 import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
@@ -53,11 +52,6 @@ class ContainerAPI {
     return status;
   }
 
-  // get the downloadManager Instance
-
-  public getDownloadManagerInstance(pluginId: string): DownloadManager {
-    return new DownloadManager(pluginId);
-  }
   public getSystemSDKInstance(pluginId: string): SystemSDK {
     return new SystemSDK(pluginId);
   }

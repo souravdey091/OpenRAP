@@ -31,7 +31,6 @@ const DataBaseSDK_1 = require("./sdks/DataBaseSDK");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const _ = __importStar(require("lodash"));
-const DownloadManager_1 = require("./managers/DownloadManager/DownloadManager");
 const NetworkSDK_1 = __importDefault(require("./sdks/NetworkSDK"));
 const TelemetryManager_1 = require("./managers/TelemetryManager");
 const networkQueue_1 = require("./services/queue/networkQueue");
@@ -56,7 +55,6 @@ class App {
                     }
                 }
             }
-            yield DownloadManager_1.reconciliation();
             let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
             this.telemetryManager.registerDevice();
             // TODO - Need to remove migrateTelemetryPacketToQueueDB in next release - 2.9.0
