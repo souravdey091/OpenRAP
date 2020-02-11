@@ -376,9 +376,6 @@ export class SystemQueue {
         props,
       },
     };
-    if (prevstate) {
-      telemetryEvent.edata.duration = (Date.now() - data.updatedOn) / 1000;
-    }
     if (_.get(data, 'metaData.contentId')) {
       telemetryEvent.object = {
         id: _.get(data, 'metaData.contentId'),
