@@ -33,6 +33,7 @@ const logger_1 = require("@project-sunbird/ext-framework-server/logger");
 const uuid = require("uuid");
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
+const telemetryInstance_1 = require("./../telemetry/telemetryInstance");
 const DEFAULT_CONCURRENCY = {
     "openrap-sunbirded-plugin_IMPORT": 1,
     "openrap-sunbirded-plugin_DOWNLOAD": 1,
@@ -122,6 +123,10 @@ let SystemQueue = class SystemQueue {
             }
             tasks = _.isArray(tasks) ? tasks : [tasks];
             const queueData = tasks.map((task, index) => (Object.assign({}, task, { _id: uuid(), createdOn: Date.now() + index, updatedOn: Date.now() + index, status: IQueue_1.SystemQueueStatus.inQueue, progress: 0, plugin, priority: 1, runTime: 0, isActive: true })));
+            // Add audit event for newly added queue data
+            for (const data of queueData) {
+                this.logAuditEvent(data, Object.keys(data), IQueue_1.SystemQueueStatus.inQueue);
+            }
             logger_1.logger.info("Adding to queue for", plugin, queueData.length);
             yield this.dbSDK.bulkDocs(this.dbName, queueData)
                 .catch((err) => logger_1.logger.error("SystemQueue, Error while adding task in db", err.message));
@@ -282,6 +287,8 @@ let SystemQueue = class SystemQueue {
                     throw res || "INVALID_OPERATION";
                 }
                 const queueData = inProgressJob.taskExecuterRef.status();
+                // Adding telemetry audit event
+                this.logAuditEvent(queueData, ["status", "updatedOn"], IQueue_1.SystemQueueStatus.paused, queueData.status);
                 queueData.status = IQueue_1.SystemQueueStatus.paused;
                 inProgressJob.syncFunc.next(queueData);
                 inProgressJob.syncFunc.complete();
@@ -293,6 +300,8 @@ let SystemQueue = class SystemQueue {
                     IQueue_1.SystemQueueStatus.pausing, IQueue_1.SystemQueueStatus.canceling], dbResults.status)) {
                     throw "INVALID_OPERATION";
                 }
+                // Adding telemetry audit event
+                this.logAuditEvent(dbResults, ["status", "updatedOn"], IQueue_1.SystemQueueStatus.paused, dbResults.status);
                 dbResults.status = IQueue_1.SystemQueueStatus.paused;
                 yield this.dbSDK.updateDoc(this.dbName, _id, dbResults)
                     .catch((err) => logger_1.logger.error("pause error while updating job details for ", _id));
@@ -307,6 +316,8 @@ let SystemQueue = class SystemQueue {
             if (!dbResults || !_.includes([IQueue_1.SystemQueueStatus.paused], dbResults.status)) {
                 throw "INVALID_OPERATION";
             }
+            // Adding telemetry audit event
+            this.logAuditEvent(dbResults, ["status", "updatedOn"], IQueue_1.SystemQueueStatus.resume, dbResults.status);
             dbResults.status = IQueue_1.SystemQueueStatus.resume;
             yield this.dbSDK.updateDoc(this.dbName, _id, dbResults)
                 .catch((err) => logger_1.logger.error("resume error while updating job details for ", _id));
@@ -322,6 +333,8 @@ let SystemQueue = class SystemQueue {
                     throw res || "INVALID_OPERATION";
                 }
                 const queueData = inProgressJob.taskExecuterRef.status();
+                // Adding telemetry audit event
+                this.logAuditEvent(queueData, ["status", "updatedOn"], IQueue_1.SystemQueueStatus.canceled, queueData.status);
                 queueData.status = IQueue_1.SystemQueueStatus.canceled;
                 queueData.isActive = false;
                 inProgressJob.syncFunc.next(queueData);
@@ -334,6 +347,8 @@ let SystemQueue = class SystemQueue {
                     IQueue_1.SystemQueueStatus.pausing, IQueue_1.SystemQueueStatus.canceling], dbResults.status)) {
                     throw "INVALID_OPERATION";
                 }
+                // Adding telemetry audit event
+                this.logAuditEvent(dbResults, ["status", "updatedOn"], IQueue_1.SystemQueueStatus.canceled, dbResults.status);
                 dbResults.status = IQueue_1.SystemQueueStatus.canceled;
                 yield this.dbSDK.updateDoc(this.dbName, _id, dbResults)
                     .catch((err) => logger_1.logger.error("cancel error while updating job details for ", _id));
@@ -348,6 +363,8 @@ let SystemQueue = class SystemQueue {
             if (!dbResults || !_.includes([IQueue_1.SystemQueueStatus.failed], dbResults.status)) {
                 throw "INVALID_OPERATION";
             }
+            // Adding telemetry audit event
+            this.logAuditEvent(dbResults, ["status", "updatedOn"], IQueue_1.SystemQueueStatus.inQueue, dbResults.status);
             dbResults.status = IQueue_1.SystemQueueStatus.inQueue;
             yield this.dbSDK.updateDoc(this.dbName, _id, dbResults)
                 .catch((err) => logger_1.logger.error("retry error while updating job details for ", _id));
@@ -371,11 +388,45 @@ let SystemQueue = class SystemQueue {
             return queueData.map(({ _id }) => _id);
         });
     }
+    logAuditEvent(data, props, state, prevstate) {
+        const telemetryEvent = {
+            context: {
+                env: 'systemQueue',
+                cdata: [{
+                        id: _.get(data, 'name'),
+                        type: "fileName",
+                    }, {
+                        id: _.get(data, '_id'),
+                        type: _.get(data, 'type'),
+                    }],
+            },
+            edata: {
+                state,
+                prevstate,
+                props,
+            },
+        };
+        if (prevstate) {
+            telemetryEvent.edata.duration = (Date.now() - data.updatedOn) / 1000;
+        }
+        if (_.get(data, 'metaData.contentId')) {
+            telemetryEvent.object = {
+                id: _.get(data, 'metaData.contentId'),
+                type: "content",
+                ver: _.get(data, 'metaData.contentId'),
+            };
+        }
+        this.telemetryInstance.audit(telemetryEvent);
+    }
 };
 __decorate([
     typescript_ioc_2.Inject,
     __metadata("design:type", DataBaseSDK_1.DataBaseSDK)
 ], SystemQueue.prototype, "dbSDK", void 0);
+__decorate([
+    typescript_ioc_2.Inject,
+    __metadata("design:type", telemetryInstance_1.TelemetryInstance)
+], SystemQueue.prototype, "telemetryInstance", void 0);
 SystemQueue = __decorate([
     typescript_ioc_1.Singleton
 ], SystemQueue);
