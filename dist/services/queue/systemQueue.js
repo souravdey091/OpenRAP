@@ -410,7 +410,7 @@ let SystemQueue = class SystemQueue {
             telemetryEvent.object = {
                 id: _.get(data, 'metaData.contentId'),
                 type: "content",
-                ver: _.get(data, 'metaData.pkgVersion'),
+                ver: _.toString(_.get(data, 'metaData.pkgVersion')),
             };
         }
         this.telemetryInstance.audit(telemetryEvent);
