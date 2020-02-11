@@ -393,9 +393,6 @@ let SystemQueue = class SystemQueue {
             context: {
                 env: 'systemQueue',
                 cdata: [{
-                        id: _.get(data, 'name'),
-                        type: "fileName",
-                    }, {
                         id: _.get(data, '_id'),
                         type: _.get(data, 'type'),
                     }],
