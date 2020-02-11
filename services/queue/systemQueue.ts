@@ -7,6 +7,7 @@ import { logger } from "@project-sunbird/ext-framework-server/logger";
 const uuid = require("uuid");
 import { Subject, Observer, asyncScheduler, Observable } from "rxjs";
 import { throttleTime, mergeMap } from "rxjs/operators";
+import { TelemetryInstance } from './../telemetry/telemetryInstance';
 export { ISystemQueue } from './IQueue';
 const DEFAULT_CONCURRENCY = {
   "openrap-sunbirded-plugin_IMPORT": 1,
@@ -17,6 +18,7 @@ const DEFAULT_CONCURRENCY = {
 @Singleton 
 export class SystemQueue {
   @Inject private dbSDK: DataBaseSDK;
+  @Inject private telemetryInstance: TelemetryInstance;
   private dbName = 'system_queue';
   private registeredTasks: { [task: string]: RegisteredTasks } = {};
   private runningTasks: IRunningTasks[] =  [];
@@ -105,6 +107,11 @@ export class SystemQueue {
       runTime: 0,
       isActive: true,
     }));
+    // Add audit event for newly added queue data
+    for (const data of queueData) {
+      this.logAuditEvent(data, Object.keys(data), SystemQueueStatus.inQueue);
+    }
+
     logger.info("Adding to queue for", plugin, queueData.length);
     await this.dbSDK.bulkDocs(this.dbName, queueData)
     .catch((err) => logger.error("SystemQueue, Error while adding task in db", err.message));
@@ -260,6 +267,8 @@ export class SystemQueue {
         throw res || "INVALID_OPERATION";
       }
       const queueData = inProgressJob.taskExecuterRef.status();
+      // Adding telemetry audit event
+      this.logAuditEvent(queueData, ["status", "updatedOn"], SystemQueueStatus.paused, queueData.status);
       queueData.status = SystemQueueStatus.paused;
       inProgressJob.syncFunc.next(queueData);
       inProgressJob.syncFunc.complete();
@@ -270,6 +279,8 @@ export class SystemQueue {
         SystemQueueStatus.pausing, SystemQueueStatus.canceling], dbResults.status)) {	
           throw "INVALID_OPERATION";	
       }
+      // Adding telemetry audit event
+      this.logAuditEvent(dbResults, ["status", "updatedOn"], SystemQueueStatus.paused, dbResults.status);
       dbResults.status = SystemQueueStatus.paused;
       await this.dbSDK.updateDoc(this.dbName, _id, dbResults)
       .catch((err) => logger.error("pause error while updating job details for ", _id));
@@ -282,6 +293,8 @@ export class SystemQueue {
     if (!dbResults || !_.includes([SystemQueueStatus.paused], dbResults.status)) {	
       throw "INVALID_OPERATION";	
     }
+    // Adding telemetry audit event
+    this.logAuditEvent(dbResults, ["status", "updatedOn"], SystemQueueStatus.resume, dbResults.status);
     dbResults.status = SystemQueueStatus.resume;	
     await this.dbSDK.updateDoc(this.dbName, _id, dbResults)	
       .catch((err) => logger.error("resume error while updating job details for ", _id));
@@ -295,6 +308,8 @@ export class SystemQueue {
         throw res || "INVALID_OPERATION";
       }
       const queueData = inProgressJob.taskExecuterRef.status();
+      // Adding telemetry audit event
+      this.logAuditEvent(queueData, ["status", "updatedOn"], SystemQueueStatus.canceled, queueData.status);
       queueData.status = SystemQueueStatus.canceled;
       queueData.isActive = false;
       inProgressJob.syncFunc.next(queueData);
@@ -306,6 +321,8 @@ export class SystemQueue {
         SystemQueueStatus.pausing, SystemQueueStatus.canceling], dbResults.status)) {	
           throw "INVALID_OPERATION";	
       }
+      // Adding telemetry audit event
+      this.logAuditEvent(dbResults, ["status", "updatedOn"], SystemQueueStatus.canceled, dbResults.status);
       dbResults.status = SystemQueueStatus.canceled;
       await this.dbSDK.updateDoc(this.dbName, _id, dbResults)
       .catch((err) => logger.error("cancel error while updating job details for ", _id));
@@ -318,6 +335,8 @@ export class SystemQueue {
     if (!dbResults || !_.includes([SystemQueueStatus.failed], dbResults.status)) {	
       throw "INVALID_OPERATION";	
     }
+    // Adding telemetry audit event
+    this.logAuditEvent(dbResults, ["status", "updatedOn"], SystemQueueStatus.inQueue, dbResults.status);
     dbResults.status = SystemQueueStatus.inQueue;	
     await this.dbSDK.updateDoc(this.dbName, _id, dbResults)	
       .catch((err) => logger.error("retry error while updating job details for ", _id));
@@ -338,6 +357,30 @@ export class SystemQueue {
       .catch((err) => logger.error("SystemQueue migration, Error while adding task in db", err.message));
     this.executeNextTask();
    return queueData.map(({ _id }) => _id);
+  }
+  private logAuditEvent(data: any, props: string[], state: string, prevstate?: string) {
+    const telemetryEvent: any = {
+      context: {
+        env: 'systemQueue',
+        cdata: [{
+          id: _.get(data, '_id'),
+          type: _.get(data, 'type'),
+        }],
+      },
+      edata: {
+        state,
+        prevstate,
+        props,
+      },
+    };
+    if (_.get(data, 'metaData.contentId')) {
+      telemetryEvent.object = {
+        id: _.get(data, 'metaData.contentId'),
+        type: "content",
+        ver: _.toString(_.get(data, 'metaData.pkgVersion')),
+      };
+    }
+    this.telemetryInstance.audit(telemetryEvent)
   }
 }
 

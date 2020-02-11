@@ -3,6 +3,7 @@ import { Observer } from "rxjs";
 export { ISystemQueue } from './IQueue';
 export declare class SystemQueue {
     private dbSDK;
+    private telemetryInstance;
     private dbName;
     private registeredTasks;
     private runningTasks;
@@ -44,6 +45,7 @@ export declare class SystemQueue {
     cancel(plugin: string, _id: string): Promise<void>;
     retry(plugin: string, _id: string): Promise<void>;
     migrate(queueData: ISystemQueue[]): Promise<string[]>;
+    private logAuditEvent;
 }
 export interface ITaskExecuter {
     start(ISystemQueue: ISystemQueue, observer: Observer<ISystemQueue>): Promise<boolean | SystemQueueError>;
