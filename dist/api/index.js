@@ -37,10 +37,14 @@ const DownloadSDK_1 = require("./../sdks/DownloadSDK");
 const queue_1 = require("./../services/queue");
 var queue_2 = require("./../services/queue");
 exports.SystemQueueStatus = queue_2.SystemQueueStatus;
+const EventManager_1 = require("@project-sunbird/ext-framework-server/managers/EventManager");
 let ContainerAPI = class ContainerAPI {
     bootstrap() {
         return __awaiter(this, void 0, void 0, function* () {
             yield index_1.App.bootstrap();
+            EventManager_1.EventManager.subscribe("app:initialized", () => {
+                this.systemQueue.initialize();
+            });
         });
     }
     register(pluginId, pluginInfo) {

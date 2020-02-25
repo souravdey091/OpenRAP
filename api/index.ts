@@ -16,6 +16,8 @@ import { TicketSDK } from "./../sdks/TicketSDK";
 import { DownloadSDK } from "./../sdks/DownloadSDK";
 import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue } from './../services/queue';
 export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus } from "./../services/queue";
+import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
+
 @Singleton
 class ContainerAPI {
   @Inject userSDK : UserSDK;
@@ -24,6 +26,9 @@ class ContainerAPI {
   @Inject downloadSDK: DownloadSDK
   public async bootstrap() {
     await App.bootstrap();
+    EventManager.subscribe("app:initialized", () => {
+      this.systemQueue.initialize();
+    });
   }
 
   public async register(pluginId: string, pluginInfo: PluginConfig) {
