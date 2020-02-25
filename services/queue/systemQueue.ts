@@ -33,6 +33,7 @@ export class SystemQueue {
    */
   public async initialize(config?: any) {
     // this.config = config; TODO: support configurable concurrency
+    logger.debug("System queue is being initialized");
     const { docs } = await this.dbSDK.find(this.dbName, { selector: { status: SystemQueueStatus.inProgress} })
     .catch((err) => {
       logger.log("reconcile error while fetching inProgress content from DB", err.message);
@@ -140,7 +141,7 @@ export class SystemQueue {
         return;
       }
       const selector = { // TODO: should limit task query at plugin/type level
-        status: { $in: [SystemQueueStatus.inQueue, SystemQueueStatus.resume] },
+        status: { $in: [SystemQueueStatus.inQueue, SystemQueueStatus.resume, SystemQueueStatus.reconcile] },
         plugin: { $in: fetchQuery.map(data => data.plugin) },
         type: { $in: fetchQuery.map(data => data.type) }
       }

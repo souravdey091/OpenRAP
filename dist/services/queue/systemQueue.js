@@ -58,6 +58,7 @@ let SystemQueue = class SystemQueue {
     initialize(config) {
         return __awaiter(this, void 0, void 0, function* () {
             // this.config = config; TODO: support configurable concurrency
+            logger_1.logger.debug("System queue is being initialized");
             const { docs } = yield this.dbSDK.find(this.dbName, { selector: { status: IQueue_1.SystemQueueStatus.inProgress } })
                 .catch((err) => {
                 logger_1.logger.log("reconcile error while fetching inProgress content from DB", err.message);
@@ -157,7 +158,7 @@ let SystemQueue = class SystemQueue {
                     return;
                 }
                 const selector = {
-                    status: { $in: [IQueue_1.SystemQueueStatus.inQueue, IQueue_1.SystemQueueStatus.resume] },
+                    status: { $in: [IQueue_1.SystemQueueStatus.inQueue, IQueue_1.SystemQueueStatus.resume, IQueue_1.SystemQueueStatus.reconcile] },
                     plugin: { $in: fetchQuery.map(data => data.plugin) },
                     type: { $in: fetchQuery.map(data => data.type) }
                 };
