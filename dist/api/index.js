@@ -113,6 +113,15 @@ let ContainerAPI = class ContainerAPI {
         };
         return { register, add, query, pause, resume, cancel, retry, migrate };
     }
+    getNetworkQueueInstance() {
+        const add = (tasks, docId) => {
+            return this.networkQueue.add(tasks, docId);
+        };
+        const query = (query) => {
+            return this.networkQueue.getByQuery(query);
+        };
+        return { add, query };
+    }
 };
 __decorate([
     typescript_ioc_1.Inject,
@@ -126,6 +135,10 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", queue_1.SystemQueue)
 ], ContainerAPI.prototype, "systemQueue", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", queue_1.NetworkQueue)
+], ContainerAPI.prototype, "networkQueue", void 0);
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", DownloadSDK_1.DownloadSDK)

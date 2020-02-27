@@ -30,9 +30,10 @@ export interface INetworkQueue extends IQueue {
     data?: any;
 }
 
-export interface IQuery {
+export interface INetworkQueueQuery {
     selector: {
-        type: string;
+        _id?: string;
+        type?: string;
         subType?: string;
     };
     limit?: number;

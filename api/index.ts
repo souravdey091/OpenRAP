@@ -14,15 +14,17 @@ import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
 import { DownloadSDK } from "./../sdks/DownloadSDK";
-import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue } from './../services/queue';
-export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus } from "./../services/queue";
+import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue, NetworkQueue, NetworkQueueReq } from './../services/queue';
+export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus, NetworkQueueReq } from "./../services/queue";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
+import { INetworkQueueQuery } from './../services/queue/IQueue';
 
 @Singleton
 class ContainerAPI {
   @Inject userSDK : UserSDK;
   @Inject ticketSDK : TicketSDK;
   @Inject systemQueue: SystemQueue
+  @Inject networkQueue: NetworkQueue
   @Inject downloadSDK: DownloadSDK
   public async bootstrap() {
     await App.bootstrap();
@@ -101,6 +103,17 @@ class ContainerAPI {
     }
     return { register, add, query, pause, resume, cancel, retry, migrate }
   }
+
+  public getNetworkQueueInstance(): INetworkQueueInstance {
+    const add = (tasks: NetworkQueueReq, docId?: string) => {
+      return this.networkQueue.add(tasks, docId);
+    }
+    const query = (query: INetworkQueueQuery) => {
+      return this.networkQueue.getByQuery(query);
+
+    }
+    return { add, query }
+  }
 }
 export interface ISystemQueueInstance {
   register(type: string, taskExecuter: TaskExecuter); 
@@ -111,5 +124,9 @@ export interface ISystemQueueInstance {
   cancel(_id: string);
   retry(_id: string);
   migrate(tasks: ISystemQueue[]);
+}
+export interface INetworkQueueInstance {
+  add(tasks: NetworkQueueReq, docId?: string);
+  query(query: INetworkQueueQuery);
 }
 export const containerAPI = new ContainerAPI();

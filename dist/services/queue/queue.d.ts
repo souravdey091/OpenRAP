@@ -1,4 +1,4 @@
-import { ISystemQueue, INetworkQueue, IQuery, IUpdateQuery } from './IQueue';
+import { ISystemQueue, INetworkQueue, INetworkQueueQuery, IUpdateQuery } from './IQueue';
 export declare enum QUEUE_TYPE {
     System = "SYSTEM",
     Network = "NETWORK"
@@ -10,6 +10,6 @@ export declare class Queue {
     deQueue(id: string): Promise<any>;
     length(): any;
     getById(id: string): any;
-    getByQuery(query: IQuery): any;
+    getByQuery(query: INetworkQueueQuery): any;
 }
 export * from './IQueue';

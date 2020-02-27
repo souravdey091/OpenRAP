@@ -16,7 +16,7 @@ export declare class NetworkQueue extends Queue {
     private retryCount;
     private queueInProgress;
     apiKey: string;
-    add(doc: IAdd, docId?: string): Promise<any>;
+    add(doc: NetworkQueueReq, docId?: string): Promise<any>;
     start(): Promise<void>;
     private execute;
     private makeHTTPCall;
@@ -24,7 +24,7 @@ export declare class NetworkQueue extends Queue {
     private getAPIToken;
     logTelemetryError(error: any, errType?: string): void;
 }
-export interface IAdd {
+export interface NetworkQueueReq {
     bearerToken: boolean;
     subType: string;
     pathToApi: string;

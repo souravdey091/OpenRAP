@@ -2,7 +2,7 @@ import { Singleton } from "typescript-ioc";
 import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
 import { DataBaseSDK } from "./../../sdks/DataBaseSDK";
-import { ISystemQueue, INetworkQueue, IQuery, IUpdateQuery } from './IQueue';
+import { ISystemQueue, INetworkQueue, INetworkQueueQuery, IUpdateQuery } from './IQueue';
 const dbName = 'queue';
 export enum QUEUE_TYPE {
     System = "SYSTEM",
@@ -41,7 +41,7 @@ export class Queue {
             .catch(err => { throw this.dbSDK.handleError(err); });
     }
 
-    getByQuery(query: IQuery) {
+    getByQuery(query: INetworkQueueQuery) {
         return this.dbSDK.find(dbName, query)
             .then(result => result.docs)
             .catch(err => { throw this.dbSDK.handleError(err); });
