@@ -114,13 +114,7 @@ let ContainerAPI = class ContainerAPI {
         return { register, add, query, pause, resume, cancel, retry, migrate };
     }
     getNetworkQueueInstance() {
-        const add = (tasks, docId) => {
-            return this.networkQueue.add(tasks, docId);
-        };
-        const query = (query) => {
-            return this.networkQueue.getByQuery(query);
-        };
-        return { add, query };
+        return this.networkQueue;
     }
 };
 __decorate([

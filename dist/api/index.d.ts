@@ -9,9 +9,8 @@ import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
 import { DownloadSDK } from "./../sdks/DownloadSDK";
-import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue, NetworkQueue, NetworkQueueReq } from './../services/queue';
+import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue, NetworkQueue } from './../services/queue';
 export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus, NetworkQueueReq } from "./../services/queue";
-import { INetworkQueueQuery } from './../services/queue/IQueue';
 declare class ContainerAPI {
     userSDK: UserSDK;
     ticketSDK: TicketSDK;
@@ -30,7 +29,7 @@ declare class ContainerAPI {
     getTicketSdkInstance(): TicketSDK;
     initializeSystemQueue(): void;
     getSystemQueueInstance(pluginId: string): ISystemQueueInstance;
-    getNetworkQueueInstance(): INetworkQueueInstance;
+    getNetworkQueueInstance(): NetworkQueue;
 }
 export interface ISystemQueueInstance {
     register(type: string, taskExecuter: TaskExecuter): any;
@@ -41,9 +40,5 @@ export interface ISystemQueueInstance {
     cancel(_id: string): any;
     retry(_id: string): any;
     migrate(tasks: ISystemQueue[]): any;
-}
-export interface INetworkQueueInstance {
-    add(tasks: NetworkQueueReq, docId?: string): any;
-    query(query: INetworkQueueQuery): any;
 }
 export declare const containerAPI: ContainerAPI;

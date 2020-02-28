@@ -104,15 +104,8 @@ class ContainerAPI {
     return { register, add, query, pause, resume, cancel, retry, migrate }
   }
 
-  public getNetworkQueueInstance(): INetworkQueueInstance {
-    const add = (tasks: NetworkQueueReq, docId?: string) => {
-      return this.networkQueue.add(tasks, docId);
-    }
-    const query = (query: INetworkQueueQuery) => {
-      return this.networkQueue.getByQuery(query);
-
-    }
-    return { add, query }
+  public getNetworkQueueInstance() {
+    return this.networkQueue;
   }
 }
 export interface ISystemQueueInstance {
@@ -124,9 +117,5 @@ export interface ISystemQueueInstance {
   cancel(_id: string);
   retry(_id: string);
   migrate(tasks: ISystemQueue[]);
-}
-export interface INetworkQueueInstance {
-  add(tasks: NetworkQueueReq, docId?: string);
-  query(query: INetworkQueueQuery);
 }
 export const containerAPI = new ContainerAPI();
