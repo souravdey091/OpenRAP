@@ -266,6 +266,7 @@ let SystemQueue = class SystemQueue {
             syncFun.complete();
         };
         const complete = () => {
+            queueCopy.progress = 100;
             queueCopy.isActive = false;
             queueCopy.status = IQueue_1.SystemQueueStatus.completed;
             const runningTaskRef = _.find(this.runningTasks, { _id: queueCopy._id });

@@ -1,15 +1,15 @@
-import { ISystemQueue, INetworkQueue, IQuery, IUpdateQuery } from './IQueue';
+import { ISystemQueue, INetworkQueue, INetworkQueueQuery, IUpdateQuery } from './IQueue';
 export declare enum QUEUE_TYPE {
     System = "SYSTEM",
     Network = "NETWORK"
 }
 export declare class Queue {
     private dbSDK;
-    enQueue(data: ISystemQueue | INetworkQueue, docId?: string): any;
-    updateQueue(docId: string, query: IUpdateQuery): Promise<any>;
-    deQueue(id: string): Promise<any>;
-    length(): any;
+    protected enQueue(data: ISystemQueue | INetworkQueue, docId?: string): any;
+    protected updateQueue(docId: string, query: IUpdateQuery): Promise<any>;
+    protected deQueue(id: string): Promise<any>;
+    protected length(): any;
     getById(id: string): any;
-    getByQuery(query: IQuery): any;
+    getByQuery(query: INetworkQueueQuery): any;
 }
 export * from './IQueue';

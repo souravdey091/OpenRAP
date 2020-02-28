@@ -32,7 +32,7 @@ export class NetworkQueue extends Queue {
     private queueInProgress = false;
     apiKey: string;
 
-    async add(doc: IAdd, docId?: string) {
+    async add(doc: NetworkQueueReq, docId?: string) {
         let date = Date.now();
         let data = {
             ...doc,
@@ -226,7 +226,7 @@ export class NetworkQueue extends Queue {
     }
 }
 
-export interface IAdd {
+export interface NetworkQueueReq {
     bearerToken: boolean;
     subType: string;
     pathToApi: string;
