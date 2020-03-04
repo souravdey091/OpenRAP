@@ -1,7 +1,6 @@
 import { DataBaseSDK } from "./DataBaseSDK";
 import { hash } from "./../utils";
 import { Inject } from "typescript-ioc";
-import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
 
 /**
  * @author Harish Kumar Gangula <harishg@ilimi.in>
@@ -13,9 +12,6 @@ export default class SettingSDK {
   @Inject
   private dbSDK: DataBaseSDK;
 
-  @Inject
-  private telemetryInstance: TelemetryInstance;
-
   constructor(public pluginId?: string) {}
   /*
    * Method to put the setting
@@ -23,27 +19,6 @@ export default class SettingSDK {
    * @param value Object - The value of the setting
    */
   put = async (key: string, value: object): Promise<boolean> => {
-    this.telemetryInstance.log({
-      context: {
-        env: "settingSDK"
-      },
-      edata: {
-        level: "INFO",
-        type: "OTHER",
-        message: `${key} is updated`,
-        params: [
-          {
-            key: key
-          },
-          {
-            value: value
-          },
-          {
-            pluginId: this.pluginId
-          }
-        ]
-      }
-    });
     let keyName = this.pluginId ? `${hash(this.pluginId)}_${key}` : key;
     await this.dbSDK.upsertDoc(dbName, keyName, value);
     return true;

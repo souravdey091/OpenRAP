@@ -1,29 +1,47 @@
-import { Singleton } from "typescript-ioc";
+import { Singleton, Inject } from "typescript-ioc";
 const GetMac = require("getmac");
 const crypto = require("crypto");
+const uuid = require("uuid");
 import { logger } from "@project-sunbird/ext-framework-server/logger";
 import * as os from "os";
 import * as si from "systeminformation";
 import * as _ from "lodash";
+import SettingSDK from "./SettingSDK";
 @Singleton
 export default class SystemSDK {
   private deviceId: string;
+  @Inject
+  private settingSDK: SettingSDK;
+  
   constructor(pluginId?: string) {}
 
-  getDeviceId(): Promise<string> {
+  async getDeviceId() {
     if (this.deviceId) return Promise.resolve(this.deviceId);
-    return new Promise(resolve => {
-      GetMac.getMac((err, macAddress) => {
-        if (err) {
-          logger.error(`Error while getting deviceId ${err}`);
+    const  deviceInfo: any = await this.settingSDK.get('deviceId').catch(err => logger.error('While getting deviceId from settingSDK', err));
+    if (deviceInfo && deviceInfo.did) {
+      this.deviceId = deviceInfo.did
+      return Promise.resolve(deviceInfo.did)
+    } 
+    let address = await this.getAddress()
+    this.deviceId = crypto
+                          .createHash("sha256")
+                          .update(address)
+                          .digest("hex");
+    await this.settingSDK.put('deviceId', {did: this.deviceId});
+    return Promise.resolve(this.deviceId);
+  }
+
+  // This method will return the address or unique id
+  private getAddress(): Promise<string> {
+    return new Promise((resolve) => {
+      GetMac.getMac((err, macAddress) => { 
+        if(err) {
+          resolve(uuid.v4());
+        } else {
+          resolve(macAddress);
         }
-        this.deviceId = crypto
-          .createHash("sha256")
-          .update(macAddress)
-          .digest("hex");
-        resolve(this.deviceId);
-      });
-    });
+      })
+    })
   }
 
   async getHardDiskInfo() {

@@ -10,7 +10,7 @@ describe('UserSDK', async () => {
   let userSDK;
   before(async () => {
     userSDK = new UserSDK();
-    process.env.DATABASE_PATH = __dirname;
+    process.env.DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, '..', 'test_data');
   });
   it('should create user with "guest" as name and formatedName if name is not passed', async () => {
     const timeBefore = Date.now();
