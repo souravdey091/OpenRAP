@@ -1,8 +1,10 @@
 import * as si from "systeminformation";
 export default class SystemSDK {
     private deviceId;
+    private settingSDK;
     constructor(pluginId?: string);
-    getDeviceId(): Promise<string>;
+    getDeviceId(): Promise<any>;
+    private getAddress;
     getHardDiskInfo(): Promise<{
         totalHarddisk: number;
         availableHarddisk: number;

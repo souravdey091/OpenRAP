@@ -23,29 +23,49 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const typescript_ioc_1 = require("typescript-ioc");
 const GetMac = require("getmac");
 const crypto = require("crypto");
+const uuid = require("uuid");
 const logger_1 = require("@project-sunbird/ext-framework-server/logger");
 const os = __importStar(require("os"));
 const si = __importStar(require("systeminformation"));
 const _ = __importStar(require("lodash"));
+const SettingSDK_1 = __importDefault(require("./SettingSDK"));
 let SystemSDK = class SystemSDK {
     constructor(pluginId) { }
     getDeviceId() {
-        if (this.deviceId)
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.deviceId)
+                return Promise.resolve(this.deviceId);
+            const deviceInfo = yield this.settingSDK.get('deviceId').catch(err => logger_1.logger.error('While getting deviceId from settingSDK', err));
+            if (deviceInfo && deviceInfo.did) {
+                this.deviceId = deviceInfo.did;
+                return Promise.resolve(deviceInfo.did);
+            }
+            let address = yield this.getAddress();
+            this.deviceId = crypto
+                .createHash("sha256")
+                .update(address)
+                .digest("hex");
+            yield this.settingSDK.put('deviceId', { did: this.deviceId });
             return Promise.resolve(this.deviceId);
-        return new Promise(resolve => {
+        });
+    }
+    // This method will return the address or unique id
+    getAddress() {
+        return new Promise((resolve) => {
             GetMac.getMac((err, macAddress) => {
                 if (err) {
-                    logger_1.logger.error(`Error while getting deviceId ${err}`);
+                    resolve(uuid.v4());
                 }
-                this.deviceId = crypto
-                    .createHash("sha256")
-                    .update(macAddress)
-                    .digest("hex");
-                resolve(this.deviceId);
+                else {
+                    resolve(macAddress);
+                }
             });
         });
     }
@@ -184,6 +204,10 @@ let SystemSDK = class SystemSDK {
         });
     }
 };
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", SettingSDK_1.default)
+], SystemSDK.prototype, "settingSDK", void 0);
 SystemSDK = __decorate([
     typescript_ioc_1.Singleton,
     __metadata("design:paramtypes", [String])
