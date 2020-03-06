@@ -20,7 +20,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const DataBaseSDK_1 = require("./DataBaseSDK");
 const utils_1 = require("./../utils");
 const typescript_ioc_1 = require("typescript-ioc");
-const telemetryInstance_1 = require("./../services/telemetry/telemetryInstance");
 /**
  * @author Harish Kumar Gangula <harishg@ilimi.in>
  */
@@ -34,27 +33,6 @@ class SettingSDK {
          * @param value Object - The value of the setting
          */
         this.put = (key, value) => __awaiter(this, void 0, void 0, function* () {
-            this.telemetryInstance.log({
-                context: {
-                    env: "settingSDK"
-                },
-                edata: {
-                    level: "INFO",
-                    type: "OTHER",
-                    message: `${key} is updated`,
-                    params: [
-                        {
-                            key: key
-                        },
-                        {
-                            value: value
-                        },
-                        {
-                            pluginId: this.pluginId
-                        }
-                    ]
-                }
-            });
             let keyName = this.pluginId ? `${utils_1.hash(this.pluginId)}_${key}` : key;
             yield this.dbSDK.upsertDoc(dbName, keyName, value);
             return true;
@@ -77,8 +55,4 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", DataBaseSDK_1.DataBaseSDK)
 ], SettingSDK.prototype, "dbSDK", void 0);
-__decorate([
-    typescript_ioc_1.Inject,
-    __metadata("design:type", telemetryInstance_1.TelemetryInstance)
-], SettingSDK.prototype, "telemetryInstance", void 0);
 exports.default = SettingSDK;

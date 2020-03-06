@@ -29,6 +29,7 @@ const typescript_ioc_1 = require("typescript-ioc");
 const dns = __importStar(require("dns"));
 const telemetryInstance_1 = require("./../services/telemetry/telemetryInstance");
 const typescript_ioc_2 = require("typescript-ioc");
+const URL = require('url').URL;
 let NetworkSDK = class NetworkSDK {
     constructor() {
         this.isInternetAvailable = (baseUrl) => {
