@@ -59,7 +59,7 @@ class ContainerAPI {
     return status;
   }
 
-  public getSystemSDKInstance(pluginId: string): SystemSDK {
+  public getSystemSDKInstance(pluginId?: string): SystemSDK {
     return new SystemSDK(pluginId);
   }
 

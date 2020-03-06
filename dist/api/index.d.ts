@@ -23,7 +23,7 @@ declare class ContainerAPI {
     getFileSDKInstance(pluginId: string): FileSDK;
     getDownloadSdkInstance(): DownloadSDK;
     getNetworkStatus(url?: string): Promise<boolean>;
-    getSystemSDKInstance(pluginId: string): SystemSDK;
+    getSystemSDKInstance(pluginId?: string): SystemSDK;
     getTelemetrySDKInstance(): TelemetrySDK;
     getUserSdkInstance(): UserSDK;
     getTicketSdkInstance(): TicketSDK;
