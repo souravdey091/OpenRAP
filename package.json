@@ -5,7 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "rimraf dist && tsc && cpy package.json ./dist && cpy  ./db/ ./dist/db/",
-    "test": "nyc --reporter=lcov --reporter=html --reporter=text mocha --exit -r ts-node/register **/**/*.spec.ts **/*.spec.ts *.spec.ts"
+    "test": "rimraf test_data && mkdirp test_data && nyc --reporter=lcov --reporter=html --reporter=text mocha --exit -r ts-node/register **/**/*.spec.ts **/*.spec.ts *.spec.ts"
   },
   "nyc": {
     "extension": [
@@ -51,7 +51,7 @@
     "pouchdb-find": "^7.1.1",
     "su-downloader3": "^1.0.8",
     "systeminformation": "^4.14.17",
-    "typescript-ioc": "^1.2.5"
+    "typescript-ioc": "^3.0.4"
   },
   "devDependencies": {
     "@project-sunbird/ext-framework-server": "^0.1.26",
@@ -69,6 +69,7 @@
     "chai-spies": "^1.0.0",
     "cpy-cli": "^2.0.0",
     "gulp": "^3.9.1",
+    "mkdirp": "^1.0.3",
     "mocha": "^6.1.4",
     "nyc": "^14.1.1",
     "rimraf": "^2.6.3",

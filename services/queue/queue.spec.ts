@@ -1,4 +1,5 @@
 import { Queue } from './queue';
+import * as path from 'path';
 const chai = require('chai'), spies = require('chai-spies');
 chai.use(spies);
 const spy = chai.spy.sandbox();
@@ -8,7 +9,7 @@ describe('Queue', async () => {
   let queue;
   before(async () => {
     queue = new Queue();
-    process.env.DATABASE_PATH = __dirname;
+    process.env.DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, '..', '..', 'test_data');
   });
   it('should call enQueue method', async () => {
     let insertDoc = spy.on(queue.dbSDK, 'insertDoc', data => Promise.resolve('123'));

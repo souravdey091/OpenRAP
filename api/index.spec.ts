@@ -2,8 +2,6 @@ import { expect } from "chai";
 import { containerAPI } from "./index";
 import SettingSDK from "./../sdks/SettingSDK";
 import FileSDK from "./../sdks/FileSDK";
-import DownloadManager from "./../managers/DownloadManager/DownloadManager";
-import { statSync } from "fs";
 import SystemSDK from "../sdks/SystemSDK";
 import TelemetrySDK from "../sdks/TelemetrySDK";
 
@@ -22,13 +20,6 @@ describe("ContainerAPI", () => {
   it("should get file SDK instance", () => {
     let fileSDK = containerAPI.getFileSDKInstance("sunbird-test-plugin");
     expect(fileSDK).to.be.instanceOf(FileSDK);
-  });
-
-  it("should get download manager instance", () => {
-    let downloadManager = containerAPI.getDownloadManagerInstance(
-      "sunbird-test-plugin"
-    );
-    expect(downloadManager).to.be.instanceOf(DownloadManager);
   });
 
   it("should get internet status", async () => {

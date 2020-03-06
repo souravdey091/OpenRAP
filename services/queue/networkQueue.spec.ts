@@ -1,4 +1,5 @@
 import { NetworkQueue } from './networkQueue';
+import * as path from 'path';
 const chai = require('chai'), spies = require('chai-spies');
 chai.use(spies);
 const spy = chai.spy.sandbox();
@@ -7,9 +8,9 @@ import {queueListData, errorEvent} from './networkQueue.spec.data';
 
 describe('NetworkQueue', async () => {
   let networkQueue;
+  process.env.DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, '..', '..', 'test_data');
   before(async () => {
     networkQueue = new NetworkQueue();
-    process.env.DATABASE_PATH = __dirname;
   });
   it('should call add method', async () => {
     spy.on(networkQueue, 'enQueue', data => Promise.resolve('123'));

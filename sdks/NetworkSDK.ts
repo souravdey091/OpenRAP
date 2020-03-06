@@ -3,6 +3,7 @@ import { Singleton } from "typescript-ioc";
 import * as dns from "dns";
 import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
 import { Inject } from "typescript-ioc";
+const URL = require('url').URL;
 @Singleton
 export default class NetworkSDK {
   private internetStatus;
