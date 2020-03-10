@@ -38,7 +38,7 @@ let NetworkSDK = class NetworkSDK {
                     ? baseUrl
                     : process.env.APP_BASE_URL;
                 const url = new URL(endPointUrl);
-                dns.lookup(url.hostname, err => {
+                dns.resolve(url.hostname, err => {
                     if (err) {
                         resolve(false);
                     }
