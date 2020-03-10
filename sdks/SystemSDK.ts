@@ -34,9 +34,12 @@ export default class SystemSDK {
       .catch(error => logger.error(`while getting hard disk size`, error));
     if (fsSize) {
       if (os.platform() === "win32") {
-        // C drive is default for windows. When the storage changes feature comes the logic will also change
-        totalHarddisk = _.find(fsSize, { mount: "C:" })["size"] || 0;
-        let usedHarddisk = _.find(fsSize, { mount: "C:" })["used"] || 0;
+        totalHarddisk = fsSize
+          .map(mountFS => mountFS.size)
+          .reduce((acc, size) => acc + size, 0);
+        let usedHarddisk = fsSize
+          .map(mountFS => mountFS.used)
+          .reduce((acc, size) => acc + size, 0);
         availableHarddisk = totalHarddisk - usedHarddisk;
       } else {
         totalHarddisk = _.find(fsSize, { mount: "/" })["size"] || 0;
@@ -45,7 +48,7 @@ export default class SystemSDK {
       }
     }
 
-    return { totalHarddisk, availableHarddisk };
+    return { totalHarddisk, availableHarddisk, fsSize };
   }
 
   async getMemoryInfo() {
