@@ -72,7 +72,7 @@ let SystemSDK = class SystemSDK {
                     availableHarddisk = totalHarddisk - usedHarddisk;
                 }
             }
-            return { totalHarddisk, availableHarddisk };
+            return { totalHarddisk, availableHarddisk, fsSize };
         });
     }
     getMemoryInfo() {

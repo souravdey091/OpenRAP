@@ -6,6 +6,7 @@ export default class SystemSDK {
     getHardDiskInfo(): Promise<{
         totalHarddisk: number;
         availableHarddisk: number;
+        fsSize: void | si.Systeminformation.FsSizeData[];
     }>;
     getMemoryInfo(): Promise<{
         totalMemory: number;
