@@ -9,12 +9,6 @@ chai.use(spies);
 const spy = chai.spy.sandbox();
 const expect = chai.expect;
 
-export const TelemetrySDKError = {
-  code: "BAD_REQUEST",
-  status: 400,
-  message: "Enable key should exist and it should be boolean"
-}
-
 export const getSystemSDKerr = {
   status: 404,
   name: 'not_found',
@@ -43,7 +37,6 @@ describe("TelemetrySDK", () => {
   it("should get the telemetryInstance", () => {
     expect(telemetrySDK.getInstance()).to.be.instanceOf(TelemetryInstance);
   });
-  getSystemSDKerr
   it("should send the telemetryEvents", () => {
     let event = {
       eid: "START",
@@ -81,7 +74,7 @@ describe("TelemetrySDK", () => {
     telemetrySDK.send([event]);
   });
 
-  it.only('should return data - getTelemetrySyncSetting', async () => {
+  it('should return data - getTelemetrySyncSetting', async () => {
     spy.on(settingSDK, 'get', data => Promise.reject(getSystemSDKerr));
     const response = await telemetrySDK.getTelemetrySyncSetting();
     expect(response['enable']).to.equal(true );
@@ -89,7 +82,7 @@ describe("TelemetrySDK", () => {
     expect(response).to.have.property('updatedOn');
   });
 
-  it.only('should insert config and return true - setTelemetrySyncSetting', async () => {
+  it('should insert config and return true - setTelemetrySyncSetting', async () => {
     spy.on(settingSDK, 'put', data => Promise.resolve(true));
     const response = await telemetrySDK.setTelemetrySyncSetting(true);
     expect(response).to.equal(true);
