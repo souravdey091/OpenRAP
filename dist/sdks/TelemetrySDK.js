@@ -8,10 +8,22 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const telemetryInstance_1 = require("./../services/telemetry/telemetryInstance");
 const TelemetryExport_1 = require("./../services/telemetry/TelemetryExport");
 const typescript_ioc_1 = require("typescript-ioc");
+const SettingSDK_1 = __importDefault(require("./SettingSDK"));
 class TelemetrySDK {
     getInstance() {
         return this.telemetryInstance;
@@ -25,6 +37,19 @@ class TelemetrySDK {
     info(cb) {
         return this.telemetryExport.info(cb);
     }
+    setTelemetrySyncSetting(enable) {
+        return this.settingSDK.put('telemetrySyncSetting', { enable: enable, updatedOn: Date.now() });
+    }
+    getTelemetrySyncSetting() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield this.settingSDK.get('telemetrySyncSetting');
+            }
+            catch (error) {
+                return Promise.resolve({ enable: true });
+            }
+        });
+    }
 }
 __decorate([
     typescript_ioc_1.Inject,
@@ -34,4 +59,8 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", TelemetryExport_1.TelemetryExport)
 ], TelemetrySDK.prototype, "telemetryExport", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", SettingSDK_1.default)
+], TelemetrySDK.prototype, "settingSDK", void 0);
 exports.default = TelemetrySDK;
