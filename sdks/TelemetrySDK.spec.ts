@@ -2,7 +2,6 @@ import TelemetrySDK from "./TelemetrySDK";
 import * as _ from "lodash";
 import * as path from 'path';
 import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
-import SettingSDK from './SettingSDK'
 
 const chai = require('chai'), spies = require('chai-spies');
 chai.use(spies);
@@ -19,16 +18,13 @@ export const getSystemSDKerr = {
 };
 
 let telemetryInstance: TelemetryInstance = new TelemetryInstance();
-
-let telemetrySDK = new TelemetrySDK();
-
 describe("TelemetrySDK", () => {
   process.env.FILES_PATH = path.join(__dirname, '..', 'test_data');
 
-  let settingSDK;
+  let telemetrySDK;
     process.env.DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, '..', 'test_data');
     beforeEach(async () => {
-      settingSDK = new SettingSDK();
+      telemetrySDK = new TelemetrySDK();
     });
     afterEach(async () => {
       spy.restore();
@@ -74,16 +70,23 @@ describe("TelemetrySDK", () => {
     telemetrySDK.send([event]);
   });
 
-  it('should return data - getTelemetrySyncSetting', async () => {
-    spy.on(settingSDK, 'get', data => Promise.reject(getSystemSDKerr));
+  it.only('should return data - getTelemetrySyncSetting', async () => {
+    spy.on(telemetrySDK.settingSDK, 'get', (data) => Promise.resolve({enable: true, updatedOn: 12345678987687}));
     const response = await telemetrySDK.getTelemetrySyncSetting();
     expect(response['enable']).to.equal(true );
     expect(response).to.have.property('enable');
     expect(response).to.have.property('updatedOn');
   });
 
-  it('should insert config and return true - setTelemetrySyncSetting', async () => {
-    spy.on(settingSDK, 'put', data => Promise.resolve(true));
+  it.only('should return only true - getTelemetrySyncSetting', async () => {
+    spy.on(telemetrySDK.settingSDK, 'get', (data) => Promise.reject(getSystemSDKerr));
+    const response = await telemetrySDK.getTelemetrySyncSetting();
+    expect(response).to.deep.equal({ enable: true});
+    expect(response).to.have.property('enable');
+  });
+
+  it.only('should insert config and return true - setTelemetrySyncSetting', async () => {
+    spy.on(telemetrySDK.settingSDK, 'put', data => Promise.resolve(true));
     const response = await telemetrySDK.setTelemetrySyncSetting(true);
     expect(response).to.equal(true);
   });
