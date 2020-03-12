@@ -25,13 +25,6 @@ export default class TelemetrySDK {
   }
 
   setTelemetrySyncSetting(enable: boolean): Promise<boolean | TelemetrySDKError> {
-    if (enable === undefined || typeof enable !== "boolean") {
-      throw {
-        code: "BAD_REQUEST",
-        status: 400,
-        message: "Enable key should exist and it should be boolean"
-      }
-    }
     return this.settingSDK.put('telemetrySyncSetting', { enable: enable, updatedOn: Date.now() });
   }
 

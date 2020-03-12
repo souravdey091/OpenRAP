@@ -38,13 +38,6 @@ class TelemetrySDK {
         return this.telemetryExport.info(cb);
     }
     setTelemetrySyncSetting(enable) {
-        if (enable === undefined || typeof enable !== "boolean") {
-            throw {
-                code: "BAD_REQUEST",
-                status: 400,
-                message: "Enable key should exist and it should be boolean"
-            };
-        }
         return this.settingSDK.put('telemetrySyncSetting', { enable: enable, updatedOn: Date.now() });
     }
     getTelemetrySyncSetting() {

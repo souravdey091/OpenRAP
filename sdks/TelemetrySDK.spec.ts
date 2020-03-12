@@ -1,8 +1,28 @@
-import { expect } from "chai";
 import TelemetrySDK from "./TelemetrySDK";
 import * as _ from "lodash";
 import * as path from 'path';
 import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
+import SettingSDK from './SettingSDK'
+
+const chai = require('chai'), spies = require('chai-spies');
+chai.use(spies);
+const spy = chai.spy.sandbox();
+const expect = chai.expect;
+
+export const TelemetrySDKError = {
+  code: "BAD_REQUEST",
+  status: 400,
+  message: "Enable key should exist and it should be boolean"
+}
+
+export const getSystemSDKerr = {
+  status: 404,
+  name: 'not_found',
+  message: 'missing',
+  error: true,
+  reason: 'missing',
+  docId: 'telemetrySyncSetting'
+};
 
 let telemetryInstance: TelemetryInstance = new TelemetryInstance();
 
@@ -11,10 +31,19 @@ let telemetrySDK = new TelemetrySDK();
 describe("TelemetrySDK", () => {
   process.env.FILES_PATH = path.join(__dirname, '..', 'test_data');
 
+  let settingSDK;
+    process.env.DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, '..', 'test_data');
+    beforeEach(async () => {
+      settingSDK = new SettingSDK();
+    });
+    afterEach(async () => {
+      spy.restore();
+    })
+
   it("should get the telemetryInstance", () => {
     expect(telemetrySDK.getInstance()).to.be.instanceOf(TelemetryInstance);
   });
-
+  getSystemSDKerr
   it("should send the telemetryEvents", () => {
     let event = {
       eid: "START",
@@ -51,4 +80,19 @@ describe("TelemetrySDK", () => {
     };
     telemetrySDK.send([event]);
   });
+
+  it.only('should return data - getTelemetrySyncSetting', async () => {
+    spy.on(settingSDK, 'get', data => Promise.reject(getSystemSDKerr));
+    const response = await telemetrySDK.getTelemetrySyncSetting();
+    expect(response['enable']).to.equal(true );
+    expect(response).to.have.property('enable');
+    expect(response).to.have.property('updatedOn');
+  });
+
+  it.only('should insert config and return true - setTelemetrySyncSetting', async () => {
+    spy.on(settingSDK, 'put', data => Promise.resolve(true));
+    const response = await telemetrySDK.setTelemetrySyncSetting(true);
+    expect(response).to.equal(true);
+  });
+
 });
