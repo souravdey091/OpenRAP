@@ -24,22 +24,22 @@ export default class TelemetrySDK {
     return this.telemetryExport.info(cb)
   }
 
-  setTelemetryConfigSyncToServer(syncToServer: boolean): Promise<boolean | TelemetrySDKError> {
-    if (syncToServer === undefined || typeof syncToServer !== "boolean") {
+  setTelemetrySyncSetting(enable: boolean): Promise<boolean | TelemetrySDKError> {
+    if (enable === undefined || typeof enable !== "boolean") {
       throw {
         code: "BAD_REQUEST",
         status: 400,
-        message: "SyncToServer key should exist and it should be boolean"
+        message: "Enable key should exist and it should be boolean"
       }
     }
-    return this.settingSDK.put('isTelemetrySyncToServer', { syncToServer: syncToServer, updatedOn: Date.now() });
+    return this.settingSDK.put('telemetrySyncSetting', { enable: enable, updatedOn: Date.now() });
   }
 
-  async getTelemetryConfigSyncToServer(): Promise<{} | { syncToServer: boolean }> {
+  async getTelemetrySyncSetting(): Promise<{} | { enable: boolean }> {
     try {
-      return await this.settingSDK.get('isTelemetrySyncToServer');
+      return await this.settingSDK.get('telemetrySyncSetting');
     } catch (error) {
-      return { syncToServer: true };
+      return Promise.resolve({ enable: true });
     }
   }
 }

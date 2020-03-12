@@ -7,9 +7,9 @@ export default class TelemetrySDK {
     send(events: any[]): Promise<any>;
     export(destPath: string, cb: any): Promise<void>;
     info(cb: any): Promise<void>;
-    setTelemetryConfigSyncToServer(syncToServer: boolean): Promise<boolean | TelemetrySDKError>;
-    getTelemetryConfigSyncToServer(): Promise<{} | {
-        syncToServer: boolean;
+    setTelemetrySyncSetting(enable: boolean): Promise<boolean | TelemetrySDKError>;
+    getTelemetrySyncSetting(): Promise<{} | {
+        enable: boolean;
     }>;
 }
 export interface TelemetrySDKError {

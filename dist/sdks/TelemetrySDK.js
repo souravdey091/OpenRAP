@@ -37,23 +37,23 @@ class TelemetrySDK {
     info(cb) {
         return this.telemetryExport.info(cb);
     }
-    setTelemetryConfigSyncToServer(syncToServer) {
-        if (syncToServer === undefined || typeof syncToServer !== "boolean") {
+    setTelemetrySyncSetting(enable) {
+        if (enable === undefined || typeof enable !== "boolean") {
             throw {
                 code: "BAD_REQUEST",
                 status: 400,
-                message: "SyncToServer key should exist and it should be boolean"
+                message: "Enable key should exist and it should be boolean"
             };
         }
-        return this.settingSDK.put('isTelemetrySyncToServer', { syncToServer: syncToServer, updatedOn: Date.now() });
+        return this.settingSDK.put('telemetrySyncSetting', { enable: enable, updatedOn: Date.now() });
     }
-    getTelemetryConfigSyncToServer() {
+    getTelemetrySyncSetting() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                return yield this.settingSDK.get('isTelemetrySyncToServer');
+                return yield this.settingSDK.get('telemetrySyncSetting');
             }
             catch (error) {
-                return { syncToServer: true };
+                return Promise.resolve({ enable: true });
             }
         });
     }
