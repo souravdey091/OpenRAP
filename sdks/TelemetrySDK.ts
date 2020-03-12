@@ -7,7 +7,6 @@ export default class TelemetrySDK {
   @Inject private telemetryInstance: TelemetryInstance;
   @Inject private telemetryExport: TelemetryExport;
   @Inject private settingSDK: SettingSDK;
-  private cb;
 
   getInstance() {
     return this.telemetryInstance;

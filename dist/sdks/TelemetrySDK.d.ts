@@ -3,7 +3,6 @@ export default class TelemetrySDK {
     private telemetryInstance;
     private telemetryExport;
     private settingSDK;
-    private cb;
     getInstance(): TelemetryInstance;
     send(events: any[]): Promise<any>;
     export(destPath: string, cb: any): Promise<void>;
