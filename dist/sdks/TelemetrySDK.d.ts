@@ -8,6 +8,13 @@ export default class TelemetrySDK {
     send(events: any[]): Promise<any>;
     export(destPath: string, cb: any): Promise<void>;
     info(cb: any): Promise<void>;
-    setIsTelemetrySyncToServer(syncToServer: boolean, cb: any): void;
-    getIsTelemetrySyncToServer(cb: any): Promise<void>;
+    setTelemetryConfigSyncToServer(syncToServer: boolean): Promise<boolean | TelemetrySDKError>;
+    getTelemetryConfigSyncToServer(): Promise<{} | {
+        syncToServer: boolean;
+    }>;
+}
+export interface TelemetrySDKError {
+    code: string;
+    status: number;
+    message: string;
 }
