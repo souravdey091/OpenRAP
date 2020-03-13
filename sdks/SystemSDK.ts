@@ -66,7 +66,7 @@ export default class SystemSDK {
       }
     }
 
-    return { totalHarddisk, availableHarddisk };
+    return { totalHarddisk, availableHarddisk, fsSize };
   }
 
   async getMemoryInfo() {
