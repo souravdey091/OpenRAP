@@ -11,7 +11,7 @@ import { retry, mergeMap, catchError } from 'rxjs/operators';
 import { of, throwError } from 'rxjs';
 import SystemSDK from "../../sdks/SystemSDK";
 import { DataBaseSDK } from "../../sdks/DataBaseSDK";
-
+import SettingSDK from '../../sdks/SettingSDK';
 
 export enum NETWORK_SUBTYPE {
     Telemetry = "TELEMETRY"
@@ -25,12 +25,26 @@ export class NetworkQueue extends Queue {
     @Inject private telemetryInstance: TelemetryInstance;
     @Inject private systemSDK: SystemSDK;
     @Inject private databaseSdk: DataBaseSDK;
+    @Inject private settingSDK: SettingSDK;
     private concurrency: number = 6;
     private queueList = [];
     private running: number = 0;
     private retryCount: number = 5;
     private queueInProgress = false;
-    apiKey: string;
+    private apiKey: string;
+    private includeSubType: string[];
+    private excludeSubType: string[];
+
+    async setSubType() {
+        try {
+            const dbData: any = await this.settingSDK.get('networkQueueInfo');
+            this.includeSubType = _.map(_.filter(dbData.config, { sync: true }), 'type');
+            this.excludeSubType = _.map(_.filter(dbData.config, { sync: false }), 'type');
+        } catch (error) {
+            this.includeSubType = [];
+            this.excludeSubType = [];
+        }
+    }
 
     async add(doc: NetworkQueueReq, docId?: string) {
         let date = Date.now();
@@ -48,13 +62,15 @@ export class NetworkQueue extends Queue {
     }
 
     async start() {
+        EventManager.subscribe("networkQueueInfo", async (data) => {
+            await this.setSubType();
+        });
         this.apiKey = this.apiKey || await this.getApiKey();
         if (this.running !== 0 || this.queueInProgress) {
             logger.warn("Job is in progress");
             return;
         }
         this.queueInProgress = true;
-
         // If internet is not available return
         let networkStatus: boolean = await this.networkSDK.isInternetAvailable();
         if (!networkStatus) {
@@ -62,14 +78,20 @@ export class NetworkQueue extends Queue {
             logger.warn("Network syncing failed as internet is not available");
             return;
         }
-
         try {
-            this.queueList = await this.getByQuery({
+            let query = {
                 selector: {
                     type: QUEUE_TYPE.Network,
                 },
                 limit: this.concurrency
-            });
+            };
+            if (!_.isEmpty(this.includeSubType)) {
+                query.selector['subType'] = { $in: this.includeSubType };
+            }
+            if (!_.isEmpty(this.excludeSubType)) {
+                query.selector['subType'] = { $nin: this.excludeSubType };
+            }
+            this.queueList = await this.getByQuery(query);
 
             // If no data is available to sync return
             if (!this.queueList || this.queueList.length === 0) {
@@ -105,7 +127,7 @@ export class NetworkQueue extends Queue {
                         this.running--;
                     } else {
                         logger.warn(`Unable to sync network queue with id = ${currentQueue._id}`);
-                        await this.deQueue(currentQueue._id).catch(error => { 
+                        await this.deQueue(currentQueue._id).catch(error => {
                             logger.info(`Received error deleting id = ${currentQueue._id}`);
                         });
                         this.running--;
@@ -152,19 +174,19 @@ export class NetworkQueue extends Queue {
         let did = await this.systemSDK.getDeviceId();
         let apiKey: any;
         try {
-          let { api_key } = await this.databaseSdk.getDoc(
-            "settings",
-            "device_token"
-          );
-          apiKey = api_key;
+            let { api_key } = await this.databaseSdk.getDoc(
+                "settings",
+                "device_token"
+            );
+            apiKey = api_key;
         } catch (error) {
-          logger.warn("device token is not set getting it from api", error);
-          apiKey = await this.getAPIToken(did).catch(err =>
-            logger.error(`while getting the token ${err}`)
-          );
+            logger.warn("device token is not set getting it from api", error);
+            apiKey = await this.getAPIToken(did).catch(err =>
+                logger.error(`while getting the token ${err}`)
+            );
         }
         return apiKey;
-      }
+    }
 
     private async getAPIToken(deviceId) {
         //const apiKey =;
@@ -209,7 +231,7 @@ export class NetworkQueue extends Queue {
         // } else {
         //   throw Error(`token or deviceID missing to register device ${deviceId}`);
         // }
-      }
+    }
 
     logTelemetryError(error: any, errType: string = "SERVER_ERROR") {
         const errorEvent = {

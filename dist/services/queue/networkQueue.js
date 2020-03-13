@@ -40,6 +40,7 @@ const operators_1 = require("rxjs/operators");
 const rxjs_1 = require("rxjs");
 const SystemSDK_1 = __importDefault(require("../../sdks/SystemSDK"));
 const DataBaseSDK_1 = require("../../sdks/DataBaseSDK");
+const SettingSDK_1 = __importDefault(require("../../sdks/SettingSDK"));
 var NETWORK_SUBTYPE;
 (function (NETWORK_SUBTYPE) {
     NETWORK_SUBTYPE["Telemetry"] = "TELEMETRY";
@@ -60,6 +61,19 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
         this.retryCount = 5;
         this.queueInProgress = false;
     }
+    setSubType() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const dbData = yield this.settingSDK.get('networkQueueInfo');
+                this.includeSubType = _.map(_.filter(dbData.config, { sync: true }), 'type');
+                this.excludeSubType = _.map(_.filter(dbData.config, { sync: false }), 'type');
+            }
+            catch (error) {
+                this.includeSubType = [];
+                this.excludeSubType = [];
+            }
+        });
+    }
     add(doc, docId) {
         return __awaiter(this, void 0, void 0, function* () {
             let date = Date.now();
@@ -71,6 +85,9 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
+            EventManager_1.EventManager.subscribe("networkQueueInfo", (data) => __awaiter(this, void 0, void 0, function* () {
+                yield this.setSubType();
+            }));
             this.apiKey = this.apiKey || (yield this.getApiKey());
             if (this.running !== 0 || this.queueInProgress) {
                 logger_1.logger.warn("Job is in progress");
@@ -85,12 +102,19 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                 return;
             }
             try {
-                this.queueList = yield this.getByQuery({
+                let query = {
                     selector: {
                         type: queue_1.QUEUE_TYPE.Network,
                     },
                     limit: this.concurrency
-                });
+                };
+                if (!_.isEmpty(this.includeSubType)) {
+                    query.selector['subType'] = { $in: this.includeSubType };
+                }
+                if (!_.isEmpty(this.excludeSubType)) {
+                    query.selector['subType'] = { $nin: this.excludeSubType };
+                }
+                this.queueList = yield this.getByQuery(query);
                 // If no data is available to sync return
                 if (!this.queueList || this.queueList.length === 0) {
                     this.queueInProgress = false;
@@ -258,6 +282,10 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", DataBaseSDK_1.DataBaseSDK)
 ], NetworkQueue.prototype, "databaseSdk", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", SettingSDK_1.default)
+], NetworkQueue.prototype, "settingSDK", void 0);
 NetworkQueue = __decorate([
     typescript_ioc_1.Singleton
 ], NetworkQueue);

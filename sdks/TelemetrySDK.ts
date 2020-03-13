@@ -1,7 +1,9 @@
 import { TelemetryInstance } from "./../services/telemetry/telemetryInstance";
 import { TelemetryExport } from './../services/telemetry/TelemetryExport';
 import { Inject } from "typescript-ioc";
-import SettingSDK from './SettingSDK'
+import SettingSDK from './SettingSDK';
+import * as _ from "lodash";
+import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 
 export default class TelemetrySDK {
   @Inject private telemetryInstance: TelemetryInstance;
@@ -24,13 +26,32 @@ export default class TelemetrySDK {
     return this.telemetryExport.info(cb)
   }
 
-  setTelemetrySyncSetting(enable: boolean): Promise<boolean | TelemetrySDKError> {
-    return this.settingSDK.put('telemetrySyncSetting', { enable: enable, updatedOn: Date.now() });
+  // : Promise<boolean | TelemetrySDKError>
+
+  async setTelemetrySyncSetting(enable: boolean) {
+    let dbData = await this.settingSDK.put('networkQueueInfo', {config: [{type: 'TELEMETRY', sync: enable}]});
+    EventManager.emit(`networkQueueInfo`, {});
+    return dbData;
+    
+
+    // try {
+    //   const dbData = await this.settingSDK.get('networkQueueInfo');
+    //   return dbData;
+    // } catch (error) {
+    //   return this.settingSDK.put('networkQueueInfo', {config: [{type: 'TELEMETRY', sync: enable}]});
+    // }
+
+
   }
 
   async getTelemetrySyncSetting(): Promise<{} | { enable: boolean }> {
     try {
-      return await this.settingSDK.get('telemetrySyncSetting');
+      const dbData: any = await this.settingSDK.get('networkQueueInfo');
+      let mapData = _.find(dbData.config, {type: 'TELEMETRY'});
+      if (_.get(mapData, 'sync') === undefined) {
+        return Promise.resolve({ enable: true });
+      }
+      return Promise.resolve({ enable: _.get(mapData, 'sync') });
     } catch (error) {
       return Promise.resolve({ enable: true });
     }

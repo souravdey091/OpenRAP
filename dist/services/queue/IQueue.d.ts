@@ -32,7 +32,11 @@ export interface INetworkQueueQuery {
     selector: {
         _id?: string;
         type?: string;
-        subType?: string;
+        subType?: string | {
+            $in: INetworkQueue['subType'][];
+        } | {
+            $nin: INetworkQueue['subType'][];
+        };
     };
     limit?: number;
 }
