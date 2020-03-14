@@ -82,15 +82,18 @@ export class NetworkQueue extends Queue {
             let query = {
                 selector: {
                     type: QUEUE_TYPE.Network,
+                    subType: {}
                 },
                 limit: this.concurrency
             };
             if (!_.isEmpty(this.includeSubType)) {
-                query.selector['subType'] = { $in: this.includeSubType };
+                query.selector['subType']['$in'] = this.includeSubType;
             }
             if (!_.isEmpty(this.excludeSubType)) {
-                query.selector['subType'] = { $nin: this.excludeSubType };
+                query.selector['subType']['$nin'] = this.excludeSubType
             }
+
+            console.log('query================================', query)
             this.queueList = await this.getByQuery(query);
 
             // If no data is available to sync return
@@ -247,7 +250,11 @@ export class NetworkQueue extends Queue {
             return 'All data is synced';
         }
         const resp = await this.executeForceSync(dbData, subType);
-        return resp;
+        throw {
+            code: _.get(resp, 'response.statusText'),
+            status: _.get(resp, 'response.status'),
+            message: _.get(resp, 'response.data.message')
+        }
     }
 
     private async executeForceSync(dbData, subType) {
@@ -267,7 +274,7 @@ export class NetworkQueue extends Queue {
                     await this.deQueue(currentQueue._id).catch(error => {
                         logger.info(`Received error deleting id = ${currentQueue._id}`);
                     });
-                    // return resp;
+                    return resp;
                 }
             } catch (error) {
                 logger.error(`Error while syncing to Network Queue for id = ${currentQueue._id}`, error.message);
@@ -284,7 +291,7 @@ export class NetworkQueue extends Queue {
                     bearerToken: _.get(currentQueue, 'bearerToken'),
                 };
                 await this.add(dbData, currentQueue._id);
-                // return error;
+                return error;
             }
         }
         await this.forceSync(subType);

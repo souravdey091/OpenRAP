@@ -105,15 +105,17 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                 let query = {
                     selector: {
                         type: queue_1.QUEUE_TYPE.Network,
+                        subType: {}
                     },
                     limit: this.concurrency
                 };
                 if (!_.isEmpty(this.includeSubType)) {
-                    query.selector['subType'] = { $in: this.includeSubType };
+                    query.selector['subType']['$in'] = this.includeSubType;
                 }
                 if (!_.isEmpty(this.excludeSubType)) {
-                    query.selector['subType'] = { $nin: this.excludeSubType };
+                    query.selector['subType']['$nin'] = this.excludeSubType;
                 }
+                console.log('query================================', query);
                 this.queueList = yield this.getByQuery(query);
                 // If no data is available to sync return
                 if (!this.queueList || this.queueList.length === 0) {
@@ -266,7 +268,11 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                 return 'All data is synced';
             }
             const resp = yield this.executeForceSync(dbData, subType);
-            return resp;
+            throw {
+                code: _.get(resp, 'response.statusText'),
+                status: _.get(resp, 'response.status'),
+                message: _.get(resp, 'response.data.message')
+            };
         });
     }
     executeForceSync(dbData, subType) {
@@ -288,7 +294,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                         yield this.deQueue(currentQueue._id).catch(error => {
                             logger_1.logger.info(`Received error deleting id = ${currentQueue._id}`);
                         });
-                        // return resp;
+                        return resp;
                     }
                 }
                 catch (error) {
@@ -306,7 +312,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                         bearerToken: _.get(currentQueue, 'bearerToken'),
                     };
                     yield this.add(dbData, currentQueue._id);
-                    // return error;
+                    return error;
                 }
             }
             yield this.forceSync(subType);
