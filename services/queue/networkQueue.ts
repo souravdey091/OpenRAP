@@ -270,26 +270,11 @@ export class NetworkQueue extends Queue {
                     EventManager.emit(`${_.toLower(currentQueue.subType)}-synced`, currentQueue);
                 } else {
                     logger.warn(`Unable to sync network queue with id = ${currentQueue._id}`);
-                    await this.deQueue(currentQueue._id).catch(error => {
-                        logger.info(`Received error deleting id = ${currentQueue._id}`);
-                    });
                     return resp;
                 }
             } catch (error) {
                 logger.error(`Error while syncing to Network Queue for id = ${currentQueue._id}`, error.message);
                 this.logTelemetryError(error);
-                await this.deQueue(currentQueue._id).catch(error => {
-                    logger.info(`Received error in catch for deleting id = ${currentQueue._id}`);
-                });
-                let dbData = {
-                    pathToApi: _.get(currentQueue, 'pathToApi'),
-                    requestHeaderObj: _.get(currentQueue, 'requestHeaderObj'),
-                    requestBody: _.get(currentQueue, 'requestBody'),
-                    subType: _.get(currentQueue, 'subType'),
-                    size: _.get(currentQueue, 'size'),
-                    bearerToken: _.get(currentQueue, 'bearerToken'),
-                };
-                await this.add(dbData, currentQueue._id);
                 return error;
             }
         }
