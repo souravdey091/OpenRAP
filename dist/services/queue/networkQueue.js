@@ -309,7 +309,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     // return error;
                 }
             }
-            this.forceSync(subType);
+            yield this.forceSync(subType);
         });
     }
     logTelemetryError(error, errType = "SERVER_ERROR") {

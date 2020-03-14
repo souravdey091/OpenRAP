@@ -287,7 +287,7 @@ export class NetworkQueue extends Queue {
                 // return error;
             }
         }
-        this.forceSync(subType);
+        await this.forceSync(subType);
     }
 
     logTelemetryError(error: any, errType: string = "SERVER_ERROR") {
