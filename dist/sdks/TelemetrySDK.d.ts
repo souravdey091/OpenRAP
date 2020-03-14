@@ -7,7 +7,7 @@ export default class TelemetrySDK {
     send(events: any[]): Promise<any>;
     export(destPath: string, cb: any): Promise<void>;
     info(cb: any): Promise<void>;
-    setTelemetrySyncSetting(enable: boolean): Promise<boolean>;
+    setTelemetrySyncSetting(enable: boolean): Promise<any>;
     getTelemetrySyncSetting(): Promise<{} | {
         enable: boolean;
     }>;

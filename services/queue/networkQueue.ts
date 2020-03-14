@@ -93,7 +93,6 @@ export class NetworkQueue extends Queue {
                 query.selector['subType']['$nin'] = this.excludeSubType
             }
 
-            console.log('query================================', query)
             this.queueList = await this.getByQuery(query);
 
             // If no data is available to sync return

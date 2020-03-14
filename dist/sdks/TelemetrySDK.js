@@ -46,18 +46,32 @@ class TelemetrySDK {
     info(cb) {
         return this.telemetryExport.info(cb);
     }
-    // : Promise<boolean | TelemetrySDKError>
     setTelemetrySyncSetting(enable) {
         return __awaiter(this, void 0, void 0, function* () {
-            let dbData = yield this.settingSDK.put('networkQueueInfo', { config: [{ type: 'TELEMETRY', sync: enable }] });
+            let mapData;
+            try {
+                const dbData = yield this.settingSDK.get('networkQueueInfo');
+                let isTelemetryExist = _.find(dbData.config, { type: 'TELEMETRY' });
+                if (isTelemetryExist) {
+                    mapData = _.map(dbData.config, doc => {
+                        if (doc.type === 'TELEMETRY') {
+                            doc.sync = enable;
+                            return doc;
+                        }
+                        return doc;
+                    });
+                }
+                else {
+                    dbData.config.push({ type: "TELEMETRY", sync: enable });
+                    mapData = dbData.config;
+                }
+            }
+            catch (error) {
+                mapData = [{ type: 'TELEMETRY', sync: enable }];
+            }
+            yield this.settingSDK.put('networkQueueInfo', { config: mapData });
             EventManager_1.EventManager.emit(`networkQueueInfo`, {});
-            return dbData;
-            // try {
-            //   const dbData = await this.settingSDK.get('networkQueueInfo');
-            //   return dbData;
-            // } catch (error) {
-            //   return this.settingSDK.put('networkQueueInfo', {config: [{type: 'TELEMETRY', sync: enable}]});
-            // }
+            return mapData;
         });
     }
     getTelemetrySyncSetting() {
@@ -65,7 +79,7 @@ class TelemetrySDK {
             try {
                 const dbData = yield this.settingSDK.get('networkQueueInfo');
                 let mapData = _.map(_.filter(dbData.config, { type: 'TELEMETRY' }), 'sync');
-                if (mapData) {
+                if (!_.isEmpty(mapData)) {
                     return Promise.resolve({ enable: mapData[0] });
                 }
                 return Promise.resolve({ enable: true });

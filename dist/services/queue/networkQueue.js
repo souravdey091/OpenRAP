@@ -115,7 +115,6 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                 if (!_.isEmpty(this.excludeSubType)) {
                     query.selector['subType']['$nin'] = this.excludeSubType;
                 }
-                console.log('query================================', query);
                 this.queueList = yield this.getByQuery(query);
                 // If no data is available to sync return
                 if (!this.queueList || this.queueList.length === 0) {
