@@ -252,6 +252,66 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
             // }
         });
     }
+    forceSync(subType) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.apiKey = this.apiKey || (yield this.getApiKey());
+            let query = {
+                selector: {
+                    subType: { $in: subType }
+                },
+                limit: this.concurrency
+            };
+            const dbData = yield this.getByQuery(query);
+            if (!dbData || dbData.length === 0) {
+                return 'All data is synced';
+            }
+            const resp = yield this.executeForceSync(dbData, subType);
+            return resp;
+        });
+    }
+    executeForceSync(dbData, subType) {
+        return __awaiter(this, void 0, void 0, function* () {
+            for (const currentQueue of dbData) {
+                currentQueue.requestHeaderObj['Authorization'] = currentQueue.bearerToken ? `Bearer ${this.apiKey}` : '';
+                let requestBody = _.get(currentQueue, 'requestHeaderObj.Content-Encoding') === 'gzip' ? Buffer.from(currentQueue.requestBody.data) : currentQueue.requestBody;
+                try {
+                    let resp = yield this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi);
+                    if (_.includes(successResponseCode, _.toLower(_.get(resp, 'data.responseCode')))) {
+                        logger_1.logger.info(`Network Queue synced for id = ${currentQueue._id}`);
+                        yield this.deQueue(currentQueue._id).catch(error => {
+                            logger_1.logger.info(`Received error deleting id = ${currentQueue._id}`);
+                        });
+                        EventManager_1.EventManager.emit(`${_.toLower(currentQueue.subType)}-synced`, currentQueue);
+                    }
+                    else {
+                        logger_1.logger.warn(`Unable to sync network queue with id = ${currentQueue._id}`);
+                        yield this.deQueue(currentQueue._id).catch(error => {
+                            logger_1.logger.info(`Received error deleting id = ${currentQueue._id}`);
+                        });
+                        // return resp;
+                    }
+                }
+                catch (error) {
+                    logger_1.logger.error(`Error while syncing to Network Queue for id = ${currentQueue._id}`, error.message);
+                    this.logTelemetryError(error);
+                    yield this.deQueue(currentQueue._id).catch(error => {
+                        logger_1.logger.info(`Received error in catch for deleting id = ${currentQueue._id}`);
+                    });
+                    let dbData = {
+                        pathToApi: _.get(currentQueue, 'pathToApi'),
+                        requestHeaderObj: _.get(currentQueue, 'requestHeaderObj'),
+                        requestBody: _.get(currentQueue, 'requestBody'),
+                        subType: _.get(currentQueue, 'subType'),
+                        size: _.get(currentQueue, 'size'),
+                        bearerToken: _.get(currentQueue, 'bearerToken'),
+                    };
+                    yield this.add(dbData, currentQueue._id);
+                    // return error;
+                }
+            }
+            this.forceSync(subType);
+        });
+    }
     logTelemetryError(error, errType = "SERVER_ERROR") {
         const errorEvent = {
             context: {

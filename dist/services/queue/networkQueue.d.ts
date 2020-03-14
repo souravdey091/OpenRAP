@@ -26,6 +26,8 @@ export declare class NetworkQueue extends Queue {
     private makeHTTPCall;
     private getApiKey;
     private getAPIToken;
+    forceSync(subType: string[]): Promise<void | "All data is synced">;
+    private executeForceSync;
     logTelemetryError(error: any, errType?: string): void;
 }
 export interface NetworkQueueReq {

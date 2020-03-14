@@ -47,11 +47,11 @@ export default class TelemetrySDK {
   async getTelemetrySyncSetting(): Promise<{} | { enable: boolean }> {
     try {
       const dbData: any = await this.settingSDK.get('networkQueueInfo');
-      let mapData = _.find(dbData.config, {type: 'TELEMETRY'});
-      if (_.get(mapData, 'sync') === undefined) {
-        return Promise.resolve({ enable: true });
+      let mapData = _.map(_.filter(dbData.config, { type: 'TELEMETRY' }), 'sync');
+      if (mapData) {
+        return Promise.resolve({ enable: mapData[0] });
       }
-      return Promise.resolve({ enable: _.get(mapData, 'sync') });
+      return Promise.resolve({ enable: true });
     } catch (error) {
       return Promise.resolve({ enable: true });
     }
