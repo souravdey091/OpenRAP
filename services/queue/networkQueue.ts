@@ -32,16 +32,13 @@ export class NetworkQueue extends Queue {
     private retryCount: number = 5;
     private queueInProgress = false;
     private apiKey: string;
-    private includeSubType: string[];
     private excludeSubType: string[];
 
     async setSubType() {
         try {
             const dbData: any = await this.settingSDK.get('networkQueueInfo');
-            this.includeSubType = _.map(_.filter(dbData.config, { sync: true }), 'type');
             this.excludeSubType = _.map(_.filter(dbData.config, { sync: false }), 'type');
         } catch (error) {
-            this.includeSubType = [];
             this.excludeSubType = [];
         }
     }
@@ -88,9 +85,6 @@ export class NetworkQueue extends Queue {
                 },
                 limit: this.concurrency
             };
-            if (!_.isEmpty(this.includeSubType)) {
-                query.selector['subType']['$in'] = this.includeSubType;
-            }
             if (!_.isEmpty(this.excludeSubType)) {
                 query.selector['subType']['$nin'] = this.excludeSubType
             }
