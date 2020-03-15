@@ -257,9 +257,7 @@ export class NetworkQueue extends Queue {
                 let resp = await this.makeHTTPCall(currentQueue.requestHeaderObj, requestBody, currentQueue.pathToApi);
                 if (_.includes(successResponseCode, _.toLower(_.get(resp, 'data.responseCode')))) {
                     logger.info(`Network Queue synced for id = ${currentQueue._id}`);
-                    await this.deQueue(currentQueue._id).catch(error => {
-                        logger.info(`Received error deleting id = ${currentQueue._id}`);
-                    });
+                    await this.deQueue(currentQueue._id);
                     EventManager.emit(`${_.toLower(currentQueue.subType)}-synced`, currentQueue);
                 } else {
                     logger.warn(`Unable to sync network queue with id = ${currentQueue._id}`);
