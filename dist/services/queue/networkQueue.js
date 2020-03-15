@@ -65,11 +65,9 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const dbData = yield this.settingSDK.get('networkQueueInfo');
-                this.includeSubType = _.map(_.filter(dbData.config, { sync: true }), 'type');
                 this.excludeSubType = _.map(_.filter(dbData.config, { sync: false }), 'type');
             }
             catch (error) {
-                this.includeSubType = [];
                 this.excludeSubType = [];
             }
         });
@@ -109,9 +107,6 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     },
                     limit: this.concurrency
                 };
-                if (!_.isEmpty(this.includeSubType)) {
-                    query.selector['subType']['$in'] = this.includeSubType;
-                }
                 if (!_.isEmpty(this.excludeSubType)) {
                     query.selector['subType']['$nin'] = this.excludeSubType;
                 }

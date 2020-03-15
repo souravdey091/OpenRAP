@@ -17,7 +17,6 @@ export declare class NetworkQueue extends Queue {
     private retryCount;
     private queueInProgress;
     private apiKey;
-    private includeSubType;
     private excludeSubType;
     setSubType(): Promise<void>;
     add(doc: NetworkQueueReq, docId?: string): Promise<any>;
