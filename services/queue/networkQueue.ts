@@ -11,7 +11,7 @@ import { retry, mergeMap, catchError } from 'rxjs/operators';
 import { of, throwError } from 'rxjs';
 import SystemSDK from "../../sdks/SystemSDK";
 import { DataBaseSDK } from "../../sdks/DataBaseSDK";
-
+import SettingSDK from '../../sdks/SettingSDK';
 
 export enum NETWORK_SUBTYPE {
     Telemetry = "TELEMETRY"
@@ -25,12 +25,26 @@ export class NetworkQueue extends Queue {
     @Inject private telemetryInstance: TelemetryInstance;
     @Inject private systemSDK: SystemSDK;
     @Inject private databaseSdk: DataBaseSDK;
+    @Inject private settingSDK: SettingSDK;
     private concurrency: number = 6;
     private queueList = [];
     private running: number = 0;
     private retryCount: number = 5;
     private queueInProgress = false;
-    apiKey: string;
+    private apiKey: string;
+    private includeSubType: string[];
+    private excludeSubType: string[];
+
+    async setSubType() {
+        try {
+            const dbData: any = await this.settingSDK.get('networkQueueInfo');
+            this.includeSubType = _.map(_.filter(dbData.config, { sync: true }), 'type');
+            this.excludeSubType = _.map(_.filter(dbData.config, { sync: false }), 'type');
+        } catch (error) {
+            this.includeSubType = [];
+            this.excludeSubType = [];
+        }
+    }
 
     async add(doc: NetworkQueueReq, docId?: string) {
         let date = Date.now();
@@ -48,6 +62,9 @@ export class NetworkQueue extends Queue {
     }
 
     async start() {
+        EventManager.subscribe("networkQueueInfo", async (data) => {
+            await this.setSubType();
+        });
         this.apiKey = this.apiKey || await this.getApiKey();
         if (this.running !== 0 || this.queueInProgress) {
             logger.warn("Job is in progress");
@@ -64,12 +81,20 @@ export class NetworkQueue extends Queue {
         }
 
         try {
-            this.queueList = await this.getByQuery({
+            let query = {
                 selector: {
                     type: QUEUE_TYPE.Network,
+                    subType: {}
                 },
                 limit: this.concurrency
-            });
+            };
+            if (!_.isEmpty(this.includeSubType)) {
+                query.selector['subType']['$in'] = this.includeSubType;
+            }
+            if (!_.isEmpty(this.excludeSubType)) {
+                query.selector['subType']['$nin'] = this.excludeSubType
+            }
+            this.queueList = await this.getByQuery(query);
 
             // If no data is available to sync return
             if (!this.queueList || this.queueList.length === 0) {

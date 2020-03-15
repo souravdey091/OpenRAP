@@ -32,7 +32,7 @@ export interface INetworkQueueQuery {
     selector: {
         _id?: string;
         type?: string;
-        subType?: string;
+        subType?: any;
     };
     limit?: number;
 }

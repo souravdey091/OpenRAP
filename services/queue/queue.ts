@@ -25,7 +25,7 @@ export class Queue {
         return this.dbSDK.updateDoc(dbName, docId, query);
     }
 
-    protected deQueue(id: string) {
+    deQueue(id: string) {
         return this.dbSDK.delete(dbName, id);
     }
 
