@@ -239,6 +239,7 @@ export class NetworkQueue extends Queue {
 
         const dbData = await this.getByQuery(query);
         if (!dbData || dbData.length === 0) {
+            this.settingSDK.put('forceNetworkSyncInfo', { type: subType, lastSyncedOn: Date.now() });
             return 'All data is synced';
         }
         const resp = await this.executeForceSync(dbData, subType);

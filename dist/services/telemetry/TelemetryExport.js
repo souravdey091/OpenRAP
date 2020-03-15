@@ -204,7 +204,14 @@ let TelemetryExport = class TelemetryExport {
                 catch (error) {
                     exportedDate = { lastExportedOn: null };
                 }
-                this.cb(null, { totalSize: totalSize, lastExportedOn: exportedDate.lastExportedOn });
+                let forceSyncInfo;
+                try {
+                    forceSyncInfo = yield this.settingSDK.get('forceNetworkSyncInfo');
+                }
+                catch (error) {
+                    forceSyncInfo = {};
+                }
+                this.cb(null, { totalSize: totalSize, lastExportedOn: exportedDate.lastExportedOn, forceSyncInfo });
             }
             catch (error) {
                 this.cb(error, null);
