@@ -10,18 +10,23 @@ export declare class NetworkQueue extends Queue {
     private telemetryInstance;
     private systemSDK;
     private databaseSdk;
+    private settingSDK;
     private concurrency;
     private queueList;
     private running;
     private retryCount;
     private queueInProgress;
-    apiKey: string;
+    private apiKey;
+    private excludeSubType;
+    setSubType(): Promise<void>;
     add(doc: NetworkQueueReq, docId?: string): Promise<any>;
     start(): Promise<void>;
     private execute;
     private makeHTTPCall;
     private getApiKey;
     private getAPIToken;
+    forceSync(subType: string[]): Promise<string>;
+    private executeForceSync;
     logTelemetryError(error: any, errType?: string): void;
 }
 export interface NetworkQueueReq {
