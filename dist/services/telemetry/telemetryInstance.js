@@ -21,7 +21,7 @@ const telemetryService_1 = require("./telemetryService");
 const DataBaseSDK_1 = require("./../../sdks/DataBaseSDK");
 const _ = __importStar(require("lodash"));
 const uuid = require("uuid");
-const logger_1 = require("@project-sunbird/ext-framework-server/logger");
+const logger_1 = require("@project-sunbird/logger");
 let TelemetryInstance = class TelemetryInstance extends telemetryService_1.TelemetryService {
     constructor() {
         super();

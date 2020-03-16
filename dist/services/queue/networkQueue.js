@@ -28,7 +28,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const queue_1 = require("./queue");
-const logger_1 = require("@project-sunbird/ext-framework-server/logger");
+const logger_1 = require("@project-sunbird/logger");
 const typescript_ioc_1 = require("typescript-ioc");
 const services_1 = require("@project-sunbird/ext-framework-server/services");
 const telemetryInstance_1 = require("./../telemetry/telemetryInstance");

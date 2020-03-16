@@ -1,5 +1,5 @@
 import { Singleton } from "typescript-ioc";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
 import { DataBaseSDK } from "./DataBaseSDK";
