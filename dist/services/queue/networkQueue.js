@@ -259,7 +259,6 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
             };
             const dbData = yield this.getByQuery(query);
             if (!dbData || dbData.length === 0) {
-                this.settingSDK.put('forceNetworkSyncInfo', { type: subType, lastSyncedOn: Date.now() });
                 return 'All data is synced';
             }
             const resp = yield this.executeForceSync(dbData, subType);
