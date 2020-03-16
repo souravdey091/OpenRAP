@@ -239,6 +239,7 @@ export class NetworkQueue extends Queue {
 
         const dbData = await this.getByQuery(query);
         if (!dbData || dbData.length === 0) {
+            this.setForceSyncInfo(subType);
             return 'All data is synced';
         }
         const resp = await this.executeForceSync(dbData, subType);
@@ -249,6 +250,30 @@ export class NetworkQueue extends Queue {
                 message: _.get(resp, 'response.data.message')
             }
         }
+    }
+
+    private async setForceSyncInfo(subType: string[]) {
+        let dbResp;
+        try {
+            dbResp = await this.settingSDK.get('forceNetworkSyncInfo');
+            dbResp = dbResp.forceSyncInfo;
+        } catch (error) {
+            dbResp = [];
+        }
+        let currentDate = Date.now();
+        let newSyncArray = [];
+        _.forEach(subType, (value) => {
+            let found: any = _.find(dbResp, { type: value });
+            if (found) {
+                found.lastSyncedOn = currentDate;
+            } else {
+                newSyncArray.push({
+                    "type": value,
+                    "lastSyncedOn": currentDate
+                })
+            }
+        });
+        await this.settingSDK.put('forceNetworkSyncInfo', { forceSyncInfo: _.concat(newSyncArray, dbResp) });
     }
 
     private async executeForceSync(dbData, subType) {

@@ -12,13 +12,6 @@ describe('NetworkQueue', async () => {
   before(async () => {
     networkQueue = new NetworkQueue();
   });
-  it('should call add method', async () => {
-    spy.on(networkQueue, 'enQueue', data => Promise.resolve('123'));
-    let start = spy.on(networkQueue, 'start');
-    const data = await networkQueue.add({});
-    expect(data).to.be.equal('123');
-    expect(start).to.have.been.called();
-  });
   it('should call start method when internet is available', async () => {
     networkQueue.queueInProgress = false;
     spy.on(networkQueue.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
@@ -26,6 +19,13 @@ describe('NetworkQueue', async () => {
     let execute = spy.on(networkQueue, 'execute');
     const data = await networkQueue.start();
     expect(execute).to.have.been.called();
+  });
+  it('should call add method', async () => {
+    spy.on(networkQueue, 'enQueue', data => Promise.resolve('123'));
+    let start = spy.on(networkQueue, 'start');
+    const data = await networkQueue.add({});
+    expect(data).to.be.equal('123');
+    expect(start).to.have.been.called();
   });
   it('should call start method when internet is not available execute method should not get called', async () => {
     networkQueue.queueInProgress = false;

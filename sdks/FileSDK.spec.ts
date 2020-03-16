@@ -1,12 +1,21 @@
 import FileSDK from './FileSDK';
 import * as fs from 'fs';
 import * as path from 'path';
-import { expect } from 'chai';
-
-const fileSDK = new FileSDK("testPlugin");
+const chai = require('chai'), spies = require('chai-spies');
+chai.use(spies);
+const spy = chai.spy.sandbox();
+const expect = chai.expect;
 const data = 'test data'
 
 describe('FileSDK', () => {
+  let fileSDK;
+  process.env.FILES_PATH = path.join(__dirname, '..', 'test_data');
+  beforeEach(async () => {
+    fileSDK = new FileSDK("testPlugin");
+  });
+  afterEach(async () => {
+    spy.restore();
+  })
 
   process.env.FILES_PATH = path.join(__dirname, '..', 'test_data');
   it('should create test directory', (done) => {

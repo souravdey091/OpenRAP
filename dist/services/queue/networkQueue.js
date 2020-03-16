@@ -259,6 +259,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
             };
             const dbData = yield this.getByQuery(query);
             if (!dbData || dbData.length === 0) {
+                this.setForceSyncInfo(subType);
                 return 'All data is synced';
             }
             const resp = yield this.executeForceSync(dbData, subType);
@@ -269,6 +270,33 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                     message: _.get(resp, 'response.data.message')
                 };
             }
+        });
+    }
+    setForceSyncInfo(subType) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let dbResp;
+            try {
+                dbResp = yield this.settingSDK.get('forceNetworkSyncInfo');
+                dbResp = dbResp.forceSyncInfo;
+            }
+            catch (error) {
+                dbResp = [];
+            }
+            let currentDate = Date.now();
+            let newSyncArray = [];
+            _.forEach(subType, (value) => {
+                let found = _.find(dbResp, { type: value });
+                if (found) {
+                    found.lastSyncedOn = currentDate;
+                }
+                else {
+                    newSyncArray.push({
+                        "type": value,
+                        "lastSyncedOn": currentDate
+                    });
+                }
+            });
+            yield this.settingSDK.put('forceNetworkSyncInfo', { forceSyncInfo: _.concat(newSyncArray, dbResp) });
         });
     }
     executeForceSync(dbData, subType) {
