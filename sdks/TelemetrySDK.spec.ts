@@ -70,25 +70,24 @@ describe("TelemetrySDK", () => {
     telemetrySDK.send([event]);
   });
 
-  it.only('should return data - getTelemetrySyncSetting', async () => {
+  it('should return data - getTelemetrySyncSetting', async () => {
     spy.on(telemetrySDK.settingSDK, 'get', (data) => Promise.resolve({enable: true, updatedOn: 12345678987687}));
     const response = await telemetrySDK.getTelemetrySyncSetting();
     expect(response['enable']).to.equal(true );
     expect(response).to.have.property('enable');
-    expect(response).to.have.property('updatedOn');
   });
 
-  it.only('should return only true - getTelemetrySyncSetting', async () => {
+  it('should return only true - getTelemetrySyncSetting', async () => {
     spy.on(telemetrySDK.settingSDK, 'get', (data) => Promise.reject(getSystemSDKerr));
     const response = await telemetrySDK.getTelemetrySyncSetting();
-    expect(response).to.deep.equal({ enable: true});
+    expect(response).to.deep.equal({ enable: true });
     expect(response).to.have.property('enable');
   });
 
-  it.only('should insert config and return true - setTelemetrySyncSetting', async () => {
+  it('should insert config and return true - setTelemetrySyncSetting', async () => {
     spy.on(telemetrySDK.settingSDK, 'put', data => Promise.resolve(true));
     const response = await telemetrySDK.setTelemetrySyncSetting(true);
-    expect(response).to.equal(true);
+    expect(response).to.deep.equal([ { type: 'TELEMETRY', sync: true } ]);
   });
 
 });
