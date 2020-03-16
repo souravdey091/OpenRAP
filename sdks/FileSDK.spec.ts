@@ -8,7 +8,7 @@ const data = 'test data'
 
 describe('FileSDK', () => {
 
-  process.env.FILES_PATH = path.join(__dirname, '..', 'test_data');
+  process.env.FILES_PATH = path.join('..', 'test_data');
   it('should create test directory', (done) => {
     Promise
       .all([fileSDK.mkdir('test1'), fileSDK.mkdir('test2')])
