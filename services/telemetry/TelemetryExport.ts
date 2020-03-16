@@ -185,7 +185,15 @@ export class TelemetryExport {
             } catch (error) {
                 exportedDate = { lastExportedOn: null };
             }
-            this.cb(null, { totalSize: totalSize, lastExportedOn: exportedDate.lastExportedOn });
+
+            let networkInfo;
+            try {
+                networkInfo = await this.settingSDK.get('forceNetworkSyncInfo');
+            } catch (error) {
+                networkInfo = {};
+            }
+
+            this.cb(null, { totalSize: totalSize, lastExportedOn: exportedDate.lastExportedOn, networkInfo });
         } catch (error) {
             this.cb(error, null);
         }
