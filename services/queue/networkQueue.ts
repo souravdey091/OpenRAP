@@ -242,10 +242,12 @@ export class NetworkQueue extends Queue {
             return 'All data is synced';
         }
         const resp = await this.executeForceSync(dbData, subType);
-        throw {
-            code: _.get(resp, 'response.statusText'),
-            status: _.get(resp, 'response.status'),
-            message: _.get(resp, 'response.data.message')
+        if (resp) {
+            throw {
+                code: _.get(resp, 'response.statusText'),
+                status: _.get(resp, 'response.status'),
+                message: _.get(resp, 'response.data.message')
+            }
         }
     }
 

@@ -262,11 +262,13 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                 return 'All data is synced';
             }
             const resp = yield this.executeForceSync(dbData, subType);
-            throw {
-                code: _.get(resp, 'response.statusText'),
-                status: _.get(resp, 'response.status'),
-                message: _.get(resp, 'response.data.message')
-            };
+            if (resp) {
+                throw {
+                    code: _.get(resp, 'response.statusText'),
+                    status: _.get(resp, 'response.status'),
+                    message: _.get(resp, 'response.data.message')
+                };
+            }
         });
     }
     executeForceSync(dbData, subType) {
