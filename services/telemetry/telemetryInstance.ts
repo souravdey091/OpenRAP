@@ -4,7 +4,7 @@ import { TelemetryConfig } from "./../../interfaces/telemetryConfig";
 import { DataBaseSDK } from "./../../sdks/DataBaseSDK";
 import * as _ from "lodash";
 import uuid = require("uuid");
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 
 @Singleton
 export class TelemetryInstance extends TelemetryService {

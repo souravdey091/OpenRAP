@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import { TelemetryHelper } from "./telemetry-helper";
 import { Singleton } from "typescript-ioc";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 @Singleton
 export class TelemetryService extends TelemetryHelper {
   telemetryBatch = [];

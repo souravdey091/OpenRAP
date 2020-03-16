@@ -30,7 +30,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = __importStar(require("lodash"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const logger_1 = require("@project-sunbird/ext-framework-server/logger");
+const logger_1 = require("@project-sunbird/logger");
 const DataBaseSDK_1 = require("../../sdks/DataBaseSDK");
 const typescript_ioc_1 = require("typescript-ioc");
 const FileSDK_1 = __importDefault(require("../../sdks/FileSDK"));

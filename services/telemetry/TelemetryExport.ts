@@ -1,7 +1,7 @@
 import * as  _ from "lodash";
 import * as fs from "fs";
 import * as path from "path";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { DataBaseSDK } from "../../sdks/DataBaseSDK";
 import { Inject, Singleton } from "typescript-ioc";
 import FileSDK from "../../sdks/FileSDK";

@@ -3,7 +3,7 @@ import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
 import { DataBaseSDK } from "../../sdks/DataBaseSDK";
 import { ISystemQueue, SystemQueueStatus } from './IQueue';
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 const uuid = require("uuid");
 import { Subject, Observer, asyncScheduler, Observable } from "rxjs";
 import { throttleTime, mergeMap } from "rxjs/operators";

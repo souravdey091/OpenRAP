@@ -28,7 +28,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const typescript_ioc_1 = require("typescript-ioc");
-const logger_1 = require("@project-sunbird/ext-framework-server/logger");
+const logger_1 = require("@project-sunbird/logger");
 const _ = __importStar(require("lodash"));
 const typescript_ioc_2 = require("typescript-ioc");
 const SystemSDK_1 = __importDefault(require("./SystemSDK"));

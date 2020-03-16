@@ -1,5 +1,5 @@
 import { Queue, QUEUE_TYPE } from './queue';
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { Inject, Singleton } from "typescript-ioc";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
 import { TelemetryInstance } from './../telemetry/telemetryInstance';
