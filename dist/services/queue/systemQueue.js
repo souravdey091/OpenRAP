@@ -61,7 +61,7 @@ let SystemQueue = class SystemQueue {
             logger_1.logger.debug("System queue is being initialized");
             const { docs } = yield this.dbSDK.find(this.dbName, { selector: { status: IQueue_1.SystemQueueStatus.inProgress } })
                 .catch((err) => {
-                logger_1.logger.log("reconcile error while fetching inProgress content from DB", err.message);
+                logger_1.logger.error("reconcile error while fetching inProgress content from DB", err.message);
                 return { docs: [] };
             });
             logger_1.logger.info("length of inProgress jobs found while reconcile", docs.length);
@@ -71,7 +71,7 @@ let SystemQueue = class SystemQueue {
                     return job;
                 });
                 yield this.dbSDK.bulkDocs(this.dbName, updateQuery)
-                    .catch((err) => logger_1.logger.log("reconcile error while updating status to DB", err.message));
+                    .catch((err) => logger_1.logger.error("reconcile error while updating status to DB", err.message));
             }
             this.executeNextTask();
             setInterval(this.trackTaskProgress, 1000);
