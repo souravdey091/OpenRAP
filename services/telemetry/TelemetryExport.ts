@@ -108,7 +108,7 @@ export class TelemetryExport {
                     this.push(data)
                     this.push(null)
                 }).catch((err) => {
-                    logger.log(`Received error while getting stream: ${err}`);
+                    logger.error(`Received error while getting stream: ${err}`);
                     this.push('No Data found')
                     this.push(null)
                 })
@@ -154,7 +154,7 @@ export class TelemetryExport {
             const output = fs.createWriteStream(filePath);
             output.on("close", () => resolve({}));
             this.telemetryArchive.on("end", () => {
-                logger.log("Data has been zipped");
+                logger.error("Data has been zipped");
                 this.settingSDK.put('telemetryExportedInfo', { lastExportedOn: Date.now() });
                 this.generateShareEvent(this.telemetryShareItems);
             });
