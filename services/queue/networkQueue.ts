@@ -33,6 +33,7 @@ export class NetworkQueue extends Queue {
     private queueInProgress = false;
     private apiKey: string;
     private excludeSubType: string[];
+    private isForceSync: boolean = false;
 
     async setSubType() {
         try {
@@ -63,7 +64,7 @@ export class NetworkQueue extends Queue {
             await this.setSubType();
         });
         this.apiKey = this.apiKey || await this.getApiKey();
-        if (this.running !== 0 || this.queueInProgress) {
+        if (this.running !== 0 || this.queueInProgress || this.isForceSync) {
             logger.warn("Job is in progress");
             return;
         }
@@ -229,6 +230,7 @@ export class NetworkQueue extends Queue {
     }
 
     public async forceSync(subType: string[]) {
+        this.isForceSync = true;
         this.apiKey = this.apiKey || await this.getApiKey();
         let query = {
             selector: {
@@ -239,11 +241,13 @@ export class NetworkQueue extends Queue {
 
         const dbData = await this.getByQuery(query);
         if (!dbData || dbData.length === 0) {
+            this.isForceSync = false;
             this.setForceSyncInfo(subType);
             return 'All data is synced';
         }
         const resp = await this.executeForceSync(dbData, subType);
         if (resp) {
+            this.isForceSync = false;
             throw {
                 code: _.get(resp, 'response.statusText'),
                 status: _.get(resp, 'response.status'),

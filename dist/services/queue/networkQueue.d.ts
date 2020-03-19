@@ -18,6 +18,7 @@ export declare class NetworkQueue extends Queue {
     private queueInProgress;
     private apiKey;
     private excludeSubType;
+    private isForceSync;
     setSubType(): Promise<void>;
     add(doc: NetworkQueueReq, docId?: string): Promise<any>;
     start(): Promise<void>;

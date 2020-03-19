@@ -60,6 +60,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
         this.running = 0;
         this.retryCount = 5;
         this.queueInProgress = false;
+        this.isForceSync = false;
     }
     setSubType() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -87,7 +88,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
                 yield this.setSubType();
             }));
             this.apiKey = this.apiKey || (yield this.getApiKey());
-            if (this.running !== 0 || this.queueInProgress) {
+            if (this.running !== 0 || this.queueInProgress || this.isForceSync) {
                 logger_1.logger.warn("Job is in progress");
                 return;
             }
@@ -250,6 +251,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     }
     forceSync(subType) {
         return __awaiter(this, void 0, void 0, function* () {
+            this.isForceSync = true;
             this.apiKey = this.apiKey || (yield this.getApiKey());
             let query = {
                 selector: {
@@ -259,11 +261,13 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
             };
             const dbData = yield this.getByQuery(query);
             if (!dbData || dbData.length === 0) {
+                this.isForceSync = false;
                 this.setForceSyncInfo(subType);
                 return 'All data is synced';
             }
             const resp = yield this.executeForceSync(dbData, subType);
             if (resp) {
+                this.isForceSync = false;
                 throw {
                     code: _.get(resp, 'response.statusText'),
                     status: _.get(resp, 'response.status'),
