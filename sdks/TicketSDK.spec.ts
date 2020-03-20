@@ -34,6 +34,7 @@ describe('TicketSDK', async () => {
     });
   });
   it('should throw error if helpdesk api throws error', async () => {
+    spy.on(ticketSDK.deviceSDK, 'getToken', data => Promise.resolve("api_key"));
     spy.on(ticketSDK.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
     let getDeviceIdSpy = spy.on(ticketSDK.systemSDK, 'getDeviceId', data => Promise.resolve('deviceId'));
     let getDeviceInfoSpy = spy.on(ticketSDK.systemSDK, 'getDeviceInfo', data => Promise.resolve({}));
@@ -46,6 +47,7 @@ describe('TicketSDK', async () => {
     });
   });
   it('should return success if helpdesk api return success', async () => {
+    spy.on(ticketSDK.deviceSDK, 'getToken', data => Promise.resolve("api_key"));
     spy.on(ticketSDK.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
     const HTTPServiceSpy = spy.on(HTTPService, 'post', data => of({message: helpDeskSuccess.message}));
     let getDeviceIdSpy = spy.on(ticketSDK.systemSDK, 'getDeviceId', data => Promise.resolve('deviceId'));

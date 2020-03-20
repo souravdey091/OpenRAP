@@ -14,6 +14,7 @@ describe('NetworkQueue', async () => {
   });
   it('should call start method when internet is available', async () => {
     networkQueue.queueInProgress = false;
+    spy.on(networkQueue.deviceSDK, 'getToken', data => Promise.resolve("api_key"));
     spy.on(networkQueue.networkSDK, 'isInternetAvailable', data => Promise.resolve(true));
     spy.on(networkQueue, 'getByQuery', data => Promise.resolve([{id: '123', data: {}}]));
     let execute = spy.on(networkQueue, 'execute');
