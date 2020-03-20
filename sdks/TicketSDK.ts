@@ -36,7 +36,7 @@ export class TicketSDK {
     const deviceId = await this.systemSDK.getDeviceId();
     const deviceInfo: any = await this.systemSDK.getDeviceInfo();
     const networkInfo: any = await this.systemSDK.getNetworkInfo();
-    this.apiKey = this.apiKey || await this.getApiKey(deviceId);
+    this.apiKey = this.apiKey || await this.deviceSDK.getToken(deviceId);
     deviceInfo.networkInfo = _.map(networkInfo, item => {
       delete item.ip4;
       delete item.ip6;
@@ -76,10 +76,6 @@ export class TicketSDK {
         message: error.message
       };
     });
-  }
-
-  private async getApiKey(deviceId: string) {
-    return await this.deviceSDK.getToken(deviceId);
   }
 }
 export interface ITicketReq {

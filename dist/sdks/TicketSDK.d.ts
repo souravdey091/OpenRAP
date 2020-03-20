@@ -9,7 +9,6 @@ export declare class TicketSDK {
         code: string;
         status: number;
     }>;
-    private getApiKey;
 }
 export interface ITicketReq {
     email: string;

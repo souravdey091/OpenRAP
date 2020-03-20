@@ -58,7 +58,7 @@ let TicketSDK = class TicketSDK {
             const deviceId = yield this.systemSDK.getDeviceId();
             const deviceInfo = yield this.systemSDK.getDeviceInfo();
             const networkInfo = yield this.systemSDK.getNetworkInfo();
-            this.apiKey = this.apiKey || (yield this.getApiKey(deviceId));
+            this.apiKey = this.apiKey || (yield this.deviceSDK.getToken(deviceId));
             deviceInfo.networkInfo = _.map(networkInfo, item => {
                 delete item.ip4;
                 delete item.ip6;
@@ -95,11 +95,6 @@ let TicketSDK = class TicketSDK {
                     message: error.message
                 };
             });
-        });
-    }
-    getApiKey(deviceId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.deviceSDK.getToken(deviceId);
         });
     }
 };
