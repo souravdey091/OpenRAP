@@ -14,11 +14,11 @@ export default class DeviceSDK {
     @Inject private settingSDK: SettingSDK;
     @Inject private systemSDK: SystemSDK;
     @Inject private databaseSdk: DataBaseSDK;
-    private config: string;
+    private config: IConfig;
     private apiKey: string;
 
     initialize(config: IConfig) {
-        this.config = config.key;
+        this.config = config;
     }
 
     async register() {
@@ -82,10 +82,10 @@ export default class DeviceSDK {
             return Promise.resolve(this.apiKey);
         } catch (error) {
             // Try to get it from API, set in local and return
-            if (this.config && deviceId) {
+            if (_.get(this.config, 'key') && deviceId) {
                 let headers = {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${this.config}`
+                    Authorization: `Bearer ${_.get(this.config, 'key')}`
                 };
                 let body = {
                     id: "api.device.register",

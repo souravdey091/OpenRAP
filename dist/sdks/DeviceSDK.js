@@ -39,7 +39,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const DataBaseSDK_1 = require("./DataBaseSDK");
 let DeviceSDK = class DeviceSDK {
     initialize(config) {
-        this.config = config.key;
+        this.config = config;
     }
     register() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -101,10 +101,10 @@ let DeviceSDK = class DeviceSDK {
             }
             catch (error) {
                 // Try to get it from API, set in local and return
-                if (this.config && deviceId) {
+                if (_.get(this.config, 'key') && deviceId) {
                     let headers = {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${this.config}`
+                        Authorization: `Bearer ${_.get(this.config, 'key')}`
                     };
                     let body = {
                         id: "api.device.register",
