@@ -64,7 +64,8 @@ export default class DeviceSDK {
         }, 30000);
     }
 
-    async getToken(deviceId: string) {
+    async getToken(deviceId?: string) {
+        let did = deviceId || await this.systemSDK.getDeviceId();
         // Return API key if already exist
         if (this.apiKey) {
             logger.info("Received token from local");
@@ -82,7 +83,7 @@ export default class DeviceSDK {
             return Promise.resolve(this.apiKey);
         } catch (error) {
             // Try to get it from API, set in local and return
-            if (_.get(this.config, 'key') && deviceId) {
+            if (_.get(this.config, 'key') && did) {
                 let headers = {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${_.get(this.config, 'key')}`
@@ -92,7 +93,7 @@ export default class DeviceSDK {
                     ver: "1.0",
                     ts: Date.now(),
                     request: {
-                        key: deviceId
+                        key: did
                     }
                 };
                 let response = await axios
@@ -122,7 +123,7 @@ export default class DeviceSDK {
                 logger.info("Received token from API");
                 return Promise.resolve(this.apiKey);
             } else {
-                throw Error(`Token or deviceID missing to register device ${deviceId}`);
+                throw Error(`Token or deviceID missing to register device ${did}`);
             }
         }
     }
