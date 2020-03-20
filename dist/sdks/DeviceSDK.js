@@ -38,10 +38,10 @@ const axios_1 = __importDefault(require("axios"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const DataBaseSDK_1 = require("./DataBaseSDK");
 let DeviceSDK = class DeviceSDK {
-    initialize(masterKey) {
-        this.masterKey = masterKey;
+    initialize(config) {
+        this.config = config.key;
     }
-    deviceRegistry() {
+    register() {
         return __awaiter(this, void 0, void 0, function* () {
             var interval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
                 let deviceId = yield this.systemSDK.getDeviceId();
@@ -70,7 +70,7 @@ let DeviceSDK = class DeviceSDK {
                 services_1.HTTPService.post(`${process.env.DEVICE_REGISTRY_URL}/${deviceId}`, body, {
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${this.masterKey}`
+                        Authorization: `Bearer ${this.apiKey}`
                     }
                 })
                     .toPromise()
@@ -87,38 +87,55 @@ let DeviceSDK = class DeviceSDK {
     }
     getToken(deviceId) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this.masterKey && deviceId) {
-                let headers = {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${this.masterKey}`
-                };
-                let body = {
-                    id: "api.device.register",
-                    ver: "1.0",
-                    ts: Date.now(),
-                    request: {
-                        key: deviceId
-                    }
-                };
-                let response = yield axios_1.default
-                    .post(process.env.APP_BASE_URL +
-                    "/api/api-manager/v1/consumer/desktop_device/credential/register", body, { headers: headers })
-                    .catch(err => {
-                    logger_1.logger.error(`Error while registering the device status ${err.response.status} data ${err.response.data}`);
-                    throw Error(err);
-                });
-                let key = _.get(response, "data.result.key");
-                let secret = _.get(response, "data.result.secret");
-                let apiKey = jsonwebtoken_1.default.sign({ iss: key }, secret, { algorithm: "HS256" });
-                yield this.databaseSdk
-                    .upsertDoc("settings", "device_token", { api_key: apiKey })
-                    .catch(err => {
-                    logger_1.logger.error("while inserting the api key to the  database", err);
-                });
-                return Promise.resolve(apiKey);
+            // Return API key if already exist
+            if (this.apiKey) {
+                logger_1.logger.info("Received token from local");
+                return Promise.resolve(this.apiKey);
             }
-            else {
-                throw Error(`Token or deviceID missing to register device ${deviceId}`);
+            try {
+                // Try to get it from DB, set in local and return
+                let { api_key } = yield this.databaseSdk.getDoc("settings", "device_token");
+                this.apiKey = api_key;
+                logger_1.logger.info("Received token from Database");
+                return Promise.resolve(this.apiKey);
+            }
+            catch (error) {
+                // Try to get it from API, set in local and return
+                if (this.config && deviceId) {
+                    let headers = {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${this.config}`
+                    };
+                    let body = {
+                        id: "api.device.register",
+                        ver: "1.0",
+                        ts: Date.now(),
+                        request: {
+                            key: deviceId
+                        }
+                    };
+                    let response = yield axios_1.default
+                        .post(process.env.APP_BASE_URL +
+                        "/api/api-manager/v1/consumer/desktop_device/credential/register", body, { headers: headers })
+                        .catch(err => {
+                        logger_1.logger.error(`Error while registering the device status ${err.response.status} data ${err.response.data}`);
+                        throw Error(err);
+                    });
+                    let key = _.get(response, "data.result.key");
+                    let secret = _.get(response, "data.result.secret");
+                    let apiKey = jsonwebtoken_1.default.sign({ iss: key }, secret, { algorithm: "HS256" });
+                    yield this.databaseSdk
+                        .upsertDoc("settings", "device_token", { api_key: apiKey })
+                        .catch(err => {
+                        logger_1.logger.error("while inserting the api key to the  database", err);
+                    });
+                    this.apiKey = apiKey;
+                    logger_1.logger.info("Received token from API");
+                    return Promise.resolve(this.apiKey);
+                }
+                else {
+                    throw Error(`Token or deviceID missing to register device ${deviceId}`);
+                }
             }
         });
     }

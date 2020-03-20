@@ -33,6 +33,7 @@ const _ = __importStar(require("lodash"));
 const typescript_ioc_2 = require("typescript-ioc");
 const SystemSDK_1 = __importDefault(require("./SystemSDK"));
 const NetworkSDK_1 = __importDefault(require("./NetworkSDK"));
+const DeviceSDK_1 = __importDefault(require("./DeviceSDK"));
 const services_1 = require("@project-sunbird/ext-framework-server/services");
 const FormData = require('form-data');
 let TicketSDK = class TicketSDK {
@@ -57,6 +58,7 @@ let TicketSDK = class TicketSDK {
             const deviceId = yield this.systemSDK.getDeviceId();
             const deviceInfo = yield this.systemSDK.getDeviceInfo();
             const networkInfo = yield this.systemSDK.getNetworkInfo();
+            this.apiKey = this.apiKey || (yield this.getApiKey(deviceId));
             deviceInfo.networkInfo = _.map(networkInfo, item => {
                 delete item.ip4;
                 delete item.ip6;
@@ -75,7 +77,7 @@ let TicketSDK = class TicketSDK {
             formData.append('custom_fields[cf_reqeststatus]', "None");
             formData.append('custom_fields[cf_reasonforseverity]', "Offline Desktop App Query");
             formData.append('attachments[]', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json' });
-            const headers = Object.assign({ authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}` }, formData.getHeaders());
+            const headers = Object.assign({ authorization: `Bearer ${this.apiKey}` }, formData.getHeaders());
             return services_1.HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create`, formData, { headers }).toPromise()
                 .then((data) => {
                 logger_1.logger.info('Ticket created successfully', data.data);
@@ -95,6 +97,11 @@ let TicketSDK = class TicketSDK {
             });
         });
     }
+    getApiKey(deviceId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.deviceSDK.getToken(deviceId);
+        });
+    }
 };
 __decorate([
     typescript_ioc_2.Inject,
@@ -104,6 +111,10 @@ __decorate([
     typescript_ioc_2.Inject,
     __metadata("design:type", SystemSDK_1.default)
 ], TicketSDK.prototype, "systemSDK", void 0);
+__decorate([
+    typescript_ioc_2.Inject,
+    __metadata("design:type", DeviceSDK_1.default)
+], TicketSDK.prototype, "deviceSDK", void 0);
 TicketSDK = __decorate([
     typescript_ioc_1.Singleton,
     __metadata("design:paramtypes", [])

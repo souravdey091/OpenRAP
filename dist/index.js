@@ -57,7 +57,7 @@ class App {
                 }
             }
             let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
-            this.deviceSDK.deviceRegistry();
+            this.deviceSDK.register();
             this.networkQueue.setSubType();
             // TODO - Need to remove migrateTelemetryPacketToQueueDB in next release - 2.9.0
             setTimeout(() => { this.telemetryManager.migrateTelemetryPacketToQueueDB(); }, interval);

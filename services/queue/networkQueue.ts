@@ -170,24 +170,7 @@ export class NetworkQueue extends Queue {
 
     private async getApiKey() {
         let did = await this.systemSDK.getDeviceId();
-        let apiKey: any;
-        try {
-            let { api_key } = await this.databaseSdk.getDoc(
-                "settings",
-                "device_token"
-            );
-            apiKey = api_key;
-        } catch (error) {
-            logger.warn("device token is not set getting it from api", error);
-            apiKey = await this.getAPIToken(did).catch(err =>
-                logger.error(`while getting the token ${err}`)
-            );
-        }
-        return apiKey;
-    }
-
-    private async getAPIToken(deviceId: string) {
-        return await this.deviceSDK.getToken(deviceId);
+        return await this.deviceSDK.getToken(did);
     }
 
     public async forceSync(subType: string[]) {

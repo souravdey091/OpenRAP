@@ -192,21 +192,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     getApiKey() {
         return __awaiter(this, void 0, void 0, function* () {
             let did = yield this.systemSDK.getDeviceId();
-            let apiKey;
-            try {
-                let { api_key } = yield this.databaseSdk.getDoc("settings", "device_token");
-                apiKey = api_key;
-            }
-            catch (error) {
-                logger_1.logger.warn("device token is not set getting it from api", error);
-                apiKey = yield this.getAPIToken(did).catch(err => logger_1.logger.error(`while getting the token ${err}`));
-            }
-            return apiKey;
-        });
-    }
-    getAPIToken(deviceId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.deviceSDK.getToken(deviceId);
+            return yield this.deviceSDK.getToken(did);
         });
     }
     forceSync(subType) {

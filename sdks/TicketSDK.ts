@@ -4,6 +4,7 @@ import * as _ from "lodash";
 import { Inject } from "typescript-ioc";
 import SystemSDK from "./SystemSDK";
 import NetworkSDK from "./NetworkSDK";
+import DeviceSDK from './DeviceSDK';
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
 const FormData = require('form-data');
 
@@ -12,6 +13,8 @@ export class TicketSDK {
 
   @Inject private networkSDK: NetworkSDK;
   @Inject private systemSDK: SystemSDK;
+  @Inject private deviceSDK: DeviceSDK;
+  private apiKey: string;
   constructor() { }
 
   async createTicket(ticketReq: ITicketReq): Promise<{ message: string, code: string, status: number }> {
@@ -33,6 +36,7 @@ export class TicketSDK {
     const deviceId = await this.systemSDK.getDeviceId();
     const deviceInfo: any = await this.systemSDK.getDeviceInfo();
     const networkInfo: any = await this.systemSDK.getNetworkInfo();
+    this.apiKey = this.apiKey || await this.getApiKey(deviceId);
     deviceInfo.networkInfo = _.map(networkInfo, item => {
       delete item.ip4;
       delete item.ip6;
@@ -52,7 +56,7 @@ export class TicketSDK {
     formData.append('custom_fields[cf_reasonforseverity]', "Offline Desktop App Query");
     formData.append('attachments[]', JSON.stringify(deviceInfo), { filename: 'deviceSpec.json', contentType: 'application/json' });
     const headers = {
-      authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`,
+      authorization: `Bearer ${this.apiKey}`,
       ...formData.getHeaders(),
     }
     return HTTPService.post(`${process.env.APP_BASE_URL}/api/tickets/v1/create`, formData, {headers}).toPromise()
@@ -72,6 +76,10 @@ export class TicketSDK {
         message: error.message
       };
     });
+  }
+
+  private async getApiKey(deviceId: string) {
+    return await this.deviceSDK.getToken(deviceId);
   }
 }
 export interface ITicketReq {
