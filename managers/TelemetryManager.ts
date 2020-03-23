@@ -35,47 +35,6 @@ export class TelemetryManager {
 
   private ARCHIVE_EXPIRY_TIME = 10; // in days
 
-  registerDevice() {
-    var interval = setInterval(async () => {
-      let deviceId = await this.systemSDK.getDeviceId();
-      let deviceSpec = await this.systemSDK.getDeviceInfo();
-      let userDeclaredLocation = await this.settingSDK.get('location').catch(err => logger.error('Error while fetching user Location in registerDevice, error:', err.message));
-      if (_.isEmpty(userDeclaredLocation)) {
-        return;
-      }
-      let body = {
-        id: process.env.APP_ID,
-        ver: process.env.APP_VERSION,
-        ts: new Date().toISOString(),
-        params: {
-          msgid: uuid.v4()
-        },
-        request: {
-          channel: process.env.CHANNEL,
-          producer: process.env.APP_ID,
-          dspec: deviceSpec,
-          userDeclaredLocation: {
-            state: _.get(userDeclaredLocation, 'state.name'),
-            district: _.get(userDeclaredLocation, 'city.name')
-          }
-        }
-      };
-      HTTPService.post(`${process.env.DEVICE_REGISTRY_URL}/${deviceId}`, body, {
-        headers: {
-          "Content-Type": "application/json"
-        }
-      })
-        .toPromise()
-        .then(data => {
-          logger.info(`device registred successfully ${data.status}`);
-          clearInterval(interval);
-        })
-        .catch(error => {
-          logger.error(`Unable to sync device data: ${error.message}`);
-        });
-    }, 30000);
-  }
-
   async migrateTelemetryPacketToQueueDB() {
     try {
       let telemetryPackets = await this.databaseSdk.list("telemetry_packets", { include_docs: true });

@@ -41,6 +41,7 @@ const rxjs_1 = require("rxjs");
 const SystemSDK_1 = __importDefault(require("../../sdks/SystemSDK"));
 const DataBaseSDK_1 = require("../../sdks/DataBaseSDK");
 const SettingSDK_1 = __importDefault(require("../../sdks/SettingSDK"));
+const DeviceSDK_1 = __importDefault(require("../../sdks/DeviceSDK"));
 var NETWORK_SUBTYPE;
 (function (NETWORK_SUBTYPE) {
     NETWORK_SUBTYPE["Telemetry"] = "TELEMETRY";
@@ -191,62 +192,7 @@ let NetworkQueue = class NetworkQueue extends queue_1.Queue {
     getApiKey() {
         return __awaiter(this, void 0, void 0, function* () {
             let did = yield this.systemSDK.getDeviceId();
-            let apiKey;
-            try {
-                let { api_key } = yield this.databaseSdk.getDoc("settings", "device_token");
-                apiKey = api_key;
-            }
-            catch (error) {
-                logger_1.logger.warn("device token is not set getting it from api", error);
-                apiKey = yield this.getAPIToken(did).catch(err => logger_1.logger.error(`while getting the token ${err}`));
-            }
-            return apiKey;
-        });
-    }
-    getAPIToken(deviceId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            //const apiKey =;
-            //let token = Buffer.from(apiKey, 'base64').toString('ascii');
-            // if (process.env.APP_BASE_URL_TOKEN && deviceId) {
-            //   let headers = {
-            //     "Content-Type": "application/json",
-            //     Authorization: `Bearer ${process.env.APP_BASE_URL_TOKEN}`
-            //   };
-            //   let body = {
-            //     id: "api.device.register",
-            //     ver: "1.0",
-            //     ts: Date.now(),
-            //     request: {
-            //       key: deviceId
-            //     }
-            //   };
-            //   let response = await axios
-            //     .post(
-            //       process.env.APP_BASE_URL +
-            //         "/api/api-manager/v1/consumer/mobile_device/credential/register",
-            //       body,
-            //       { headers: headers }
-            //     )
-            //     .catch(err => {
-            //       logger.error(
-            //         `Error while registering the device status ${
-            //           err.response.status
-            //         } data ${err.response.data}`
-            //       );
-            //       throw Error(err);
-            //     });
-            //   let key = _.get(response, "data.result.key");
-            //   let secret = _.get(response, "data.result.secret");
-            //   let apiKey = jwt.sign({ iss: key }, secret, { algorithm: "HS256" });
-            //   await this.databaseSdk
-            //     .upsertDoc("settings", "device_token", { api_key: apiKey })
-            //     .catch(err => {
-            //       logger.error("while inserting the api key to the  database", err);
-            //     });
-            return Promise.resolve(process.env.APP_BASE_URL_TOKEN);
-            // } else {
-            //   throw Error(`token or deviceID missing to register device ${deviceId}`);
-            // }
+            return yield this.deviceSDK.getToken(did);
         });
     }
     forceSync(subType) {
@@ -363,6 +309,10 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", SettingSDK_1.default)
 ], NetworkQueue.prototype, "settingSDK", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", DeviceSDK_1.default)
+], NetworkQueue.prototype, "deviceSDK", void 0);
 NetworkQueue = __decorate([
     typescript_ioc_1.Singleton
 ], NetworkQueue);

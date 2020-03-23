@@ -11,6 +11,7 @@ export declare class NetworkQueue extends Queue {
     private systemSDK;
     private databaseSdk;
     private settingSDK;
+    private deviceSDK;
     private concurrency;
     private queueList;
     private running;
@@ -25,7 +26,6 @@ export declare class NetworkQueue extends Queue {
     private execute;
     private makeHTTPCall;
     private getApiKey;
-    private getAPIToken;
     forceSync(subType: string[]): Promise<string>;
     private setForceSyncInfo;
     private executeForceSync;

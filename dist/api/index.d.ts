@@ -9,6 +9,7 @@ import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
 import { DownloadSDK } from "./../sdks/DownloadSDK";
+import DeviceSDK from "./../sdks/DeviceSDK";
 import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue, NetworkQueue } from './../services/queue';
 export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus, NetworkQueueReq } from "./../services/queue";
 declare class ContainerAPI {
@@ -17,6 +18,7 @@ declare class ContainerAPI {
     systemQueue: SystemQueue;
     networkQueue: NetworkQueue;
     downloadSDK: DownloadSDK;
+    deviceSDK: DeviceSDK;
     bootstrap(): Promise<void>;
     register(pluginId: string, pluginInfo: PluginConfig): Promise<void>;
     getSettingSDKInstance(pluginId: string): SettingSDK;
@@ -28,6 +30,7 @@ declare class ContainerAPI {
     getUserSdkInstance(): UserSDK;
     getTicketSdkInstance(): TicketSDK;
     initializeSystemQueue(): void;
+    getDeviceSdkInstance(): DeviceSDK;
     getSystemQueueInstance(pluginId: string): ISystemQueueInstance;
     getNetworkQueueInstance(): NetworkQueue;
 }

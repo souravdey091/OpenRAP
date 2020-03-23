@@ -35,6 +35,7 @@ const NetworkSDK_1 = __importDefault(require("./sdks/NetworkSDK"));
 const TelemetryManager_1 = require("./managers/TelemetryManager");
 const networkQueue_1 = require("./services/queue/networkQueue");
 const typescript_ioc_1 = require("typescript-ioc");
+const DeviceSDK_1 = __importDefault(require("./sdks/DeviceSDK"));
 class App {
     static bootstrap() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -56,7 +57,7 @@ class App {
                 }
             }
             let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
-            this.telemetryManager.registerDevice();
+            this.deviceSDK.register();
             this.networkQueue.setSubType();
             // TODO - Need to remove migrateTelemetryPacketToQueueDB in next release - 2.9.0
             setTimeout(() => { this.telemetryManager.migrateTelemetryPacketToQueueDB(); }, interval);
@@ -77,4 +78,8 @@ __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", TelemetryManager_1.TelemetryManager)
 ], App, "telemetryManager", void 0);
+__decorate([
+    typescript_ioc_1.Inject,
+    __metadata("design:type", DeviceSDK_1.default)
+], App, "deviceSDK", void 0);
 exports.App = App;

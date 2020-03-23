@@ -6,10 +6,12 @@ import NetworkSDK from "./sdks/NetworkSDK";
 import { TelemetryManager } from "./managers/TelemetryManager";
 import { NetworkQueue } from './services/queue/networkQueue';
 import { Inject } from "typescript-ioc";
+import DeviceSDK from "./sdks/DeviceSDK";
 
 export class App {
   @Inject static networkQueue: NetworkQueue;
   @Inject static telemetryManager: TelemetryManager;
+  @Inject static deviceSDK: DeviceSDK;
   public static async  bootstrap(){
     // initialize the telemetry instance, to get it in other modules
   
@@ -33,7 +35,7 @@ export class App {
       }
     }
     let interval = parseInt(process.env.TELEMETRY_SYNC_INTERVAL_IN_SECS) * 1000 || 30000;
-    this.telemetryManager.registerDevice();
+    this.deviceSDK.register();
     this.networkQueue.setSubType();
     // TODO - Need to remove migrateTelemetryPacketToQueueDB in next release - 2.9.0
     setTimeout(() => { this.telemetryManager.migrateTelemetryPacketToQueueDB() }, interval);

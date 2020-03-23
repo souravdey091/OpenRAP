@@ -14,6 +14,7 @@ import TelemetrySDK from "./../sdks/TelemetrySDK";
 import { UserSDK } from "./../sdks/UserSDK";
 import { TicketSDK } from "./../sdks/TicketSDK";
 import { DownloadSDK } from "./../sdks/DownloadSDK";
+import DeviceSDK from "./../sdks/DeviceSDK";
 import { SystemQueue, TaskExecuter, SystemQueueReq, SystemQueueQuery, ISystemQueue, NetworkQueue, NetworkQueueReq } from './../services/queue';
 export { ITaskExecuter, SystemQueueQuery, ISystemQueue, SystemQueueReq, SystemQueueStatus, NetworkQueueReq } from "./../services/queue";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
@@ -26,6 +27,7 @@ class ContainerAPI {
   @Inject systemQueue: SystemQueue
   @Inject networkQueue: NetworkQueue
   @Inject downloadSDK: DownloadSDK
+  @Inject deviceSDK: DeviceSDK
   public async bootstrap() {
     await App.bootstrap();
     EventManager.subscribe("app:initialized", () => {
@@ -76,6 +78,11 @@ class ContainerAPI {
   public initializeSystemQueue(){
     this.systemQueue.initialize();
   }
+
+  public getDeviceSdkInstance(){
+    return this.deviceSDK;
+  }
+
   public getSystemQueueInstance(pluginId: string): ISystemQueueInstance{
     const register = (type: string, taskExecuter: TaskExecuter) => {
       return this.systemQueue.register(pluginId, type, taskExecuter);
