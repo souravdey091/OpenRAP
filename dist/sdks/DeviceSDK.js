@@ -38,6 +38,9 @@ const axios_1 = __importDefault(require("axios"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const DataBaseSDK_1 = require("./DataBaseSDK");
 let DeviceSDK = class DeviceSDK {
+    constructor() {
+        this.settingSDK = new SettingSDK_1.default('openrap-sunbirded-plugin');
+    }
     initialize(config) {
         this.config = config;
     }
@@ -144,10 +147,6 @@ let DeviceSDK = class DeviceSDK {
         });
     }
 };
-__decorate([
-    typescript_ioc_1.Inject,
-    __metadata("design:type", SettingSDK_1.default)
-], DeviceSDK.prototype, "settingSDK", void 0);
 __decorate([
     typescript_ioc_1.Inject,
     __metadata("design:type", SystemSDK_1.default)
