@@ -96,32 +96,32 @@ export default class DeviceSDK {
                         key: did
                     }
                 };
-                let response = await axios
-                    .post(
-                        process.env.APP_BASE_URL +
-                        "/api/api-manager/v1/consumer/desktop_device/credential/register",
-                        body,
-                        { headers: headers }
-                    )
-                    .catch(err => {
-                        logger.error(
-                            `Error while registering the device status ${
-                            err.response.status
-                            } data ${err.response.data}`
+                try {
+                    let response = await axios
+                        .post(
+                            process.env.APP_BASE_URL +
+                            "/api/api-manager/v1/consumer/desktop_device/credential/register",
+                            body,
+                            { headers: headers }
                         );
-                        throw Error(err);
-                    });
-                let key = _.get(response, "data.result.key");
-                let secret = _.get(response, "data.result.secret");
-                let apiKey = jwt.sign({ iss: key }, secret, { algorithm: "HS256" });
-                await this.databaseSdk
-                    .upsertDoc("settings", "device_token", { api_key: apiKey })
-                    .catch(err => {
-                        logger.error("while inserting the api key to the  database", err);
-                    });
-                this.apiKey = apiKey;
-                logger.info("Received token from API");
-                return Promise.resolve(this.apiKey);
+                    let key = _.get(response, "data.result.key");
+                    let secret = _.get(response, "data.result.secret");
+                    let apiKey = jwt.sign({ iss: key }, secret, { algorithm: "HS256" });
+                    await this.databaseSdk
+                        .upsertDoc("settings", "device_token", { api_key: apiKey })
+                        .catch(err => {
+                            logger.error("while inserting the api key to the  database", err);
+                        });
+                    this.apiKey = apiKey;
+                    logger.info("Received token from API");
+                    return Promise.resolve(this.apiKey);
+                } catch (err) {
+                    logger.error(
+                        `Error while registering the device status ${err.response.status} data ${err.response.data}`
+                    );
+                    logger.info("Resolving error with invalid api key");
+                    return Promise.resolve(this.apiKey);
+                }
             } else {
                 throw Error(`Token or deviceID missing to register device ${did}`);
             }
