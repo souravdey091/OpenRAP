@@ -11,7 +11,7 @@ import { DataBaseSDK } from "./DataBaseSDK";
 
 @Singleton
 export default class DeviceSDK {
-    @Inject private settingSDK: SettingSDK;
+    private settingSDK = new SettingSDK('openrap-sunbirded-plugin');
     @Inject private systemSDK: SystemSDK;
     @Inject private databaseSdk: DataBaseSDK;
     private config: IConfig;
