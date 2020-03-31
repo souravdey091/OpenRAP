@@ -54,7 +54,6 @@ let NetworkSDK = class NetworkSDK {
     setInitialStatus() {
         return __awaiter(this, void 0, void 0, function* () {
             this.internetStatus = yield this.isInternetAvailable();
-            this.logTelemetryInterrupt(this.internetStatus);
         });
     }
     setEventEmitter() {
@@ -69,19 +68,16 @@ let NetworkSDK = class NetworkSDK {
                     EventManager_1.EventManager.emit("network:disconnected", {});
                     this.internetStatus = status;
                 }
-                this.logTelemetryInterrupt(status);
+                this.telemetryInstance.interrupt({
+                    context: {
+                        env: "network"
+                    },
+                    edata: {
+                        type: status ? "connected" : "disconnected"
+                    }
+                });
             }
         }), 300000);
-    }
-    logTelemetryInterrupt(status) {
-        this.telemetryInstance.interrupt({
-            context: {
-                env: "network"
-            },
-            edata: {
-                type: status ? "connected" : "disconnected"
-            }
-        });
     }
 };
 __decorate([

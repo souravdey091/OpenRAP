@@ -5,5 +5,4 @@ export default class NetworkSDK {
     isInternetAvailable: (baseUrl?: string) => Promise<boolean>;
     private setInitialStatus;
     private setEventEmitter;
-    private logTelemetryInterrupt;
 }

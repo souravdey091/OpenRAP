@@ -32,7 +32,6 @@ export default class NetworkSDK {
   };
   private async setInitialStatus() {
     this.internetStatus = await this.isInternetAvailable();
-    this.logTelemetryInterrupt(this.internetStatus);
   }
   private setEventEmitter() {
     setInterval(async () => {
@@ -45,20 +44,16 @@ export default class NetworkSDK {
           EventManager.emit("network:disconnected", {});
           this.internetStatus = status;
         }
-        this.logTelemetryInterrupt(status);
+        this.telemetryInstance.interrupt({
+          context: {
+            env: "network"
+          },
+          edata: {
+            type: status ? "connected" : "disconnected"
+          }
+        });
       }
     }, 300000);
-  }
-
-  private logTelemetryInterrupt(status: boolean) {
-    this.telemetryInstance.interrupt({
-      context: {
-        env: "network"
-      },
-      edata: {
-        type: status ? "connected" : "disconnected"
-      }
-    });
   }
 }
 
